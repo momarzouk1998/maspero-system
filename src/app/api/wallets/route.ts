@@ -6,7 +6,7 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  // External Fawry / Machine wallets
+  // External Fawry / Machine wallets & Cash Drawers
   const externalWallets = await db.external_wallets.findMany({
     where: { is_active: true },
     orderBy: { sort: 'asc' }
@@ -20,7 +20,7 @@ export async function GET() {
       name: true,
       role: true,
       job_title: true,
-      wallet_balance: user.role === 'manager' || true, // Employees can see recipient names
+      wallet_balance: true,
     },
     orderBy: { name: 'asc' }
   });
@@ -76,9 +76,7 @@ export async function POST(req: Request) {
         }
       });
 
-      // If customer paid cash for machine deposit (+cash to employee), or withdrawal (-cash from employee)
-      // Deposit: Customer gives employee cash -> employee cash increases
-      // Withdrawal: Customer receives cash from employee -> employee cash decreases
+      // Customer paid cash (+cash to employee custody) or withdrawal (-cash from employee custody)
       const employeeCashChange = transactionType === 'إيداع' ? (numAmount + numCommission) : -(numAmount - numCommission);
       await tx.users.update({
         where: { id: user.id },
@@ -94,5 +92,39 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Wallet transaction error:', error);
     return NextResponse.json({ error: 'حدث خطأ في عملية الماكينة' }, { status: 500 });
+  }
+}
+
+// Manager Initial Balance Adjustment for any Wallet / Machine / Drawer
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير بتحديد الرصيد الافتتاحي' }, { status: 403 });
+  }
+
+  try {
+    const { walletId, initialBalance, custodianName } = await req.json();
+
+    if (!walletId || initialBalance === undefined) {
+      return NextResponse.json({ error: 'المحفظة والرصيد الافتتاحي مطلوبان' }, { status: 400 });
+    }
+
+    const updated = await db.external_wallets.update({
+      where: { id: walletId },
+      data: {
+        current_balance: Number(initialBalance),
+        actual_balance: Number(initialBalance),
+        custodian_name: custodianName !== undefined ? custodianName : undefined,
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `تم ضبط الرصيد الافتتاحي لـ (${updated.wallet_name}) إلى ${Number(initialBalance)} ج.م بنجاح 🎉`,
+      wallet: updated
+    });
+  } catch (error: any) {
+    console.error('Initial balance update error:', error);
+    return NextResponse.json({ error: error.message || 'فشل تحديث الرصيد الافتتاحي' }, { status: 400 });
   }
 }

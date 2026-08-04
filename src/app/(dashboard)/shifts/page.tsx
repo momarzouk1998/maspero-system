@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, Play, Square, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { Clock, Play, Square, CheckCircle2, AlertTriangle, Wallet, ArrowRight } from 'lucide-react';
 
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<any[]>([]);
@@ -46,7 +47,7 @@ export default function ShiftsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل بدء الشفت');
 
-      setMsg('تم بدء الشفت بنجاح 🎉');
+      setMsg('تم بدء الشفت بنجاح 🎉 برجاء استلام المحافظ والعهدة للبدء');
       setShiftNote('');
       fetchShifts(1);
     } catch (err: any) {
@@ -108,6 +109,26 @@ export default function ShiftsPage() {
             <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{msg}</span>
+            </div>
+          )}
+
+          {/* Prominent Custody & Wallet Reminder Banner when Shift is Active */}
+          {activeShift && (
+            <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-300 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-sm text-amber-400">
+                <AlertTriangle className="w-5 h-5 shrink-0 animate-bounce text-amber-400" />
+                <span>⚠️ تذكير هام باستلام العهدة والمحافظ:</span>
+              </div>
+              <p className="text-xs leading-relaxed text-slate-300">
+                برجاء التوجه فوراً لشاشة <strong>المحافظ</strong> لاستلام عهدة ماكينات فوري وفودافون كاش أو أدراج الكاش لبدء العمل وتسجيل الخدمات.
+              </p>
+              <Link
+                href="/wallet"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Wallet className="w-4 h-4" />
+                <span>الانتقال فوراً لاستلام المحافظ والعهدة 🚀</span>
+              </Link>
             </div>
           )}
 
@@ -204,27 +225,6 @@ export default function ShiftsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-            <span>الصفحة {pagination.page} من {pagination.totalPages}</span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => fetchShifts(pagination.page - 1)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-40 cursor-pointer"
-              >
-                السابق
-              </button>
-              <button
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => fetchShifts(pagination.page + 1)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-40 cursor-pointer"
-              >
-                التالي
-              </button>
-            </div>
           </div>
         </div>
       </div>
