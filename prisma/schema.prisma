@@ -36,6 +36,7 @@ model users {
   
   borrowing_allowed Boolean   @default(true)
   is_active         Boolean   @default(true)
+  permissions       String?   @db.Text // JSON permissions per module: "READ_ONLY" | "READ_WRITE" | "FULL_ACCESS"
   notes             String?   @db.Text
   created_at        DateTime? @default(now()) @db.Timestamptz()
   updated_at        DateTime? @default(now()) @db.Timestamptz()
