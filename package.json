@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
-    "db:import": "node --experimental-strip-types --no-warnings=ExperimentalWarning prisma/import-maspero.ts"
+    "db:import": "npx --yes tsx prisma/import-maspero.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
