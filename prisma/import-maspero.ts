@@ -6,43 +6,64 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 const MASPERO_DIR = path.join(process.cwd());
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim().replace(/^"|"$/g, ''));
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim().replace(/^"|"$/g, ''));
-  return result;
-}
-
+// Robust CSV parser supporting quotes and multiline fields
 function parseCSV(filePath: string): any[] {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n').filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
 
-  const headers = parseCSVLine(lines[0]);
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentVal = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    const nextChar = content[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentVal += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      currentRow.push(currentVal.trim());
+      currentVal = '';
+    } else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !inQuotes) {
+      if (char === '\r') i++;
+      currentRow.push(currentVal.trim());
+      if (currentRow.some((field) => field.length > 0)) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentVal = '';
+    } else {
+      currentVal += char;
+    }
+  }
+
+  if (currentVal || currentRow.length > 0) {
+    currentRow.push(currentVal.trim());
+    if (currentRow.some((field) => field.length > 0)) {
+      rows.push(currentRow);
+    }
+  }
+
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map((h) => h.replace(/^"|"$/g, '').trim());
   const results = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i];
     const obj: any = {};
     headers.forEach((h, idx) => {
-      obj[h] = values[idx] || '';
+      obj[h] = values[idx] !== undefined ? values[idx].replace(/^"|"$/g, '').trim() : '';
     });
     results.push(obj);
   }
+
   return results;
 }
 
@@ -68,13 +89,13 @@ async function main() {
 
   for (const row of loginRows) {
     const rawId = row['Employee_Id'] || row['Name'];
-    if (!rawId || rawId.includes('<table') || rawId.includes('<h4')) continue;
+    if (!rawId) continue;
     const legacyId = String(rawId).trim().slice(0, 100);
-    if (!legacyId) continue;
+    const userName = (row['Name'] || legacyId).slice(0, 150);
+    if (!userName || userName.includes('<table')) continue;
 
     const isManager = row['Position'] === 'Manager' || row['Role'] === 'Manager';
     const userRole = isManager ? 'manager' : 'user';
-    const userName = (row['Name'] || legacyId).slice(0, 150);
     const userPassword = (row['Password'] || '').trim() || '123456';
     const passwordHash = await bcrypt.hash(userPassword, 10);
 
@@ -104,7 +125,7 @@ async function main() {
     });
     userMap.set(legacyId, created.id);
   }
-  console.log(`✓ Imported ${userMap.size} Employees/Users.`);
+  console.log(`✓ Imported ${userMap.size} Employees/Users with their exact passwords.`);
 
   // 2. Import Services Catalog
   console.log('\n2. Importing Services Catalog & Print Prices...');
