@@ -1,0 +1,439 @@
+// ========================================
+// Prisma Schema — MASPERO SERVICES (ماسـبيرو للخدمات)
+// High-Performance Next.js + PostgreSQL Schema
+// ========================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["maspero"]
+}
+
+// 1. Users & Employees (المستخدمين والموظفين)
+model users {
+  id                String    @id @default(uuid()) @db.Uuid
+  legacy_id         String?   @unique @db.VarChar(100)
+  name              String    @db.VarChar(200)
+  phone             String?   @db.VarChar(30)
+  whatsapp          String?   @db.VarChar(30)
+  email             String?   @db.VarChar(200)
+  password_hash     String    @db.Text
+  role              String    @default("user") @db.VarChar(50) // "manager" | "user"
+  job_title         String?   @db.VarChar(100)
+  employment_date   DateTime? @db.Date
+  salary            Decimal   @default(0) @db.Decimal(15, 2)
+  day_off           String?   @db.VarChar(50)
+  shift_hours       Int       @default(8)
+  
+  // Personal Cash Custody Balance (عهدة الموظف النقدية الخاصة للتسليم للمدير)
+  wallet_balance    Decimal   @default(0) @db.Decimal(15, 2)
+  
+  borrowing_allowed Boolean   @default(true)
+  is_active         Boolean   @default(true)
+  notes             String?   @db.Text
+  created_at        DateTime? @default(now()) @db.Timestamptz()
+  updated_at        DateTime? @default(now()) @db.Timestamptz()
+
+  // Relations
+  service_entries        service_entries[]
+  ticket_bookings        train_ticket_bookings[]
+  wallet_transactions    wallet_transactions[]
+  sent_transfers         employee_transfers[]         @relation("SentTransfers")
+  received_transfers     employee_transfers[]         @relation("ReceivedTransfers")
+  custody_machine_wallets external_wallets[]          @relation("WalletCustodian")
+  sent_machine_handovers  wallet_custody_handovers[]   @relation("SenderHandovers")
+  received_machine_handovers wallet_custody_handovers[]@relation("ReceiverHandovers")
+  shifts                 shifts[]
+  expenses               expenses[]
+  receipt_confirms       receipt_confirms[]
+  employee_hr            employee_hr[]
+  employee_reports       employee_reports[]
+
+  @@map("users")
+  @@schema("maspero")
+}
+
+// 2. Services Catalog (دليل الخدمات)
+model services {
+  id                 String   @id @default(uuid()) @db.Uuid
+  legacy_id          String?  @unique @db.VarChar(100)
+  service_name       String   @db.VarChar(200)
+  is_commissionable  Boolean  @default(false)
+  commission_percent Decimal  @default(0) @db.Decimal(5, 2)
+  description        String?  @db.Text
+  sort               Int      @default(0)
+  is_active          Boolean  @default(true)
+
+  service_entries    service_entries[]
+
+  @@map("services")
+  @@schema("maspero")
+}
+
+// 3. Tiered Printing Prices (أسعار الطباعة بالشرائح)
+model print_prices {
+  id         String  @id @default(uuid()) @db.Uuid
+  print_type String  @db.VarChar(100) // "طباعة أسود" | "طباعة ألوان"
+  face_type  String  @db.VarChar(50)  // "وجه واحد" | "وجهين"
+  key_name   String  @db.VarChar(250)
+  price      Decimal @db.Decimal(10, 2)
+
+  @@map("print_prices")
+  @@schema("maspero")
+}
+
+// 4. Service Entries Log (سجل الخدمات المباعة)
+model service_entries {
+  id                  String    @id @default(uuid()) @db.Uuid
+  legacy_id           String?   @unique @db.VarChar(100)
+  date                DateTime  @db.Date
+  month               String?   @db.VarChar(20)
+  shift_id            String?   @db.VarChar(100)
+  shift_name          String?   @db.VarChar(100)
+  shift_cashier       String?   @db.VarChar(100)
+  service_id          String?   @db.Uuid
+  service_name        String    @db.VarChar(200)
+  paper_count         Int       @default(1)
+  page_count          Int       @default(1)
+  face_type           String?   @db.VarChar(50)
+  amount              Decimal   @default(0) @db.Decimal(15, 2)
+  notes               String?   @db.Text
+  is_commissionable   String?   @db.VarChar(50)
+  employee_commission Decimal   @default(0) @db.Decimal(15, 2)
+  employee_id         String?   @db.Uuid
+  employee_name       String?   @db.VarChar(200)
+  invoice_code        String?   @db.VarChar(100)
+  timestamp           DateTime? @default(now()) @db.Timestamptz()
+
+  service             services? @relation(fields: [service_id], references: [id])
+  employee            users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, date])
+  @@index([shift_id])
+  @@index([invoice_code])
+  @@map("service_entries")
+  @@schema("maspero")
+}
+
+// 5. Train Ticket Bookings (حجوزات تذاكر القطارات)
+model train_ticket_bookings {
+  id                String    @id @default(uuid()) @db.Uuid
+  legacy_id         String?   @unique @db.VarChar(100)
+  date              DateTime  @db.Date
+  month             String?   @db.VarChar(20)
+  shift_id          String?   @db.VarChar(100)
+  shift_name        String?   @db.VarChar(100)
+  shift_cashier     String?   @db.VarChar(100)
+  service_name      String    @default("قطار") @db.VarChar(100)
+  item_count        Int       @default(1)
+  amount            Decimal   @default(0) @db.Decimal(15, 2)
+  ticket_price      Decimal   @default(0) @db.Decimal(15, 2)
+  ticket_commission Decimal   @default(0) @db.Decimal(15, 2)
+  notes             String?   @db.Text
+  employee_id       String?   @db.Uuid
+  employee_name     String?   @db.VarChar(200)
+  invoice_code      String?   @db.VarChar(100)
+  timestamp         DateTime? @default(now()) @db.Timestamptz()
+
+  employee          users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, date])
+  @@index([shift_id])
+  @@map("train_ticket_bookings")
+  @@schema("maspero")
+}
+
+// 6. External Machines & Actual Wallets (ماكينات فوري والمحافظ الفعلية للعمليات)
+model external_wallets {
+  id              String   @id @default(uuid()) @db.Uuid
+  legacy_id       String?  @unique @db.VarChar(100)
+  wallet_type     String   @db.VarChar(100) // "محفظة" | "ماكينة" | "درج كاشير"
+  wallet_name     String   @db.VarChar(200)
+  wallet_number   String?  @db.VarChar(50)
+  current_balance Decimal  @default(0) @db.Decimal(15, 2)
+  actual_balance  Decimal  @default(0) @db.Decimal(15, 2)
+  confirm_status  String?  @db.VarChar(50)
+  custodian_name  String?  @db.VarChar(200)
+  custodian_id    String?  @db.Uuid
+  sort            Int      @default(0)
+  is_active       Boolean  @default(true)
+
+  custodian       users?   @relation("WalletCustodian", fields: [custodian_id], references: [id])
+  transactions    wallet_transactions[]
+  custody_handovers wallet_custody_handovers[]
+
+  @@map("external_wallets")
+  @@schema("maspero")
+}
+
+// 6b. Machine Custody Handover (تسليم عهدة ماكينة/محفظة فعليّة بين الموظفين)
+model wallet_custody_handovers {
+  id               String    @id @default(uuid()) @db.Uuid
+  wallet_id        String    @db.Uuid
+  wallet_name      String    @db.VarChar(200)
+  sender_id        String    @db.Uuid
+  sender_name      String    @db.VarChar(200)
+  receiver_id      String    @db.Uuid
+  receiver_name    String    @db.VarChar(200)
+  balance_at_time  Decimal   @db.Decimal(15, 2)
+  status           String    @default("PENDING") @db.VarChar(20) // "PENDING" | "ACCEPTED" | "REJECTED"
+  notes            String?   @db.Text
+  created_at       DateTime? @default(now()) @db.Timestamptz()
+  responded_at     DateTime? @db.Timestamptz()
+
+  wallet           external_wallets @relation(fields: [wallet_id], references: [id])
+  sender           users            @relation("SenderHandovers", fields: [sender_id], references: [id])
+  receiver         users            @relation("ReceiverHandovers", fields: [receiver_id], references: [id])
+
+  @@map("wallet_custody_handovers")
+  @@schema("maspero")
+}
+
+// 7. Wallet & Machine Transactions Log (سجل حركات المحافظ والماكينات)
+model wallet_transactions {
+  id                String    @id @default(uuid()) @db.Uuid
+  legacy_id         String?   @unique @db.VarChar(100)
+  date              DateTime  @db.Date
+  transaction_month String?   @db.VarChar(20)
+  time_str          String?   @db.VarChar(50)
+  wallet_id         String?   @db.Uuid
+  wallet_name       String?   @db.VarChar(200)
+  transaction_type  String    @db.VarChar(50) // "سحب" | "إيداع"
+  wallet_type       String?   @db.VarChar(50) // "محفظة" | "ماكينة"
+  amount            Decimal   @default(0) @db.Decimal(15, 2)
+  wallet_commission Decimal   @default(0) @db.Decimal(15, 2)
+  description       String?   @db.Text
+  employee_id       String?   @db.Uuid
+  employee_name     String?   @db.VarChar(200)
+  shift_id          String?   @db.VarChar(100)
+  shift_name        String?   @db.VarChar(100)
+  shift_cashier     String?   @db.VarChar(100)
+  invoice_code      String?   @db.VarChar(100)
+  back_amount       Decimal   @default(0) @db.Decimal(15, 2)
+  comanda_type      String?   @db.VarChar(100)
+  fawry_type        String?   @db.VarChar(100)
+  timestamp         DateTime? @default(now()) @db.Timestamptz()
+
+  wallet            external_wallets? @relation(fields: [wallet_id], references: [id])
+  employee          users?            @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, date])
+  @@index([wallet_id])
+  @@index([shift_id])
+  @@map("wallet_transactions")
+  @@schema("maspero")
+}
+
+// 8. Peer-to-Peer Employee Cash Transfers (تحويل وتسليم النقدية بين الموظفين)
+model employee_transfers {
+  id            String    @id @default(uuid()) @db.Uuid
+  sender_id     String    @db.Uuid
+  sender_name   String    @db.VarChar(200)
+  receiver_id   String    @db.Uuid
+  receiver_name String    @db.VarChar(200)
+  amount        Decimal   @db.Decimal(15, 2)
+  status        String    @default("PENDING") @db.VarChar(20) // "PENDING" | "ACCEPTED" | "REJECTED"
+  sender_note   String?   @db.Text
+  receiver_note String?   @db.Text
+  shift_id      String?   @db.VarChar(100)
+  created_at    DateTime? @default(now()) @db.Timestamptz()
+  responded_at  DateTime? @db.Timestamptz()
+
+  sender        users     @relation("SentTransfers", fields: [sender_id], references: [id])
+  receiver      users     @relation("ReceivedTransfers", fields: [receiver_id], references: [id])
+
+  @@index([sender_id])
+  @@index([receiver_id])
+  @@index([status])
+  @@map("employee_transfers")
+  @@schema("maspero")
+}
+
+// 9. Employee Work Shifts (شفتات الموظفين)
+model shifts {
+  id            String    @id @default(uuid()) @db.Uuid
+  legacy_id     String?   @unique @db.VarChar(100)
+  shift_date    DateTime  @db.Date
+  shift_day     String?   @db.VarChar(30)
+  shift_month   String?   @db.VarChar(20)
+  shift_type    String?   @db.VarChar(50) // "صباحي" | "مسائي"
+  shift_cashier String?   @db.VarChar(50)
+  shift_name    String?   @db.VarChar(150)
+  employee_id   String?   @db.Uuid
+  employee_name String?   @db.VarChar(200)
+  start_time    DateTime? @db.Timestamptz()
+  end_time      DateTime? @db.Timestamptz()
+  total_hours   Decimal   @default(0) @db.Decimal(8, 2)
+  shift_note    String?   @db.Text
+  timestamp     DateTime? @default(now()) @db.Timestamptz()
+
+  employee      users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, shift_date])
+  @@map("shifts")
+  @@schema("maspero")
+}
+
+// 10. Invoices Summary Log (لوج الفواتير)
+model invoices {
+  id            String    @id @default(uuid()) @db.Uuid
+  legacy_id     String?   @unique @db.VarChar(100)
+  date          DateTime  @db.Date
+  month         String?   @db.VarChar(20)
+  invoice_number String   @db.VarChar(100)
+  total_invoice Decimal   @default(0) @db.Decimal(15, 2)
+  status        String    @default("تم الطباعة") @db.VarChar(50)
+  shift_id      String?   @db.VarChar(100)
+  shift_name    String?   @db.VarChar(100)
+  shift_cashier String?   @db.VarChar(100)
+  employee_id   String?   @db.Uuid
+  employee_name String?   @db.VarChar(200)
+  timestamp     DateTime? @default(now()) @db.Timestamptz()
+
+  @@index([employee_id, date])
+  @@map("invoices")
+  @@schema("maspero")
+}
+
+// 11. Expenses & Advances (المصروفات والسلف)
+model expenses {
+  id            String    @id @default(uuid()) @db.Uuid
+  legacy_id     String?   @unique @db.VarChar(100)
+  date          DateTime  @db.Date
+  month         String?   @db.VarChar(20)
+  shift_id      String?   @db.VarChar(100)
+  shift_name    String?   @db.VarChar(100)
+  shift_cashier String?   @db.VarChar(100)
+  main_type     String    @db.VarChar(100) // "مصروفات" | "إيرادات"
+  expense_type  String?   @db.VarChar(100) // "مصروفات" | "سلفة" | "قبض" | "دعم"
+  items         String?   @db.VarChar(200)
+  notes         String?   @db.Text
+  amount        Decimal   @default(0) @db.Decimal(15, 2)
+  employee_id   String?   @db.Uuid
+  employee_name String?   @db.VarChar(200)
+  back_amount   Decimal   @default(0) @db.Decimal(15, 2)
+  timestamp     DateTime? @default(now()) @db.Timestamptz()
+
+  employee      users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, date])
+  @@index([shift_id])
+  @@map("expenses")
+  @@schema("maspero")
+}
+
+// 12. Receipt Confirmation & Handovers (تأكيد الاستلام والتسليم)
+model receipt_confirms {
+  id              String    @id @default(uuid()) @db.Uuid
+  legacy_id       String?   @unique @db.VarChar(100)
+  date            DateTime  @db.Date
+  month           String?   @db.VarChar(20)
+  shift_id        String?   @db.VarChar(100)
+  shift_name      String?   @db.VarChar(100)
+  shift_cashier   String?   @db.VarChar(100)
+  handover_type   String?   @db.VarChar(50) // "تسليم" | "استلام"
+  confirm_status  String?   @db.VarChar(50)
+  wallet_type     String?   @db.VarChar(100)
+  wallets         String?   @db.VarChar(200)
+  current_balance Decimal   @default(0) @db.Decimal(15, 2)
+  real_balance    Decimal   @default(0) @db.Decimal(15, 2)
+  delivery_note   String?   @db.Text
+  receipt_note    String?   @db.Text
+  employee_id     String?   @db.Uuid
+  employee_name   String?   @db.VarChar(200)
+  timestamp       DateTime? @default(now()) @db.Timestamptz()
+
+  employee        users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, date])
+  @@map("receipt_confirms")
+  @@schema("maspero")
+}
+
+// 13. HR Deductions & Bonuses (خصومات ومكافآت الموظفين)
+model employee_hr {
+  id            String    @id @default(uuid()) @db.Uuid
+  legacy_id     String?   @unique @db.VarChar(100)
+  date          DateTime  @db.Date
+  month         String?   @db.VarChar(20)
+  e_hr_name     String?   @db.VarChar(200)
+  hr_items      String    @db.VarChar(100) // "خصم" | "مكافأة" | "سلفة"
+  hours         Decimal   @default(0) @db.Decimal(8, 2)
+  approval      String?   @db.VarChar(50) // "موافقة"
+  employee_id   String?   @db.Uuid
+  employee_name String?   @db.VarChar(200)
+  notes         String?   @db.Text
+  timestamp     DateTime? @default(now()) @db.Timestamptz()
+
+  employee      users?    @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, month])
+  @@map("employee_hr")
+  @@schema("maspero")
+}
+
+// 14. Monthly Employee Reports (كشف حساب الموظف الشهري)
+model employee_reports {
+  id                  String   @id @default(uuid()) @db.Uuid
+  legacy_id           String?  @unique @db.VarChar(100)
+  month               String   @db.VarChar(20)
+  monthly_salary      Decimal  @default(0) @db.Decimal(15, 2)
+  day_off             String?  @db.VarChar(50)
+  work_days           Int      @default(26)
+  required_hours      Int      @default(208)
+  hourly_rate         Decimal  @default(0) @db.Decimal(10, 2)
+  achieved_hours      Decimal  @default(0) @db.Decimal(10, 2)
+  bonus_hours         Decimal  @default(0) @db.Decimal(10, 2)
+  deducted_hours      Decimal  @default(0) @db.Decimal(10, 2)
+  final_hours         Decimal  @default(0) @db.Decimal(10, 2)
+  hours_value         Decimal  @default(0) @db.Decimal(15, 2)
+  employee_commission Decimal  @default(0) @db.Decimal(15, 2)
+  total_advances      Decimal  @default(0) @db.Decimal(15, 2)
+  total_salary        Decimal  @default(0) @db.Decimal(15, 2)
+  account_status      Decimal  @default(0) @db.Decimal(15, 2)
+  employee_id         String?  @db.Uuid
+  status              String   @default("Active") @db.VarChar(50)
+
+  employee            users?   @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id, month])
+  @@map("employee_reports")
+  @@schema("maspero")
+}
+
+// 15. Financial Summaries (التقارير المالية والأرباح)
+model financial_reports {
+  id                             String   @id @default(uuid()) @db.Uuid
+  legacy_id                      String?  @unique @db.VarChar(100)
+  start_date                     DateTime @db.Date
+  end_date                       DateTime @db.Date
+  wallet_commission              Decimal  @default(0) @db.Decimal(15, 2)
+  tickets_commission             Decimal  @default(0) @db.Decimal(15, 2)
+  machine_withdrawal_commission Decimal  @default(0) @db.Decimal(15, 2)
+  machine_deposits_commission    Decimal  @default(0) @db.Decimal(15, 2)
+  machine_deposits               Decimal  @default(0) @db.Decimal(15, 2)
+  service_value                  Decimal  @default(0) @db.Decimal(15, 2)
+  total_revenue                  Decimal  @default(0) @db.Decimal(15, 2)
+  opening_balance                Decimal  @default(0) @db.Decimal(15, 2)
+  purchase_value                 Decimal  @default(0) @db.Decimal(15, 2)
+  closing_balance                Decimal  @default(0) @db.Decimal(15, 2)
+  purchases_cost                 Decimal  @default(0) @db.Decimal(15, 2)
+  machine_withdrawal             Decimal  @default(0) @db.Decimal(15, 2)
+  purchases_cost_percent         Decimal  @default(0) @db.Decimal(8, 2)
+  total_profit                   Decimal  @default(0) @db.Decimal(15, 2)
+  total_commissions              Decimal  @default(0) @db.Decimal(15, 2)
+  other_expenses                 Decimal  @default(0) @db.Decimal(15, 2)
+  salaries                       Decimal  @default(0) @db.Decimal(15, 2)
+  net_profit                     Decimal  @default(0) @db.Decimal(15, 2)
+  withdrawn_revenue              Decimal  @default(0) @db.Decimal(15, 2)
+  ticket_count                   Int      @default(0)
+  paper_count                    Int      @default(0)
+
+  @@map("financial_reports")
+  @@schema("maspero")
+}

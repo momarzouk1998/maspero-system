@@ -1,0 +1,41 @@
+Employee_Id,Name,Phone Number,WhatsApp Number,Email,Password,Old Password,New Password,Position,Jop Title,Employment Date,Notes,Salary,Day off,Shift Hours,Invoice_Code,Invoice,Total,Show_Invoice_Code,Show_Invoice,Show_Total,Borrowing,Manager Pages,Employee Pages,Current Shift,Services Process,Dorg&Financial,Calculator,ِAction,Servicename,Item_Count,Amount,Ticket_Commission,Ticket_Notes,LAST OPEN SHIFT,TimeStamp LAST OPEN SHIFT
+fdjnfl,OPEN Apps,01558282760,01558282760,,123456,,,Manager,,,,,,,720df8a2,,,42fa5002,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>سكانر</td><td style='padding: 8px;'>20</td><td style='padding: 8px;'>1</td></tr></table><h4><a href=''>التذاكر</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >البند</th>
+        <th >المبلغ</th>
+        <th >التذاكر</th>
+      </tr><tr><td style='padding: 8px;'>قطار</td><td style='padding: 8px;'>2</td><td style='padding: 8px;'>1</td></tr></table>",22,مسموح,اظهار,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,a584242a,
+0154dfaa,أ/ احمد زرزور,01061140145,01061140145,,821981,,,Manager,المدير,,,,,,bab1a56f,,,9ccd0bc5,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>طباعة أسود</td><td style='padding: 8px;'>0</td><td style='padding: 8px;'>30</td></tr></table>",0,مسموح,اظهار,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,d261cb9e,
+36fa3ef0,ابراهيم هيما,01015054870,01015054870,,01015054870,,,User,كاشير,8/12/2025,,4000,Friday,8,fab4929e,,,67b419e9,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>اخرى</td><td style='padding: 8px;'>31</td><td style='padding: 8px;'>30</td></tr></table>",31,مسموح,اخفاء,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,,
+04b9d4de,طارق ماسبيرو,01065325626,01065325626,,123456,,,User,كاشير,2/8/2025,,6000,Friday,8,12a0ca82,,,12a0ca82,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>كتابة</td><td style='padding: 8px;'>15</td><td style='padding: 8px;'>0</td></tr></table>",15,مسموح,اخفاء,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,f8fc790b,
+4ac7873c,محمود سويفي,01009200156,01009200156,,123456,,,User,كاشير,10/18/2025,,5000,Friday,8,6b83af48,,,7d1b8b78,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>نسخ CD , كتابة</td><td style='padding: 8px;'>45</td><td style='padding: 8px;'>6</td></tr></table>",45,غير مسموح,اخفاء,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,d0be2316,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+f7f8d8a0,محمد عبدالتواب,01017051371,01017051371,,16112000,,,User,كاشير,3/31/2026,,4000,Friday,8,69350184,,,35df7343,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>طباعة أسود</td><td style='padding: 8px;'>70</td><td style='padding: 8px;'>59</td></tr></table>",70,مسموح,اخفاء,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,,
+e9ad5415,ابانوب ايليا,01094632345,01094632345,,123456,,,User,كاشير,7/4/2026,,6000,Sunday,8,a9e995ed,,,89865f19,"<h4><a href=''>الخدمات</a></h4><table border='1' style='width:100%; direction: rtl; text-align: center; border-collapse: collapse;'><tr>
+        <th >الخدمة</th>
+        <th >المبلغ</th>
+        <th >الأوراق</th>
+      </tr><tr><td style='padding: 8px;'>اخرى</td><td style='padding: 8px;'>7</td><td style='padding: 8px;'>5</td></tr></table>",7,مسموح,اخفاء,اظهار,اظهار,اظهار,اظهار,اظهار,,,,,,,,

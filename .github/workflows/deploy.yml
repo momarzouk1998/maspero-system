@@ -1,0 +1,74 @@
+# Deploy Maspero Services System via SSH to DigitalOcean
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Build & Push to GHCR"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Deploy via SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -i /tmp/deploy_key -o ConnectTimeout=30 \
+              "$SSH_USER@$SSH_HOST" "GHCR_USER='$GHCR_USER' GHCR_TOKEN='$GHCR_TOKEN' bash -s" << 'DEPLOY_SCRIPT'
+          set -e
+
+          GHCR_IMAGE="ghcr.io/momarzouk1998/maspero-system:latest"
+          LOCAL_TAG="maspero:latest"
+
+          echo "=== [1/6] Logging in to GHCR & pulling image ==="
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin || echo "ghcr login warning"
+          docker pull $GHCR_IMAGE
+
+          echo "=== [2/6] Tagging local image ==="
+          docker tag $GHCR_IMAGE $LOCAL_TAG
+
+          echo "=== [3/6] Stopping old container ==="
+          docker stop maspero 2>/dev/null || true
+          docker rm maspero 2>/dev/null || true
+
+          echo "=== [4/6] Starting new container ==="
+          docker run -d \
+            --name maspero \
+            --restart unless-stopped \
+            --network host \
+            --env-file /opt/maspero-system/.env \
+            $LOCAL_TAG
+
+          echo "=== [5/6] Waiting 15s for startup ==="
+          sleep 15
+
+          echo "=== Container status ==="
+          docker ps --filter name=maspero
+          docker logs maspero --tail 20
+
+          echo ""
+          echo "=== Syncing database schema (prisma db push) ==="
+          docker exec maspero sh -c "node node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss" || echo "db push warning"
+
+          echo ""
+          echo "=== Internal health check (port 3007) ==="
+          curl -s -o /dev/null -w "HTTP: %{http_code} | Time: %{time_total}s\n" http://127.0.0.1:3007/ || echo "Internal check failed"
+          DEPLOY_SCRIPT
