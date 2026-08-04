@@ -82,8 +82,8 @@ function parseDate(val: any): Date {
 async function main() {
   console.log('🚀 Starting Master Data & Expenses Import for Maspero Services System...\n');
 
-  // 1. Import Users & Employees (Login)
-  console.log('1. Importing Employees & Users...');
+  // 1. Import Active Users & Employees (Login)
+  console.log('1. Importing Active Employees & Users...');
   const loginRows = parseCSV(path.join(MASPERO_DIR, 'Login - Login.csv'));
   const userMap = new Map<string, string>(); // Legacy Username -> New UUID
 
@@ -125,7 +125,50 @@ async function main() {
     });
     userMap.set(legacyId, created.id);
   }
-  console.log(`✓ Imported ${userMap.size} Employees/Users with their exact passwords.`);
+  console.log(`✓ Imported ${userMap.size} Active Employees/Users.`);
+
+  // 1b. Import Former / Deleted Employees (Login - Deleted users)
+  console.log('\n1b. Importing Former & Deleted Employees (for historical reports)...');
+  const deletedRows = parseCSV(path.join(MASPERO_DIR, 'Login - Deleted users.csv'));
+  let deletedCount = 0;
+
+  for (const row of deletedRows) {
+    const rawId = row['Employee_Id DU'] || row['Name DU'];
+    if (!rawId) continue;
+    const legacyId = String(rawId).trim().slice(0, 100);
+    const userName = (row['Name DU'] || legacyId).slice(0, 150);
+    if (!userName) continue;
+
+    const userPassword = (row['Password DU'] || '').trim() || '123456';
+    const passwordHash = await bcrypt.hash(userPassword, 10);
+
+    const created = await prisma.users.upsert({
+      where: { legacy_id: legacyId },
+      update: {
+        name: userName,
+        phone: (row['Phone Number DU'] || '').slice(0, 50) || null,
+        password_hash: passwordHash,
+        job_title: (row['Position DU'] || 'موظف سابق').slice(0, 100),
+        salary: parseNum(row['Salary DU']),
+        is_active: false, // Inactive so manager can view past reports but not active on shift
+      },
+      create: {
+        legacy_id: legacyId,
+        name: userName,
+        phone: (row['Phone Number DU'] || '').slice(0, 50) || null,
+        email: `${legacyId.toLowerCase()}@maspero.internal`,
+        password_hash: passwordHash,
+        role: 'user',
+        job_title: (row['Position DU'] || 'موظف سابق').slice(0, 100),
+        salary: parseNum(row['Salary DU']),
+        wallet_balance: 0,
+        is_active: false,
+      }
+    });
+    userMap.set(legacyId, created.id);
+    deletedCount++;
+  }
+  console.log(`✓ Imported ${deletedCount} Former/Deleted Employees.`);
 
   // 2. Import Services Catalog
   console.log('\n2. Importing Services Catalog & Print Prices...');
