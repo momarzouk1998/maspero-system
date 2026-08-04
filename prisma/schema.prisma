@@ -18,17 +18,17 @@ datasource db {
 // 1. Users & Employees (المستخدمين والموظفين)
 model users {
   id                String    @id @default(uuid()) @db.Uuid
-  legacy_id         String?   @unique @db.VarChar(100)
-  name              String    @db.VarChar(200)
-  phone             String?   @db.VarChar(30)
-  whatsapp          String?   @db.VarChar(30)
-  email             String?   @db.VarChar(200)
+  legacy_id         String?   @unique @db.Text
+  name              String    @db.Text
+  phone             String?   @db.Text
+  whatsapp          String?   @db.Text
+  email             String?   @db.Text
   password_hash     String    @db.Text
-  role              String    @default("user") @db.VarChar(50) // "manager" | "user"
-  job_title         String?   @db.VarChar(100)
+  role              String    @default("user") @db.Text
+  job_title         String?   @db.Text
   employment_date   DateTime? @db.Date
   salary            Decimal   @default(0) @db.Decimal(15, 2)
-  day_off           String?   @db.VarChar(50)
+  day_off           String?   @db.Text
   shift_hours       Int       @default(8)
   
   // Personal Cash Custody Balance (عهدة الموظف النقدية الخاصة للتسليم للمدير)

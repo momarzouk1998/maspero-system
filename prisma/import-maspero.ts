@@ -63,31 +63,33 @@ async function main() {
   const defaultPasswordHash = await bcrypt.hash('Maspero2026!', 10);
 
   for (const row of loginRows) {
-    const legacyId = row['Employee_Id'] || row['Name'];
+    const rawId = row['Employee_Id'] || row['Name'];
+    if (!rawId || rawId.includes('<table') || rawId.includes('<h4')) continue;
+    const legacyId = String(rawId).trim().slice(0, 100);
     if (!legacyId) continue;
 
     const isManager = row['Position'] === 'Manager' || row['Role'] === 'Manager';
     const userRole = isManager ? 'manager' : 'user';
-    const userName = row['Name'] || legacyId;
+    const userName = (row['Name'] || legacyId).slice(0, 150);
 
     const created = await prisma.users.upsert({
       where: { legacy_id: legacyId },
       update: {
         name: userName,
-        phone: row['Phone Number'] || null,
+        phone: (row['Phone Number'] || '').slice(0, 50) || null,
         role: userRole,
-        job_title: row['Jop Title'] || row['Position'] || 'موظف مبيعات',
+        job_title: (row['Jop Title'] || row['Position'] || 'موظف مبيعات').slice(0, 100),
         salary: parseNum(row['Salary']),
         is_active: true,
       },
       create: {
         legacy_id: legacyId,
         name: userName,
-        phone: row['Phone Number'] || null,
+        phone: (row['Phone Number'] || '').slice(0, 50) || null,
         email: `${legacyId.toLowerCase()}@maspero.internal`,
         password_hash: defaultPasswordHash,
         role: userRole,
-        job_title: row['Jop Title'] || row['Position'] || 'موظف مبيعات',
+        job_title: (row['Jop Title'] || row['Position'] || 'موظف مبيعات').slice(0, 100),
         salary: parseNum(row['Salary']),
         wallet_balance: 0,
         is_active: true,
