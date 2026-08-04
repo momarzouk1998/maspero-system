@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-// GET all users/employees with aggregate statistics for Manager
+// GET all users/employees with permissions and statistics for Manager
 export async function GET() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'manager') {
@@ -27,6 +27,7 @@ export async function GET() {
       salary: true,
       wallet_balance: true,
       is_active: true,
+      permissions: true,
       created_at: true,
       _count: {
         select: {
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, phone, password, role, jobTitle, salary } = await req.json();
+    const { name, phone, password, role, jobTitle, salary, permissions } = await req.json();
 
     if (!name || !password) {
       return NextResponse.json({ error: 'الاسم وكلمة المرور مطلوبان' }, { status: 400 });
@@ -60,16 +61,27 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password.trim(), 10);
     const legacyId = `user-manual-${Date.now()}`;
 
+    // Default permissions object
+    const defaultPermissions = JSON.stringify({
+      services: 'FULL_ACCESS',
+      tickets: 'FULL_ACCESS',
+      machines: 'READ_WRITE',
+      expenses: 'READ_WRITE',
+      shifts: 'READ_WRITE',
+      wallet: 'FULL_ACCESS',
+    });
+
     const created = await db.users.create({
       data: {
         legacy_id: legacyId,
         name: trimmedName,
         phone: phone ? String(phone).trim() : null,
         password_hash: passwordHash,
-        role: role || 'user', // "manager" | "user"
+        role: role || 'user',
         job_title: jobTitle || 'كاشير مبيعات',
         salary: Number(salary || 0),
         wallet_balance: 0,
+        permissions: permissions ? JSON.stringify(permissions) : defaultPermissions,
         is_active: true,
       }
     });
@@ -85,7 +97,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Manager Update User Profile / Password / Status
+// Manager Update User Profile / Password / Status / Permissions
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'manager') {
@@ -93,7 +105,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { userId, name, phone, password, role, jobTitle, salary, isActive, resetWalletBalance } = await req.json();
+    const { userId, name, phone, password, role, jobTitle, salary, isActive, permissions, resetWalletBalance } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'معرف الموظف مطلوب' }, { status: 400 });
@@ -106,6 +118,7 @@ export async function PUT(req: Request) {
     if (jobTitle !== undefined) updateData.job_title = jobTitle;
     if (salary !== undefined) updateData.salary = Number(salary);
     if (isActive !== undefined) updateData.is_active = Boolean(isActive);
+    if (permissions !== undefined) updateData.permissions = typeof permissions === 'string' ? permissions : JSON.stringify(permissions);
     if (resetWalletBalance) updateData.wallet_balance = 0;
 
     if (password && password.trim().length > 0) {
@@ -119,7 +132,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `تم تعديل بيانات الموظف (${updated.name}) بنجاح 🎉`,
+      message: `تم تعديل بيانات وأذونات الموظف (${updated.name}) بنجاح 🎉`,
       user: updated
     });
   } catch (error: any) {

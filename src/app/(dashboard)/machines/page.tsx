@@ -9,12 +9,17 @@ import {
   CheckCircle2,
   AlertTriangle,
   History,
-  Coins
+  Coins,
+  Search,
+  Filter
 } from 'lucide-react';
 
 export default function MachinesPage() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'fawry' | 'cash'>('all');
+
   const [selectedWallet, setSelectedWallet] = useState<any>(null);
   const [actionType, setActionType] = useState<'إيداع' | 'سحب' | null>(null);
   const [amount, setAmount] = useState('');
@@ -81,13 +86,25 @@ export default function MachinesPage() {
     }
   };
 
-  const fawryMachines = wallets.filter(
-    (w) => (w.wallet_type === 'ماكينة' || w.wallet_name.includes('فوري') || w.wallet_name.includes('بساطة')) && w.wallet_type !== 'درج كاش' && w.wallet_type !== 'درج'
+  // Filter out drawers
+  const machinesList = wallets.filter(
+    (w) => w.wallet_type !== 'درج كاش' && w.wallet_type !== 'درج'
   );
 
-  const cashWallets = wallets.filter(
-    (w) => w.wallet_type === 'محفظة' && !w.wallet_name.includes('فوري') && !w.wallet_name.includes('بساطة')
-  );
+  const filteredWallets = machinesList.filter((w) => {
+    const matchesSearch =
+      w.wallet_name?.includes(search) ||
+      w.wallet_number?.includes(search) ||
+      w.custodian_name?.includes(search);
+
+    if (filterType === 'fawry') {
+      return matchesSearch && (w.wallet_type === 'ماكينة' || w.wallet_name.includes('فوري') || w.wallet_name.includes('بساطة'));
+    }
+    if (filterType === 'cash') {
+      return matchesSearch && (w.wallet_type === 'محفظة' && !w.wallet_name.includes('فوري') && !w.wallet_name.includes('بساطة'));
+    }
+    return matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -115,111 +132,127 @@ export default function MachinesPage() {
         </div>
       )}
 
-      {/* 1. Categorized Section: Fawry Machines */}
-      <div className="glass-panel p-6 rounded-3xl border border-amber-500/30 bg-amber-950/10 space-y-4">
-        <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-amber-400" />
-            <span>ماكينات فوري وبساطة</span>
-          </h2>
-          <span className="text-xs text-amber-400 font-semibold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-            {fawryMachines.length} ماكينات شحن/سحب
-          </span>
+      {/* Search & Filter Header Bar */}
+      <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute right-3.5 top-3 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث باسم المحفظة، الرقم، أو المسؤول..."
+            className="w-full pr-10 pl-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {fawryMachines.map((w) => (
-            <div key={w.id} className="glass-card p-5 rounded-2xl border border-amber-500/30 bg-slate-900/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{w.wallet_type}</span>
-                <span className="text-[11px] text-slate-400">مسؤول العهدة: {w.custodian_name || 'عامة'}</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
-                <p className="text-2xl font-extrabold text-amber-400 mt-1">
-                  {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                <button
-                  onClick={() => {
-                    setSelectedWallet(w);
-                    setActionType('إيداع');
-                  }}
-                  className="flex-1 py-2 px-3 bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
-                >
-                  <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
-                  <span>إيداع ماكينة</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedWallet(w);
-                    setActionType('سحب');
-                  }}
-                  className="flex-1 py-2 px-3 bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
-                >
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-rose-400" />
-                  <span>سحب ماكينة</span>
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              filterType === 'all'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+            }`}
+          >
+            جميع المحافظ ({machinesList.length})
+          </button>
+          <button
+            onClick={() => setFilterType('fawry')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              filterType === 'fawry'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+            }`}
+          >
+            ماكينات فوري وبساطة
+          </button>
+          <button
+            onClick={() => setFilterType('cash')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              filterType === 'cash'
+                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+            }`}
+          >
+            محافظ كاش
+          </button>
         </div>
       </div>
 
-      {/* 2. Categorized Section: Vodafone Cash Wallets */}
-      <div className="glass-panel p-6 rounded-3xl border border-blue-500/30 bg-blue-950/10 space-y-4">
-        <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-blue-400" />
-            <span>محافظ كاش وفودافون كاش</span>
-          </h2>
-          <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-            {cashWallets.length} محافظ إلكترونية
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cashWallets.map((w) => (
-            <div key={w.id} className="glass-card p-5 rounded-2xl border border-blue-500/30 bg-slate-900/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">{w.wallet_type}</span>
-                <span className="text-[11px] text-slate-400">مسؤول العهدة: {w.custodian_name || 'عامة'}</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
-                {w.wallet_number && <p className="text-xs text-slate-400 font-mono mt-0.5">{w.wallet_number}</p>}
-                <p className="text-2xl font-extrabold text-emerald-400 mt-1">
-                  {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                <button
-                  onClick={() => {
-                    setSelectedWallet(w);
-                    setActionType('إيداع');
-                  }}
-                  className="flex-1 py-2 px-3 bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
-                >
-                  <ArrowUpRight className="w-3.5 h-3.5 text-blue-400" />
-                  <span>تحويل / إيداع</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedWallet(w);
-                    setActionType('سحب');
-                  }}
-                  className="flex-1 py-2 px-3 bg-rose-600/30 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
-                >
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-rose-400" />
-                  <span>استلام / سحب</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Main Data Table */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+        {loading ? (
+          <div className="p-8 text-center text-slate-400">جاري تحميل المحافظ والماكينات...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-sm text-slate-300">
+              <thead className="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+                <tr>
+                  <th className="px-4 py-3.5">النوع</th>
+                  <th className="px-4 py-3.5">اسم المحفظة / الماكينة</th>
+                  <th className="px-4 py-3.5">رقم المحفظة</th>
+                  <th className="px-4 py-3.5">الرصيد الحالي</th>
+                  <th className="px-4 py-3.5">مسؤول العهدة</th>
+                  <th className="px-4 py-3.5 text-center">الإجراءات والعمليات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {filteredWallets.map((w) => {
+                  const isFawry = w.wallet_type === 'ماكينة' || w.wallet_name.includes('فوري') || w.wallet_name.includes('بساطة');
+                  return (
+                    <tr key={w.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-4 py-3.5">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
+                          isFawry
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                            : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                        }`}>
+                          {w.wallet_type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-white text-base">
+                        {w.wallet_name}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-xs text-slate-400">
+                        {w.wallet_number || '—'}
+                      </td>
+                      <td className="px-4 py-3.5 font-extrabold text-emerald-400 text-lg">
+                        {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-slate-300">
+                        {w.custodian_name || 'عهدة عامة'}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedWallet(w);
+                              setActionType('إيداع');
+                            }}
+                            className="py-1.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
+                          >
+                            <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
+                            <span>إيداع / تحويل</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedWallet(w);
+                              setActionType('سحب');
+                            }}
+                            className="py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
+                          >
+                            <ArrowDownLeft className="w-3.5 h-3.5 text-rose-400" />
+                            <span>سحب / استلام</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Transaction Modal */}
