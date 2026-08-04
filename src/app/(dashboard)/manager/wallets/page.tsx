@@ -46,7 +46,7 @@ export default function ManagerWalletsPage() {
     0
   );
 
-  // Create or Update Wallet
+  // Create or Update Wallet / Drawer
   const handleSaveWallet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!walletName) return;
@@ -81,9 +81,9 @@ export default function ManagerWalletsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل حفظ المحفظة');
+      if (!res.ok) throw new Error(data.error || 'فشل حفظ المحفظة/الدرج');
 
-      setMessage({ type: 'success', text: data.message || 'تم حفظ بيانات المحفظة بنجاح 🎉' });
+      setMessage({ type: 'success', text: data.message || 'تم حفظ بيانات المحفظة/الدرج بنجاح 🎉' });
       setShowAddModal(false);
       setEditingWallet(null);
       resetForm();
@@ -95,9 +95,9 @@ export default function ManagerWalletsPage() {
     }
   };
 
-  // Delete Wallet
+  // Delete Wallet / Drawer
   const handleDeleteWallet = async (walletId: string, name: string) => {
-    if (!confirm(`هل أنت تأكد من رغبتك في حذف محفظة/ماكينة (${name})؟`)) return;
+    if (!confirm(`هل أنت تأكد من رغبتك في حذف (${name})؟`)) return;
 
     setSubmitting(true);
     setMessage(null);
@@ -108,9 +108,9 @@ export default function ManagerWalletsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل حذف المحفظة');
+      if (!res.ok) throw new Error(data.error || 'فشل حذف العنصر');
 
-      setMessage({ type: 'success', text: data.message || 'تم حذف المحفظة بنجاح' });
+      setMessage({ type: 'success', text: data.message || 'تم الحذف بنجاح' });
       fetchData();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
@@ -164,7 +164,7 @@ export default function ManagerWalletsPage() {
             className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition-all"
           >
             <Plus className="w-5 h-5" />
-            <span>إضافة محفظة / ماكينة جديدة</span>
+            <span>إضافة محفظة / درج / ماكينة جديدة</span>
           </button>
 
           {/* Total Cash with Employees */}
@@ -236,13 +236,14 @@ export default function ManagerWalletsPage() {
         </div>
       </div>
 
-      {/* 2. Cash Drawers Section */}
+      {/* 2. Cash Drawers Section (Now with Full Edit & Delete Support) */}
       <div className="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-purple-950/10 space-y-4">
         <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Archive className="w-5 h-5 text-purple-400" />
-            <span>أدراج الأمانات الثلاثة ({drawersList.length})</span>
+            <span>أدراج الأمانات ({drawersList.length})</span>
           </h2>
+          <span className="text-xs text-purple-300">يمكنك تعديل أي درج كاش أو حذفه بسهولة</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -252,13 +253,22 @@ export default function ManagerWalletsPage() {
                 <span className="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
                   {w.wallet_type}
                 </span>
-                <button
-                  onClick={() => openEditModal(w)}
-                  title="تعديل الرصيد"
-                  className="p-1.5 text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditModal(w)}
+                    title="تعديل الدرج"
+                    className="p-1.5 text-purple-400 hover:bg-purple-500/20 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteWallet(w.id, w.wallet_name)}
+                    title="حذف الدرج"
+                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -309,30 +319,30 @@ export default function ManagerWalletsPage() {
         )}
       </div>
 
-      {/* Add / Edit Wallet Modal */}
+      {/* Add / Edit Wallet / Drawer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass-panel p-6 rounded-3xl border border-emerald-500/40 bg-slate-900 w-full max-w-md space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Wallet className="w-5 h-5 text-emerald-400" />
-              <span>{editingWallet ? `تعديل (${editingWallet.wallet_name})` : 'إضافة محفظة / ماكينة جديدة'}</span>
+              <span>{editingWallet ? `تعديل (${editingWallet.wallet_name})` : 'إضافة محفظة / درج / ماكينة جديدة'}</span>
             </h3>
 
             <form onSubmit={handleSaveWallet} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">اسم المحفظة / الماكينة</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">الاسم</label>
                 <input
                   type="text"
                   required
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
-                  placeholder="مثال: فودافون كاش 1 / فوري 3"
+                  placeholder="مثال: فودافون كاش 1 / درج كاش 4 / فوري 3"
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">نوع المحفظة</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">النوع</label>
                 <select
                   value={walletType}
                   onChange={(e) => setWalletType(e.target.value)}
@@ -345,7 +355,7 @@ export default function ManagerWalletsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">رقم المحفظة / الماكينة (اختياري)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">الرقم / الكود (اختياري)</label>
                 <input
                   type="text"
                   value={walletNumber}
@@ -396,7 +406,7 @@ export default function ManagerWalletsPage() {
                   disabled={submitting}
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
                 >
-                  <span>{editingWallet ? 'حفظ التعديلات' : 'إضافة المحفظة'}</span>
+                  <span>{editingWallet ? 'حفظ التعديلات' : 'إضافة'}</span>
                 </button>
               </div>
             </form>

@@ -13,9 +13,20 @@ export async function GET() {
     orderBy: { sort: 'asc' }
   });
 
-  // Employee Wallets list
+  // Clean Employee Wallets list (excluding any invalid HTML entries)
   const employeeWallets = await db.users.findMany({
-    where: { is_active: true },
+    where: {
+      is_active: true,
+      NOT: [
+        { name: { contains: '<' } },
+        { name: { contains: '>' } },
+        { name: { contains: 'style=' } },
+        { name: { contains: 'padding:' } },
+        { name: { contains: 'tr>' } },
+        { name: { contains: 'td>' } },
+        { name: { contains: 'th>' } },
+      ]
+    },
     select: {
       id: true,
       name: true,
@@ -81,14 +92,13 @@ export async function POST(req: Request) {
     const invoiceCode = Math.random().toString(36).substring(2, 10);
 
     const transaction = await db.$transaction(async (tx) => {
-      // Create transaction log
       const log = await tx.wallet_transactions.create({
         data: {
           date: today,
           transaction_month: `${today.getFullYear()} ${today.getMonth() + 1}`,
           wallet_id: walletId,
           wallet_name: wallet.wallet_name,
-          transaction_type: transactionType, // "سحب" or "إيداع"
+          transaction_type: transactionType,
           wallet_type: wallet.wallet_type,
           amount: numAmount,
           wallet_commission: numCommission,
@@ -100,7 +110,6 @@ export async function POST(req: Request) {
         }
       });
 
-      // Update external wallet balance
       const balanceChange = transactionType === 'إيداع' ? numAmount : -numAmount;
       await tx.external_wallets.update({
         where: { id: walletId },
@@ -109,7 +118,6 @@ export async function POST(req: Request) {
         }
       });
 
-      // Customer paid cash (+cash to employee custody) or withdrawal (-cash from employee custody)
       const employeeCashChange = transactionType === 'إيداع' ? (numAmount + numCommission) : -(numAmount - numCommission);
       await tx.users.update({
         where: { id: user.id },
@@ -168,11 +176,11 @@ export async function PUT(req: Request) {
   }
 }
 
-// DELETE: Manager Delete / Deactivate Wallet or Machine
+// DELETE: Manager Delete / Deactivate Wallet, Machine, or Drawer
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير بحذف المحافظ' }, { status: 403 });
+    return NextResponse.json({ error: 'غير مصرح لغير المدير بحذف المحافظ والأدراج' }, { status: 403 });
   }
 
   try {
@@ -180,7 +188,7 @@ export async function DELETE(req: Request) {
     const walletId = searchParams.get('id');
 
     if (!walletId) {
-      return NextResponse.json({ error: 'معرف المحفظة مطلوب' }, { status: 400 });
+      return NextResponse.json({ error: 'معرف المحفظة/الدرج مطلوب' }, { status: 400 });
     }
 
     const updated = await db.external_wallets.update({
@@ -194,6 +202,6 @@ export async function DELETE(req: Request) {
     });
   } catch (error: any) {
     console.error('Wallet delete error:', error);
-    return NextResponse.json({ error: error.message || 'فشل حذف المحفظة' }, { status: 400 });
+    return NextResponse.json({ error: error.message || 'فشل حذف المحفظة/الدرج' }, { status: 400 });
   }
 }

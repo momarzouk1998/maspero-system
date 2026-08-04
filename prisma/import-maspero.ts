@@ -80,7 +80,23 @@ function parseDate(val: any): Date {
 }
 
 async function main() {
-  console.log('🚀 Starting Master Data & Expenses Import for Maspero Services System...\n');
+  console.log('🚀 Starting Clean Master Data & Expenses Import for Maspero Services System...\n');
+
+  // Clean up any garbage users containing HTML code in their name
+  await prisma.users.deleteMany({
+    where: {
+      OR: [
+        { name: { contains: '<' } },
+        { name: { contains: '>' } },
+        { name: { contains: 'style=' } },
+        { name: { contains: 'padding:' } },
+        { name: { contains: 'tr>' } },
+        { name: { contains: 'td>' } },
+        { name: { contains: 'th>' } },
+      ]
+    }
+  });
+  console.log('✓ Cleaned invalid HTML user entries from database.');
 
   // 1. Import Active Users & Employees (Login)
   console.log('1. Importing Active Employees & Users...');
@@ -92,7 +108,7 @@ async function main() {
     if (!rawId) continue;
     const legacyId = String(rawId).trim().slice(0, 100);
     const userName = (row['Name'] || legacyId).slice(0, 150);
-    if (!userName || userName.includes('<table')) continue;
+    if (!userName || userName.includes('<') || userName.includes('style=')) continue;
 
     const isManager = row['Position'] === 'Manager' || row['Role'] === 'Manager';
     const userRole = isManager ? 'manager' : 'user';
@@ -137,7 +153,7 @@ async function main() {
     if (!rawId) continue;
     const legacyId = String(rawId).trim().slice(0, 100);
     const userName = (row['Name DU'] || legacyId).slice(0, 150);
-    if (!userName) continue;
+    if (!userName || userName.includes('<') || userName.includes('style=')) continue;
 
     const userPassword = (row['Password DU'] || '').trim() || '123456';
     const passwordHash = await bcrypt.hash(userPassword, 10);
@@ -150,7 +166,7 @@ async function main() {
         password_hash: passwordHash,
         job_title: (row['Position DU'] || 'موظف سابق').slice(0, 100),
         salary: parseNum(row['Salary DU']),
-        is_active: false, // Inactive so manager can view past reports but not active on shift
+        is_active: false,
       },
       create: {
         legacy_id: legacyId,
@@ -306,7 +322,7 @@ async function main() {
   }
   console.log(`✓ Imported ${expenseCount} Expense records.`);
 
-  console.log('\n🎉 Master Data & Expenses Import Completed Successfully!');
+  console.log('\n🎉 Clean Import Completed Successfully!');
 }
 
 main()
