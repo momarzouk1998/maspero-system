@@ -13,7 +13,8 @@ import {
   Coins,
   Archive,
   ArrowDownLeft,
-  ArrowUpRight
+  ArrowUpRight,
+  Smartphone
 } from 'lucide-react';
 
 export default function WalletPage() {
@@ -176,8 +177,16 @@ export default function WalletPage() {
     (t) => t.receiver_id === user?.id && t.status === 'PENDING'
   );
 
-  const drawersList = externalWallets.filter((w) => w.wallet_type === 'درج كاش');
-  const machinesList = externalWallets.filter((w) => w.wallet_type !== 'درج كاش');
+  const drawersList = externalWallets.filter((w) => w.wallet_type === 'درج كاش' || w.wallet_type === 'درج');
+  const machinesList = externalWallets.filter((w) => w.wallet_type !== 'درج كاش' && w.wallet_type !== 'درج');
+
+  // Separated lists for Fawry vs Vodafone Cash Wallets
+  const fawryMachines = machinesList.filter(
+    (w) => w.wallet_type === 'ماكينة' || w.wallet_name.includes('فوري') || w.wallet_name.includes('بساطة')
+  );
+  const cashWallets = machinesList.filter(
+    (w) => w.wallet_type === 'محفظة' && !w.wallet_name.includes('فوري') && !w.wallet_name.includes('بساطة')
+  );
 
   return (
     <div className="space-y-6">
@@ -186,10 +195,10 @@ export default function WalletPage() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
             <Coins className="w-7 h-7 text-emerald-400" />
-            <span>محفظة عهدة الموظف الكاش والأدراج والماكينات</span>
+            <span>المحافظ</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            تفرقة دقيقة بين <strong className="text-emerald-400">العهدة الكاش للشخص</strong> (مسموح بالسالب) وبين <strong className="text-purple-400 font-bold">أدراج الكاش 1 و 2 و 3</strong> و <strong className="text-amber-400 font-bold">ماكينات فوري وفودافون كاش</strong>
+            إدارة مفصلة لـ <strong className="text-emerald-400">العهدة الكاش للشخص</strong>، <strong className="text-purple-400">أدراج الكاش 1 و 2 و 3</strong>، وتصنيف خاص لـ <strong className="text-amber-400 font-bold">ماكينات فوري</strong> و <strong className="text-blue-400 font-bold">محافظ كاش</strong>
           </p>
         </div>
 
@@ -221,10 +230,10 @@ export default function WalletPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-purple-500/20 pb-3">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Archive className="w-5 h-5 text-purple-400" />
-            <span>أدراج الأمانات الثلاثة (درج 1، درج 2، درج 3) — متاح 24 ساعة لأي موظف</span>
+            <span>أدراج الأمانات الثلاثة (درج 1، درج 2، درج 3)</span>
           </h2>
           <span className="text-xs text-purple-300 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/30 font-semibold">
-            إيداع واستلام في أي وقت بين الورديات
+            إيداع واستلام متاح 24 ساعة لأي موظف
           </span>
         </div>
 
@@ -334,22 +343,56 @@ export default function WalletPage() {
         </div>
       )}
 
-      {/* Actual External Machine Wallets Status */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-amber-400" />
-          <span>أرصدة الماكينات والمافظ الفعلية (فوري / فودافون كاش)</span>
-        </h2>
+      {/* 1. Categorized Section: Fawry Machines */}
+      <div className="glass-panel p-6 rounded-3xl border border-amber-500/30 bg-amber-950/10 space-y-4">
+        <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Cpu className="w-5 h-5 text-amber-400" />
+            <span>ماكينات فوري وبساطة</span>
+          </h2>
+          <span className="text-xs text-amber-400 font-semibold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+            {fawryMachines.length} ماكينات شحن/سحب
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {machinesList.map((w) => (
-            <div key={w.id} className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-900/60">
+          {fawryMachines.map((w) => (
+            <div key={w.id} className="glass-card p-4 rounded-2xl border border-amber-500/30 bg-slate-900/80">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-amber-400">{w.wallet_type}</span>
-                <span className="text-[11px] text-slate-400">مسؤول العهدة: {w.custodian_name || 'عامة'}</span>
+                <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{w.wallet_type}</span>
+                <span className="text-[11px] text-slate-400">عهدة: {w.custodian_name || 'عامة'}</span>
               </div>
               <h3 className="font-bold text-white text-base">{w.wallet_name}</h3>
-              <p className="text-xl font-extrabold text-emerald-400 mt-1">
+              <p className="text-2xl font-extrabold text-amber-400 mt-2">
+                {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Categorized Section: Vodafone Cash Wallets */}
+      <div className="glass-panel p-6 rounded-3xl border border-blue-500/30 bg-blue-950/10 space-y-4">
+        <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-blue-400" />
+            <span>محافظ كاش وفودافون كاش</span>
+          </h2>
+          <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+            {cashWallets.length} محافظ إلكترونية
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cashWallets.map((w) => (
+            <div key={w.id} className="glass-card p-4 rounded-2xl border border-blue-500/30 bg-slate-900/80">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">{w.wallet_type}</span>
+                <span className="text-[11px] text-slate-400">عهدة: {w.custodian_name || 'عامة'}</span>
+              </div>
+              <h3 className="font-bold text-white text-base">{w.wallet_name}</h3>
+              {w.wallet_number && <p className="text-xs text-slate-400 font-mono mt-0.5">{w.wallet_number}</p>}
+              <p className="text-2xl font-extrabold text-emerald-400 mt-2">
                 {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
               </p>
             </div>
