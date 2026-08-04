@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, CheckCircle2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -60,7 +60,7 @@ export default function PwaInstallButton() {
     }
   }
 
-  // If already installed, hide button or show installed status
+  // If already installed, hide button
   if (installed) return null;
 
   return (

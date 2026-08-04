@@ -15,7 +15,9 @@ import {
   BarChart3,
   Users,
   LogOut,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Menu,
+  X
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
@@ -25,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pendingTransfers, setPendingTransfers] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const fetchUserAndPending = async () => {
     try {
@@ -89,27 +92,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex bg-[#0b1329] text-slate-100">
-      {/* Sidebar */}
-      <aside className="w-64 glass-panel border-l border-slate-800 flex flex-col justify-between hidden md:flex sticky top-0 h-screen z-20">
+      {/* Mobile Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar (Desktop + Mobile Drawer) */}
+      <aside className={`w-64 glass-panel border-l border-slate-800 flex flex-col justify-between fixed md:sticky top-0 h-screen z-50 transition-transform duration-300 ${
+        isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
+      }`}>
         <div>
           {/* Logo Header */}
-          <div className="p-4 border-b border-slate-800/80 flex items-center gap-3 bg-slate-900/40">
-            <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-white p-1 shadow-md shadow-slate-950/50 flex items-center justify-center shrink-0">
-              <Image
-                src="/maspero-logo.png"
-                alt="Maspero Logo"
-                width={40}
-                height={40}
-                className="object-contain"
-              />
+          <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/40">
+            <div className="flex items-center gap-3">
+              <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-white p-1 shadow-md shadow-slate-950/50 flex items-center justify-center shrink-0">
+                <Image
+                  src="/maspero-logo.png"
+                  alt="Maspero Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
+              </div>
+              <div>
+                <h1 className="font-bold text-white tracking-wide text-lg">ماسـبيرو</h1>
+                <p className="text-[11px] text-pink-400 font-semibold">لخدمات الطباعة والإنترنت</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-white tracking-wide text-lg">ماسـبيرو</h1>
-              <p className="text-[11px] text-pink-400 font-semibold">لخدمات الطباعة والإنترنت</p>
-            </div>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="md:hidden text-slate-400 hover:text-white p-1 cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-230px)]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
@@ -117,6 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                     active
                       ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 font-semibold'
@@ -139,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User Card & PWA Install Button bottom sidebar */}
-        <div className="p-4 border-t border-slate-800/80 space-y-3">
+        <div className="p-4 border-t border-slate-800/80 space-y-3 bg-slate-900/60">
           <PwaInstallButton />
 
           <div className="glass-card p-3 rounded-xl flex items-center justify-between">
@@ -168,22 +192,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-16 glass-panel border-b border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
-          <div className="flex items-center gap-4">
+        <header className="h-16 glass-panel border-b border-slate-800/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            {/* Mobile 3-Bars Hamburger Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden text-slate-300 hover:text-white p-2 rounded-xl bg-slate-800/60 border border-slate-700 cursor-pointer"
+              aria-label="فتح القائمة الجانبية"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+
             <h2 className="text-sm font-semibold text-slate-300">
               أهلاً بك، <span className="text-white font-bold">{user?.name}</span>
             </h2>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Top Bar PWA Install Button */}
-            <div className="hidden sm:block">
-              <PwaInstallButton />
-            </div>
-
             {/* Live Employee Wallet Balance Badge */}
             <Link href="/wallet">
-              <div className="glass-card px-4 py-2 rounded-xl flex items-center gap-2.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer">
+              <div className="glass-card px-3 md:px-4 py-2 rounded-xl flex items-center gap-2.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer">
                 <Wallet className="w-4 h-4 text-emerald-400" />
                 <div className="text-xs">
                   <span className="text-slate-400 block text-[10px]">عهدة الكاش</span>
@@ -209,26 +237,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
         </header>
-
-        {/* Mobile Navigation Header */}
-        <div className="md:hidden glass-panel border-b border-slate-800 p-3 flex items-center justify-between overflow-x-auto gap-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`p-2.5 rounded-xl text-xs font-medium shrink-0 flex items-center gap-1.5 ${
-                  active ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 bg-slate-900/60'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
 
         {/* Main View Area */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
