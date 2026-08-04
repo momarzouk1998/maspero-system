@@ -118,4 +118,113 @@ export class WalletService {
       }
     });
   }
+
+  /**
+   * Ensure 3 Cash Drawers exist in external_wallets
+   */
+  static async ensureCashDrawers() {
+    const drawers = ['درج كاش 1', 'درج كاش 2', 'درج كاش 3'];
+    for (const drawerName of drawers) {
+      const existing = await db.external_wallets.findFirst({
+        where: { wallet_name: drawerName, wallet_type: 'درج كاش' }
+      });
+      if (!existing) {
+        await db.external_wallets.create({
+          data: {
+            wallet_name: drawerName,
+            wallet_type: 'درج كاش',
+            current_balance: 0,
+            actual_balance: 0,
+            is_active: true,
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Deposit Cash from Employee Custody Wallet into a Cash Drawer
+   */
+  static async depositToDrawer(userId: string, userName: string, drawerId: string, amount: number, notes?: string) {
+    if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
+
+    return await db.$transaction(async (tx) => {
+      const drawer = await tx.external_wallets.findUnique({ where: { id: drawerId } });
+      if (!drawer || drawer.wallet_type !== 'درج كاش') throw new Error('الدرج غير موجود');
+
+      // 1. Deduct from employee custody wallet (Negative balance is allowed)
+      await tx.users.update({
+        where: { id: userId },
+        data: { wallet_balance: { decrement: amount } }
+      });
+
+      // 2. Increment Drawer balance
+      const updatedDrawer = await tx.external_wallets.update({
+        where: { id: drawerId },
+        data: { current_balance: { increment: amount } }
+      });
+
+      // 3. Log transaction
+      await tx.wallet_transactions.create({
+        data: {
+          date: new Date(),
+          wallet_id: drawerId,
+          wallet_name: drawer.wallet_name,
+          wallet_type: 'درج كاش',
+          transaction_type: 'إيداع بالدرج',
+          amount: amount,
+          description: `إيداع بالدرج من الموظف: ${userName} ${notes ? `(${notes})` : ''}`,
+          employee_id: userId,
+          employee_name: userName,
+        }
+      });
+
+      return updatedDrawer;
+    });
+  }
+
+  /**
+   * Claim/Withdraw Cash from a Cash Drawer into Employee Custody Wallet
+   */
+  static async claimFromDrawer(userId: string, userName: string, drawerId: string, amount: number, notes?: string) {
+    if (amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
+
+    return await db.$transaction(async (tx) => {
+      const drawer = await tx.external_wallets.findUnique({ where: { id: drawerId } });
+      if (!drawer || drawer.wallet_type !== 'درج كاش') throw new Error('الدرج غير موجود');
+      if (Number(drawer.current_balance) < amount) {
+        throw new Error(`رصيد الدرج الحالي (${Number(drawer.current_balance)} ج.م) لا يكفي لسحب ${amount} ج.م`);
+      }
+
+      // 1. Deduct from Drawer balance
+      const updatedDrawer = await tx.external_wallets.update({
+        where: { id: drawerId },
+        data: { current_balance: { decrement: amount } }
+      });
+
+      // 2. Increment Employee custody wallet
+      await tx.users.update({
+        where: { id: userId },
+        data: { wallet_balance: { increment: amount } }
+      });
+
+      // 3. Log transaction
+      await tx.wallet_transactions.create({
+        data: {
+          date: new Date(),
+          wallet_id: drawerId,
+          wallet_name: drawer.wallet_name,
+          wallet_type: 'درج كاش',
+          transaction_type: 'سحب من الدرج',
+          amount: amount,
+          description: `استلام من الدرج للموظف: ${userName} ${notes ? `(${notes})` : ''}`,
+          employee_id: userId,
+          employee_name: userName,
+        }
+      });
+
+      return updatedDrawer;
+    });
+  }
 }
+

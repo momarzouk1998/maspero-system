@@ -213,7 +213,27 @@ async function main() {
     });
     walletMap.set(legacyId, created.id);
   }
-  console.log(`✓ Imported ${walletMap.size} External Wallets.`);
+
+  // Ensure default 3 Cash Drawers exist
+  const defaultDrawers = ['درج كاش 1', 'درج كاش 2', 'درج كاش 3'];
+  for (let i = 0; i < defaultDrawers.length; i++) {
+    const dName = defaultDrawers[i];
+    await prisma.external_wallets.upsert({
+      where: { legacy_id: `drawer-default-${i + 1}` },
+      update: { wallet_name: dName, wallet_type: 'درج كاش' },
+      create: {
+        legacy_id: `drawer-default-${i + 1}`,
+        wallet_name: dName,
+        wallet_type: 'درج كاش',
+        current_balance: 0,
+        actual_balance: 0,
+        sort: 100 + i,
+        is_active: true,
+      }
+    });
+  }
+  console.log(`✓ Imported ${walletMap.size} External Wallets & verified 3 Cash Drawers.`);
+
 
   // 4. Import ServiceEntries (21,288 rows)
   console.log('\n4. Importing Service Entries (21,000+ records)...');

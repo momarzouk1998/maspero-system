@@ -11,6 +11,8 @@ import {
   Cpu,
   AlertCircle,
   Coins,
+  Archive,
+  ArrowDownLeft,
   ArrowUpRight
 } from 'lucide-react';
 
@@ -27,6 +29,12 @@ export default function WalletPage() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Cash Drawer Modal State
+  const [drawerAction, setDrawerAction] = useState<'deposit' | 'claim' | null>(null);
+  const [selectedDrawer, setSelectedDrawer] = useState<any>(null);
+  const [drawerAmount, setDrawerAmount] = useState('');
+  const [drawerNotes, setDrawerNotes] = useState('');
 
   const fetchData = async () => {
     try {
@@ -100,6 +108,45 @@ export default function WalletPage() {
     }
   };
 
+  // Handle Drawer Deposit or Claim
+  const handleDrawerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDrawer || !drawerAction || !drawerAmount || Number(drawerAmount) <= 0) {
+      setMessage({ type: 'error', text: 'يرجى إدخال مبلغ صحيح للدرج' });
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch('/api/wallets/drawer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drawerId: selectedDrawer.id,
+          action: drawerAction,
+          amount: Number(drawerAmount),
+          notes: drawerNotes
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تنفيذ عملية الدرج');
+
+      setMessage({ type: 'success', text: data.message || 'تمت عملية الدرج بنجاح 🎉' });
+      setDrawerAction(null);
+      setSelectedDrawer(null);
+      setDrawerAmount('');
+      setDrawerNotes('');
+      fetchData();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Accept or Reject incoming cash transfer
   const handleTransferAction = async (transferId: string, action: 'accept' | 'reject') => {
     setSubmitting(true);
@@ -129,6 +176,9 @@ export default function WalletPage() {
     (t) => t.receiver_id === user?.id && t.status === 'PENDING'
   );
 
+  const drawersList = externalWallets.filter((w) => w.wallet_type === 'درج كاش');
+  const machinesList = externalWallets.filter((w) => w.wallet_type !== 'درج كاش');
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -136,10 +186,10 @@ export default function WalletPage() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
             <Coins className="w-7 h-7 text-emerald-400" />
-            <span>محفظة عهدة الموظف وتسليم الأموال والماكينات</span>
+            <span>محفظة عهدة الموظف الكاش والأدراج والماكينات</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            تمييز مرن بين <strong className="text-emerald-400">العهدة النقدية الكاش</strong> (لتسليمها للمدير) وبين <strong className="text-amber-400 font-bold">أرصدة ماكينات فوري والمحافظ الفعلية</strong>
+            تفرقة دقيقة بين <strong className="text-emerald-400">العهدة الكاش للشخص</strong> (مسموح بالسالب) وبين <strong className="text-purple-400 font-bold">أدراج الكاش 1 و 2 و 3</strong> و <strong className="text-amber-400 font-bold">ماكينات فوري وفودافون كاش</strong>
           </p>
         </div>
 
@@ -147,8 +197,8 @@ export default function WalletPage() {
         <div className="glass-card px-6 py-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 flex items-center gap-4">
           <Wallet className="w-8 h-8 text-emerald-400" />
           <div>
-            <span className="text-xs text-slate-400 block font-medium">العهدة النقدية (الكاش المستلم مع الموظف)</span>
-            <span className="text-3xl font-extrabold text-white">
+            <span className="text-xs text-slate-400 block font-medium">عهدتك الشخصية الكاش (الحالية)</span>
+            <span className={`text-3xl font-extrabold ${Number(user?.wallet_balance || 0) < 0 ? 'text-rose-400' : 'text-white'}`}>
               {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-emerald-400">ج.م</span>
             </span>
           </div>
@@ -161,30 +211,138 @@ export default function WalletPage() {
             ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
             : 'bg-red-500/10 border border-red-500/30 text-red-400'
         }`}>
-          <AlertCircle className="w-5 h-5" />
+          <AlertCircle className="w-5 h-5 shrink-0" />
           <span>{message.text}</span>
         </div>
       )}
 
-      {/* Flexible Shift Notice */}
-      <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs font-semibold flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-400 shrink-0" />
-          <span>
-            💡 <strong>مرونة الورديات والتسليم:</strong> يمكنك بدء شفتك فوراً والبدء في العمل بدون انتطار تقفيل زميلك، وتسليم/استلام عهدة الماكينات والنقدية في أي وقت أثناء الشفت عندما ينتهي زميلك من الحساب!
+      {/* 3 Cash Drawers Section (24/7 Access for Any Employee) */}
+      <div className="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-purple-950/20 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-purple-500/20 pb-3">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Archive className="w-5 h-5 text-purple-400" />
+            <span>أدراج الأمانات الثلاثة (درج 1، درج 2، درج 3) — متاح 24 ساعة لأي موظف</span>
+          </h2>
+          <span className="text-xs text-purple-300 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/30 font-semibold">
+            إيداع واستلام في أي وقت بين الورديات
           </span>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {drawersList.map((drawer) => (
+            <div key={drawer.id} className="glass-card p-5 rounded-2xl border border-purple-500/30 bg-slate-900/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20">
+                  {drawer.wallet_type}
+                </span>
+                <span className="text-[11px] text-slate-400">أمانات وسيطة</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">{drawer.wallet_name}</h3>
+                <p className="text-2xl font-extrabold text-purple-300 mt-1">
+                  {Number(drawer.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                <button
+                  onClick={() => {
+                    setSelectedDrawer(drawer);
+                    setDrawerAction('deposit');
+                  }}
+                  className="flex-1 py-2 px-3 bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5 text-purple-400" />
+                  <span>إيداع بالدرج</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedDrawer(drawer);
+                    setDrawerAction('claim');
+                  }}
+                  className="flex-1 py-2 px-3 bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                >
+                  <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>استلام من الدرج</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Drawer Action Modal */}
+      {drawerAction && selectedDrawer && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-3xl border border-purple-500/40 bg-slate-900 w-full max-w-md space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Archive className="w-5 h-5 text-purple-400" />
+              <span>{drawerAction === 'deposit' ? 'إيداع عهدة كاش في' : 'استلام كاش من'} {selectedDrawer.wallet_name}</span>
+            </h3>
+
+            <form onSubmit={handleDrawerSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">المبلغ المراد {drawerAction === 'deposit' ? 'إيداعه' : 'استلامه'} (ج.م)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  required
+                  value={drawerAmount}
+                  onChange={(e) => setDrawerAmount(e.target.value)}
+                  placeholder="أدخل المبلغ"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">ملاحظات (اختياري)</label>
+                <textarea
+                  value={drawerNotes}
+                  onChange={(e) => setDrawerNotes(e.target.value)}
+                  rows={2}
+                  placeholder="تسليم الشفت / أمانات..."
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDrawerAction(null);
+                    setSelectedDrawer(null);
+                  }}
+                  className="px-4 py-2 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                    drawerAction === 'deposit'
+                      ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
+                      : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'
+                  }`}
+                >
+                  <span>تأكيد {drawerAction === 'deposit' ? 'الإيداع' : 'الاستلام'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Actual External Machine Wallets Status */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Cpu className="w-5 h-5 text-amber-400" />
-          <span>أرصدة الماكينات والمافظ الفعلية (فوري / كاش / محافظ إلكترونية)</span>
+          <span>أرصدة الماكينات والمافظ الفعلية (فوري / فودافون كاش)</span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {externalWallets.map((w) => (
+          {machinesList.map((w) => (
             <div key={w.id} className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-slate-900/60">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-amber-400">{w.wallet_type}</span>
