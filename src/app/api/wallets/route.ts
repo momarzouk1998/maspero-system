@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
+// GET all external wallets & employee wallets
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
@@ -12,7 +13,7 @@ export async function GET() {
     orderBy: { sort: 'asc' }
   });
 
-  // Employee Wallets list (For Manager view or transfer recipient selection)
+  // Employee Wallets list
   const employeeWallets = await db.users.findMany({
     where: { is_active: true },
     select: {
@@ -28,13 +29,45 @@ export async function GET() {
   return NextResponse.json({ externalWallets, employeeWallets });
 }
 
-// Machine Deposit / Withdrawal transaction
+// Transaction Logging OR Wallet Creation (Manager)
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { walletId, transactionType, amount, commission, description } = await req.json();
+    const body = await req.json();
+
+    // 1. Manager Create New Wallet / Machine / Drawer
+    if (body.action === 'create') {
+      if (user.role !== 'manager') {
+        return NextResponse.json({ error: 'إضافة المحافظ والماكينات متاح للمدير فقط' }, { status: 403 });
+      }
+
+      const { walletName, walletType, walletNumber, initialBalance } = body;
+      if (!walletName || !walletType) {
+        return NextResponse.json({ error: 'اسم المحفظة ونوعها مطلوبان' }, { status: 400 });
+      }
+
+      const created = await db.external_wallets.create({
+        data: {
+          wallet_name: walletName,
+          wallet_type: walletType, // "محفظة" | "ماكينة" | "درج كاش"
+          wallet_number: walletNumber || null,
+          current_balance: Number(initialBalance || 0),
+          actual_balance: Number(initialBalance || 0),
+          is_active: true,
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `تم إضافة (${created.wallet_name}) بنجاح 🎉`,
+        wallet: created
+      });
+    }
+
+    // 2. Machine Deposit / Withdrawal transaction
+    const { walletId, transactionType, amount, commission, description } = body;
 
     const wallet = await db.external_wallets.findUnique({
       where: { id: walletId }
@@ -90,41 +123,77 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, transaction });
   } catch (error: any) {
-    console.error('Wallet transaction error:', error);
-    return NextResponse.json({ error: 'حدث خطأ في عملية الماكينة' }, { status: 500 });
+    console.error('Wallet POST error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ في العملية' }, { status: 500 });
   }
 }
 
-// Manager Initial Balance Adjustment for any Wallet / Machine / Drawer
+// PUT: Manager Update Wallet / Machine / Drawer Details & Balance
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير بتحديد الرصيد الافتتاحي' }, { status: 403 });
+    return NextResponse.json({ error: 'غير مصرح لغير المدير بتعديل المحافظ' }, { status: 403 });
   }
 
   try {
-    const { walletId, initialBalance, custodianName } = await req.json();
+    const { walletId, walletName, walletType, walletNumber, initialBalance, custodianName } = await req.json();
 
-    if (!walletId || initialBalance === undefined) {
-      return NextResponse.json({ error: 'المحفظة والرصيد الافتتاحي مطلوبان' }, { status: 400 });
+    if (!walletId) {
+      return NextResponse.json({ error: 'معرف المحفظة مطلوب' }, { status: 400 });
     }
+
+    const updateData: any = {};
+    if (walletName !== undefined) updateData.wallet_name = walletName;
+    if (walletType !== undefined) updateData.wallet_type = walletType;
+    if (walletNumber !== undefined) updateData.wallet_number = walletNumber;
+    if (initialBalance !== undefined) {
+      updateData.current_balance = Number(initialBalance);
+      updateData.actual_balance = Number(initialBalance);
+    }
+    if (custodianName !== undefined) updateData.custodian_name = custodianName;
 
     const updated = await db.external_wallets.update({
       where: { id: walletId },
-      data: {
-        current_balance: Number(initialBalance),
-        actual_balance: Number(initialBalance),
-        custodian_name: custodianName !== undefined ? custodianName : undefined,
-      }
+      data: updateData
     });
 
     return NextResponse.json({
       success: true,
-      message: `تم ضبط الرصيد الافتتاحي لـ (${updated.wallet_name}) إلى ${Number(initialBalance)} ج.م بنجاح 🎉`,
+      message: `تم تعديل بيانات (${updated.wallet_name}) بنجاح 🎉`,
       wallet: updated
     });
   } catch (error: any) {
-    console.error('Initial balance update error:', error);
-    return NextResponse.json({ error: error.message || 'فشل تحديث الرصيد الافتتاحي' }, { status: 400 });
+    console.error('Wallet update error:', error);
+    return NextResponse.json({ error: error.message || 'فشل تعديل المحفظة' }, { status: 400 });
+  }
+}
+
+// DELETE: Manager Delete / Deactivate Wallet or Machine
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير بحذف المحافظ' }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const walletId = searchParams.get('id');
+
+    if (!walletId) {
+      return NextResponse.json({ error: 'معرف المحفظة مطلوب' }, { status: 400 });
+    }
+
+    const updated = await db.external_wallets.update({
+      where: { id: walletId },
+      data: { is_active: false }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `تم حذف (${updated.wallet_name}) بنجاح`
+    });
+  } catch (error: any) {
+    console.error('Wallet delete error:', error);
+    return NextResponse.json({ error: error.message || 'فشل حذف المحفظة' }, { status: 400 });
   }
 }

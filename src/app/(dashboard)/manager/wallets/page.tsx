@@ -1,17 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Wallet, ShieldCheck, Cpu, Archive, Edit3, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, Wallet, ShieldCheck, Cpu, Archive, Edit3, Plus, Trash2, CheckCircle2, AlertCircle, Phone, Smartphone } from 'lucide-react';
 
 export default function ManagerWalletsPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [externalWallets, setExternalWallets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Edit Initial Balance Modal State
+  // Add / Edit Wallet Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingWallet, setEditingWallet] = useState<any>(null);
+
+  // Form Fields
+  const [walletName, setWalletName] = useState('');
+  const [walletType, setWalletType] = useState('محفظة'); // "محفظة" | "ماكينة" | "درج كاش"
+  const [walletNumber, setWalletNumber] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [custodianName, setCustodianName] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -39,37 +46,95 @@ export default function ManagerWalletsPage() {
     0
   );
 
-  const handleSaveInitialBalance = async (e: React.FormEvent) => {
+  // Create or Update Wallet
+  const handleSaveWallet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingWallet || initialBalance === '') return;
+    if (!walletName) return;
 
     setSubmitting(true);
     setMessage(null);
 
     try {
-      const res = await fetch('/api/wallets', {
-        method: 'PUT',
+      const isEditing = Boolean(editingWallet);
+      const url = '/api/wallets';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const body = isEditing ? {
+        walletId: editingWallet.id,
+        walletName,
+        walletType,
+        walletNumber,
+        initialBalance: Number(initialBalance || 0),
+        custodianName
+      } : {
+        action: 'create',
+        walletName,
+        walletType,
+        walletNumber,
+        initialBalance: Number(initialBalance || 0)
+      };
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletId: editingWallet.id,
-          initialBalance: Number(initialBalance),
-          custodianName: custodianName || editingWallet.custodian_name
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل تحديث الرصيد الافتتاحي');
+      if (!res.ok) throw new Error(data.error || 'فشل حفظ المحفظة');
 
-      setMessage({ type: 'success', text: data.message || 'تم تحديث الرصيد الافتتاحي بنجاح 🎉' });
+      setMessage({ type: 'success', text: data.message || 'تم حفظ بيانات المحفظة بنجاح 🎉' });
+      setShowAddModal(false);
       setEditingWallet(null);
-      setInitialBalance('');
-      setCustodianName('');
+      resetForm();
       fetchData();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Delete Wallet
+  const handleDeleteWallet = async (walletId: string, name: string) => {
+    if (!confirm(`هل أنت تأكد من رغبتك في حذف محفظة/ماكينة (${name})؟`)) return;
+
+    setSubmitting(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch(`/api/wallets?id=${walletId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل حذف المحفظة');
+
+      setMessage({ type: 'success', text: data.message || 'تم حذف المحفظة بنجاح' });
+      fetchData();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setWalletName('');
+    setWalletType('محفظة');
+    setWalletNumber('');
+    setInitialBalance('');
+    setCustodianName('');
+  };
+
+  const openEditModal = (w: any) => {
+    setEditingWallet(w);
+    setWalletName(w.wallet_name || '');
+    setWalletType(w.wallet_type || 'محفظة');
+    setWalletNumber(w.wallet_number || '');
+    setInitialBalance(String(w.current_balance || 0));
+    setCustodianName(w.custodian_name || '');
+    setShowAddModal(true);
   };
 
   const drawersList = externalWallets.filter((w) => w.wallet_type === 'درج كاش' || w.wallet_type === 'درج');
@@ -80,21 +145,35 @@ export default function ManagerWalletsPage() {
       {/* Title */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
             <Users className="w-7 h-7 text-indigo-400" />
-            <span>رقابة محافظ الموظفين والضبط المالي (لوحة المدير)</span>
+            <span>رقابة وإدارة المحافظ والماكينات (لوحة المدير)</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            عرض وحصر عهد الموظفين، وضبط <strong className="text-amber-400">الأرصدة الافتتاحية</strong> لماكينات فوري ومحافظ كاش والأدراج
+            إضافة، تعديل، وحذف <strong className="text-amber-400">الماكينات ومحافظ الكاش والأدراج</strong> ومراقبة عهد الموظفين
           </p>
         </div>
 
-        {/* Total Cash with Employees */}
-        <div className="glass-card px-6 py-3 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-left">
-          <span className="text-xs text-slate-400 block font-medium">إجمالي النقدية الكاش مع الموظفين</span>
-          <span className="text-2xl font-black text-white">
-            {totalEmployeesCash.toLocaleString('ar-EG')} <span className="text-xs font-normal text-indigo-400">ج.م</span>
-          </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              resetForm();
+              setEditingWallet(null);
+              setShowAddModal(true);
+            }}
+            className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            <span>إضافة محفظة / ماكينة جديدة</span>
+          </button>
+
+          {/* Total Cash with Employees */}
+          <div className="glass-card px-6 py-3 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-left">
+            <span className="text-xs text-slate-400 block font-medium">إجمالي عهدة الكاش</span>
+            <span className="text-2xl font-black text-white">
+              {totalEmployeesCash.toLocaleString('ar-EG')} <span className="text-xs font-normal text-indigo-400">ج.م</span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -109,86 +188,85 @@ export default function ManagerWalletsPage() {
         </div>
       )}
 
-      {/* 1. External Machines & Wallets Initial Balances (Manager Control) */}
+      {/* 1. External Machines & Wallets Management */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Cpu className="w-5 h-5 text-amber-400" />
-            <span>إدارة الأرصدة الافتتاحية للمحافظ والماكينات (فوري / فودافون كاش)</span>
+            <span>ماكينات فوري ومحافظ كاش ({machinesList.length})</span>
           </h2>
-          <span className="text-xs text-slate-400">يمكنك كمدير تحديد الرصيد الافتتاحي للشباب للبدء بها</span>
+          <span className="text-xs text-slate-400">يمكنك تعديل أي محفظة أو إضافتها أو حذفها</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {machinesList.map((w) => (
-            <div key={w.id} className="glass-card p-4 rounded-2xl border border-slate-700/60 bg-slate-900/60 space-y-3">
+            <div key={w.id} className="glass-card p-5 rounded-2xl border border-slate-700/60 bg-slate-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                   {w.wallet_type}
                 </span>
-                <span className="text-[11px] text-slate-400">عهدة: {w.custodian_name || 'عامة'}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditModal(w)}
+                    title="تعديل"
+                    className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteWallet(w.id, w.wallet_name)}
+                    title="حذف"
+                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <div>
-                <h3 className="font-bold text-white text-base">{w.wallet_name}</h3>
+                <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
+                {w.wallet_number && <p className="text-xs text-slate-400 font-mono mt-0.5">{w.wallet_number}</p>}
                 <p className="text-2xl font-extrabold text-emerald-400 mt-1">
                   {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
                 </p>
+                <p className="text-xs text-slate-500 mt-1">مسؤول العهدة: {w.custodian_name || 'غير محدد'}</p>
               </div>
-
-              <button
-                onClick={() => {
-                  setEditingWallet(w);
-                  setInitialBalance(String(w.current_balance || 0));
-                  setCustodianName(w.custodian_name || '');
-                }}
-                className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>تعديل الرصيد الافتتاحي</span>
-              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 2. Cash Drawers Initial Balances */}
+      {/* 2. Cash Drawers Section */}
       <div className="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-purple-950/10 space-y-4">
         <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Archive className="w-5 h-5 text-purple-400" />
-            <span>إدارة رصيد أدراج الأمانات الثلاثة</span>
+            <span>أدراج الأمانات الثلاثة ({drawersList.length})</span>
           </h2>
-          <span className="text-xs text-purple-300">درج 1، درج 2، درج 3</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {drawersList.map((w) => (
-            <div key={w.id} className="glass-card p-4 rounded-2xl border border-purple-500/30 bg-slate-900/60 space-y-3">
+            <div key={w.id} className="glass-card p-5 rounded-2xl border border-purple-500/30 bg-slate-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
                   {w.wallet_type}
                 </span>
+                <button
+                  onClick={() => openEditModal(w)}
+                  title="تعديل الرصيد"
+                  className="p-1.5 text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
               </div>
 
               <div>
-                <h3 className="font-bold text-white text-base">{w.wallet_name}</h3>
+                <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
                 <p className="text-2xl font-extrabold text-purple-300 mt-1">
                   {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
                 </p>
               </div>
-
-              <button
-                onClick={() => {
-                  setEditingWallet(w);
-                  setInitialBalance(String(w.current_balance || 0));
-                  setCustodianName('');
-                }}
-                className="w-full py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>ضبط رصيد الدرج</span>
-              </button>
             </div>
           ))}
         </div>
@@ -231,38 +309,73 @@ export default function ManagerWalletsPage() {
         )}
       </div>
 
-      {/* Edit Initial Balance Modal */}
-      {editingWallet && (
+      {/* Add / Edit Wallet Modal */}
+      {showAddModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-3xl border border-amber-500/40 bg-slate-900 w-full max-w-md space-y-4">
+          <div className="glass-panel p-6 rounded-3xl border border-emerald-500/40 bg-slate-900 w-full max-w-md space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Edit3 className="w-5 h-5 text-amber-400" />
-              <span>ضبط الرصيد الافتتاحي لـ ({editingWallet.wallet_name})</span>
+              <Wallet className="w-5 h-5 text-emerald-400" />
+              <span>{editingWallet ? `تعديل (${editingWallet.wallet_name})` : 'إضافة محفظة / ماكينة جديدة'}</span>
             </h3>
 
-            <form onSubmit={handleSaveInitialBalance} className="space-y-4">
+            <form onSubmit={handleSaveWallet} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">الرصيد الافتتاحي الجديد (ج.م)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">اسم المحفظة / الماكينة</label>
                 <input
-                  type="number"
-                  step="0.5"
+                  type="text"
                   required
-                  value={initialBalance}
-                  onChange={(e) => setInitialBalance(e.target.value)}
-                  placeholder="أدخل الرصيد الافتتاحي"
-                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+                  value={walletName}
+                  onChange={(e) => setWalletName(e.target.value)}
+                  placeholder="مثال: فودافون كاش 1 / فوري 3"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
-              {editingWallet.wallet_type !== 'درج كاش' && editingWallet.wallet_type !== 'درج' && (
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">نوع المحفظة</label>
+                <select
+                  value={walletType}
+                  onChange={(e) => setWalletType(e.target.value)}
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="محفظة">محفظة إلكترونية (فودافون/اتصالات/أورنج)</option>
+                  <option value="ماكينة">ماكينة دفع (فوري/بساطة)</option>
+                  <option value="درج كاش">درج كاش (أمانات)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">رقم المحفظة / الماكينة (اختياري)</label>
+                <input
+                  type="text"
+                  value={walletNumber}
+                  onChange={(e) => setWalletNumber(e.target.value)}
+                  placeholder="010XXXXXXXX"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">الرصيد الافتتاحي (ج.م)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={initialBalance}
+                  onChange={(e) => setInitialBalance(e.target.value)}
+                  placeholder="أدخل الرصيد الافتتاحي"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {editingWallet && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">اسم مسئول العهدة (اختياري)</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">اسم مسؤول العهدة (اختياري)</label>
                   <input
                     type="text"
                     value={custodianName}
                     onChange={(e) => setCustodianName(e.target.value)}
-                    placeholder="اسم الموظف المسئول"
-                    className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
+                    placeholder="اسم الموظف المسؤول"
+                    className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               )}
@@ -270,7 +383,10 @@ export default function ManagerWalletsPage() {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setEditingWallet(null)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingWallet(null);
+                  }}
                   className="px-4 py-2 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
                 >
                   إلغاء
@@ -278,9 +394,9 @@ export default function ManagerWalletsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-600/30 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
                 >
-                  <span>حفظ الرصيد الافتتاحي</span>
+                  <span>{editingWallet ? 'حفظ التعديلات' : 'إضافة المحفظة'}</span>
                 </button>
               </div>
             </form>
