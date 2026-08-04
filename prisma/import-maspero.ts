@@ -52,15 +52,19 @@ function parseNum(val: any): number {
   return isNaN(num) ? 0 : num;
 }
 
+function parseDate(val: any): Date {
+  if (!val) return new Date();
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
 async function main() {
-  console.log('🚀 Starting Essential Master Data Import for Maspero Services System...\n');
+  console.log('🚀 Starting Master Data & Expenses Import for Maspero Services System...\n');
 
   // 1. Import Users & Employees (Login)
   console.log('1. Importing Employees & Users...');
   const loginRows = parseCSV(path.join(MASPERO_DIR, 'Login - Login.csv'));
   const userMap = new Map<string, string>(); // Legacy Username -> New UUID
-
-  const defaultPasswordHash = await bcrypt.hash('Maspero2026!', 10);
 
   for (const row of loginRows) {
     const rawId = row['Employee_Id'] || row['Name'];
@@ -71,12 +75,15 @@ async function main() {
     const isManager = row['Position'] === 'Manager' || row['Role'] === 'Manager';
     const userRole = isManager ? 'manager' : 'user';
     const userName = (row['Name'] || legacyId).slice(0, 150);
+    const userPassword = (row['Password'] || '').trim() || '123456';
+    const passwordHash = await bcrypt.hash(userPassword, 10);
 
     const created = await prisma.users.upsert({
       where: { legacy_id: legacyId },
       update: {
         name: userName,
         phone: (row['Phone Number'] || '').slice(0, 50) || null,
+        password_hash: passwordHash,
         role: userRole,
         job_title: (row['Jop Title'] || row['Position'] || 'موظف مبيعات').slice(0, 100),
         salary: parseNum(row['Salary']),
@@ -87,7 +94,7 @@ async function main() {
         name: userName,
         phone: (row['Phone Number'] || '').slice(0, 50) || null,
         email: `${legacyId.toLowerCase()}@maspero.internal`,
-        password_hash: defaultPasswordHash,
+        password_hash: passwordHash,
         role: userRole,
         job_title: (row['Jop Title'] || row['Position'] || 'موظف مبيعات').slice(0, 100),
         salary: parseNum(row['Salary']),
@@ -185,7 +192,57 @@ async function main() {
   }
   console.log(`✓ Imported ${walletMap.size} External Wallets & verified 3 Cash Drawers.`);
 
-  console.log('\n🎉 Master Data Import Completed Successfully!');
+  // 4. Import Expenses Records
+  console.log('\n4. Importing Historical Expenses & Advances...');
+  const expenseRows = parseCSV(path.join(MASPERO_DIR, 'Expenses Maspero - Expenses (1).csv'));
+  let expenseCount = 0;
+
+  for (const row of expenseRows) {
+    const legacyId = row['Expense_Id'];
+    if (!legacyId) continue;
+
+    const empLegacyId = row['Employee_Id'];
+    const empId = empLegacyId ? userMap.get(empLegacyId) || null : null;
+
+    await prisma.expenses.upsert({
+      where: { legacy_id: legacyId },
+      update: {
+        date: parseDate(row['Date']),
+        month: row['Month'] || null,
+        shift_id: row['Shift_Id'] || null,
+        shift_name: row['Shift_Name'] || null,
+        shift_cashier: row['Shift_Cashier'] || null,
+        main_type: row['Main_Type'] || 'مصروفات',
+        expense_type: row['Type'] || 'مصروفات',
+        items: row['Items'] || null,
+        notes: row['Notes'] || null,
+        amount: parseNum(row['Amount']),
+        employee_id: empId,
+        employee_name: row['Employee_ Name'] || row['Employee_Id'] || null,
+        back_amount: parseNum(row['BackAmount']),
+      },
+      create: {
+        legacy_id: legacyId,
+        date: parseDate(row['Date']),
+        month: row['Month'] || null,
+        shift_id: row['Shift_Id'] || null,
+        shift_name: row['Shift_Name'] || null,
+        shift_cashier: row['Shift_Cashier'] || null,
+        main_type: row['Main_Type'] || 'مصروفات',
+        expense_type: row['Type'] || 'مصروفات',
+        items: row['Items'] || null,
+        notes: row['Notes'] || null,
+        amount: parseNum(row['Amount']),
+        employee_id: empId,
+        employee_name: row['Employee_ Name'] || row['Employee_Id'] || null,
+        back_amount: parseNum(row['BackAmount']),
+      }
+    });
+    expenseCount++;
+  }
+  console.log(`✓ Imported ${expenseCount} Expense records.`);
+
+  console.log('\n🎉 Master Data & Expenses Import Completed Successfully!');
 }
 
 main()
