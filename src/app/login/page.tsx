@@ -112,8 +112,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-xs text-slate-500">
-          DigitalOcean Enterprise Cloud System &copy; 2026
+        <div className="mt-8 text-center text-xs text-slate-500 font-semibold tracking-wide">
+          OPEN Apps (openappo) Enterprise System &copy; 2026
         </div>
       </div>
     </div>
