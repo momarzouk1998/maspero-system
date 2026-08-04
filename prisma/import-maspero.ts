@@ -6,17 +6,37 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 const MASPERO_DIR = path.join(process.cwd());
 
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim().replace(/^"|"$/g, ''));
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim().replace(/^"|"$/g, ''));
+  return result;
+}
+
 function parseCSV(filePath: string): any[] {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n').filter((l) => l.trim().length > 0);
   if (lines.length === 0) return [];
 
-  const headers = lines[0].split('\t').map((h) => h.trim().replace(/^"|"$/g, ''));
+  const headers = parseCSVLine(lines[0]);
   const results = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split('\t').map((v) => v.trim().replace(/^"|"$/g, ''));
+    const values = parseCSVLine(lines[i]);
     const obj: any = {};
     headers.forEach((h, idx) => {
       obj[h] = values[idx] || '';
@@ -43,30 +63,31 @@ async function main() {
   const defaultPasswordHash = await bcrypt.hash('Maspero2026!', 10);
 
   for (const row of loginRows) {
-    const legacyId = row['Username'];
+    const legacyId = row['Employee_Id'] || row['Name'];
     if (!legacyId) continue;
 
     const isManager = row['Position'] === 'Manager' || row['Role'] === 'Manager';
     const userRole = isManager ? 'manager' : 'user';
+    const userName = row['Name'] || legacyId;
 
     const created = await prisma.users.upsert({
       where: { legacy_id: legacyId },
       update: {
-        name: row['Name'] || legacyId,
-        phone: row['Phone'] || null,
+        name: userName,
+        phone: row['Phone Number'] || null,
         role: userRole,
-        job_title: row['Position'] || 'موظف مبيعات',
+        job_title: row['Jop Title'] || row['Position'] || 'موظف مبيعات',
         salary: parseNum(row['Salary']),
-        is_active: row['IsActive'] === 'Y' || row['Status'] === 'Active',
+        is_active: true,
       },
       create: {
         legacy_id: legacyId,
-        name: row['Name'] || legacyId,
-        phone: row['Phone'] || null,
+        name: userName,
+        phone: row['Phone Number'] || null,
         email: `${legacyId.toLowerCase()}@maspero.internal`,
         password_hash: defaultPasswordHash,
         role: userRole,
-        job_title: row['Position'] || 'موظف مبيعات',
+        job_title: row['Jop Title'] || row['Position'] || 'موظف مبيعات',
         salary: parseNum(row['Salary']),
         wallet_balance: 0,
         is_active: true,
@@ -106,33 +127,13 @@ async function main() {
   }
   console.log(`✓ Imported ${serviceCount} Services.`);
 
-  // 2b. Import Tiered Print Prices
-  const printPriceRows = parseCSV(path.join(MASPERO_DIR, 'Services Maspero - Print price.csv'));
-  for (const row of printPriceRows) {
-    const printType = row['PrintType'] || row['Type'] || 'طباعة أسود';
-    const faceType = row['FaceType'] || 'وجه واحد';
-    const keyName = row['Key'] || `${printType} ${faceType}`;
-    const price = parseNum(row['Price']);
-
-    if (keyName) {
-      await prisma.print_prices.create({
-        data: {
-          print_type: printType,
-          face_type: faceType,
-          key_name: keyName,
-          price: price,
-        }
-      }).catch(() => {});
-    }
-  }
-
   // 3. Import External Wallets & Fawry Machines
   console.log('\n3. Importing External Wallets & Fawry Machines...');
   const walletRows = parseCSV(path.join(MASPERO_DIR, 'Wallets Maspero - Wallets.csv'));
   const walletMap = new Map<string, string>();
 
   for (const row of walletRows) {
-    const legacyId = row['Wallet_Id'];
+    const legacyId = row['Wallet_Id'] || row['Wallet_Name'];
     if (!legacyId) continue;
 
     const created = await prisma.external_wallets.upsert({
