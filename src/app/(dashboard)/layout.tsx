@@ -81,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
     { name: 'الشفتات وساعات العمل', href: '/shifts', icon: Clock },
     ...(isManager ? [
+      { name: 'إدارة الموظفين والحسابات', href: '/manager/users', icon: Users },
       { name: 'تقارير الأرباح واللوج', href: '/manager/reports', icon: BarChart3 },
       { name: 'محافظ الموظفين والخزينة', href: '/manager/wallets', icon: Users },
     ] : [])

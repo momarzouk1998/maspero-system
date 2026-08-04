@@ -186,35 +186,37 @@ async function main() {
   }
   console.log(`✓ Imported ${deletedCount} Former/Deleted Employees.`);
 
-  // 2. Import Services Catalog
+  // 2. Import Services Catalog (Fix Service_Name column parsing)
   console.log('\n2. Importing Services Catalog & Print Prices...');
   const serviceRows = parseCSV(path.join(MASPERO_DIR, 'Services Maspero - Services.csv'));
   let serviceCount = 0;
 
   for (const row of serviceRows) {
-    const legacyId = row['Service_Id'] || row['Service Name'];
+    const legacyId = row['Service_Id'] || row['Service Name'] || row['Service_Name'];
     if (!legacyId) continue;
+
+    const sName = row['Service_Name'] || row['Service Name'] || legacyId;
 
     await prisma.services.upsert({
       where: { legacy_id: legacyId },
       update: {
-        service_name: row['Service Name'] || legacyId,
-        is_commissionable: row['IsCommissionable'] === 'Y',
-        commission_percent: parseNum(row['Commission %']),
+        service_name: sName,
+        is_commissionable: row['Is_Commissionable'] === 'عمولة' || row['IsCommissionable'] === 'Y',
+        commission_percent: parseNum(row['Commission_Percent'] || row['Commission %']),
         sort: parseInt(row['Sort']) || 0,
       },
       create: {
         legacy_id: legacyId,
-        service_name: row['Service Name'] || legacyId,
-        is_commissionable: row['IsCommissionable'] === 'Y',
-        commission_percent: parseNum(row['Commission %']),
+        service_name: sName,
+        is_commissionable: row['Is_Commissionable'] === 'عمولة' || row['IsCommissionable'] === 'Y',
+        commission_percent: parseNum(row['Commission_Percent'] || row['Commission %']),
         sort: parseInt(row['Sort']) || 0,
         is_active: true,
       }
     });
     serviceCount++;
   }
-  console.log(`✓ Imported ${serviceCount} Services.`);
+  console.log(`✓ Imported ${serviceCount} Services with proper Arabic titles.`);
 
   // 3. Import External Wallets & Fawry Machines
   console.log('\n3. Importing External Wallets & Fawry Machines...');
