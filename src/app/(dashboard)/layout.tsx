@@ -17,6 +17,7 @@ import {
   LogOut,
   ArrowLeftRight
 } from 'lucide-react';
+import PwaInstallButton from '@/components/pwa-install-button';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -136,8 +137,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
 
-        {/* User Card bottom sidebar */}
-        <div className="p-4 border-t border-slate-800/80">
+        {/* User Card & PWA Install Button bottom sidebar */}
+        <div className="p-4 border-t border-slate-800/80 space-y-3">
+          <PwaInstallButton />
+
           <div className="glass-card p-3 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-sm">
@@ -172,12 +175,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Top Bar PWA Install Button */}
+            <div className="hidden sm:block">
+              <PwaInstallButton />
+            </div>
+
             {/* Live Employee Wallet Balance Badge */}
             <Link href="/wallet">
               <div className="glass-card px-4 py-2 rounded-xl flex items-center gap-2.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer">
                 <Wallet className="w-4 h-4 text-emerald-400" />
                 <div className="text-xs">
-                  <span className="text-slate-400 block text-[10px]">عهدة النقدية الكاش للمدير</span>
+                  <span className="text-slate-400 block text-[10px]">عهدة الكاش</span>
                   <span className="font-extrabold text-sm">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')} ج.م</span>
                 </div>
               </div>
@@ -201,8 +209,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Page Container */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* Mobile Navigation Header */}
+        <div className="md:hidden glass-panel border-b border-slate-800 p-3 flex items-center justify-between overflow-x-auto gap-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`p-2.5 rounded-xl text-xs font-medium shrink-0 flex items-center gap-1.5 ${
+                  active ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 bg-slate-900/60'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Main View Area */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

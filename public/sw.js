@@ -1,13 +1,8 @@
-// Maspero Services PWA Service Worker
 const CACHE_NAME = 'maspero-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
-  '/favicon.ico',
-  '/maspero-logo.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png'
+  '/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
@@ -21,11 +16,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
