@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Printer, Plus, Search, FileText, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Printer, Plus, Search, FileText, CheckCircle2, ChevronRight, ChevronLeft, Info } from 'lucide-react';
+import { calculatePrintPrice, DEFAULT_PRINT_PRICES } from '@/lib/print-pricing';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
@@ -17,7 +18,9 @@ export default function ServicesPage() {
   const [paperCount, setPaperCount] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [faceType, setFaceType] = useState('وجه واحد');
-  const [calculatedAmount, setCalculatedAmount] = useState(1);
+  const [unitPrice, setUnitPrice] = useState(1.0);
+  const [priceKeyName, setPriceKeyName] = useState('');
+  const [calculatedAmount, setCalculatedAmount] = useState(1.0);
   const [notes, setNotes] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -50,16 +53,19 @@ export default function ServicesPage() {
     fetchCatalogAndEntries(1);
   }, []);
 
-  // Dynamic Tiered Price Calculation
+  // Exact AppSheet Tiered Price Engine Calculation
   useEffect(() => {
-    if (serviceName.includes('طباعة أسود')) {
-      const pricePerPage = paperCount > 30 ? (faceType === 'وجهين' ? 0.65 : 0.75) : 1.0;
-      setCalculatedAmount(paperCount * pricePerPage);
-    } else if (serviceName.includes('طباعة ألوان')) {
-      const pricePerPage = paperCount > 30 ? (faceType === 'وجهين' ? 1.5 : 2.0) : 2.5;
-      setCalculatedAmount(paperCount * pricePerPage);
+    const isPrintService = serviceName.includes('طباعة');
+    if (isPrintService) {
+      const result = calculatePrintPrice(serviceName, faceType, paperCount, printPrices);
+      setUnitPrice(result.unitPrice);
+      setPriceKeyName(result.keyName);
+      setCalculatedAmount(result.totalAmount);
+    } else {
+      setUnitPrice(calculatedAmount / (paperCount || 1));
+      setPriceKeyName('خدمة عامة');
     }
-  }, [serviceName, paperCount, faceType]);
+  }, [serviceName, paperCount, faceType, printPrices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +90,7 @@ export default function ServicesPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل حفظ عملية الخدمة');
 
-      setSuccessMsg(`تم تسجيل عملية ${serviceName} بمبلغ ${calculatedAmount} ج.م وإضافتها لمحفظتك بنجاح 🎉`);
+      setSuccessMsg(`تم تسجيل عملية ${serviceName} (${paperCount} ورقة - ${faceType}) بمبلغ ${calculatedAmount} ج.م وإضافتها لمحفظتك بنجاح 🎉`);
       setNotes('');
       fetchCatalogAndEntries(1);
     } catch (err: any) {
@@ -101,10 +107,10 @@ export default function ServicesPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Printer className="w-7 h-7 text-blue-400" />
-            <span>تسجيل الخدمات المباشرة والطباعة</span>
+            <span>تسجيل الخدمات المباشرة والطباعة (نظام أسعار AppSheet)</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            حساب السعر التلقائي حسب الشرائح وتسجيل المبيعات في المحفظة الشخصية
+            حساب السعر التلقائي الدقيق حسب شرائح الورق والوجهين/الوجه الواحد
           </p>
         </div>
       </div>
@@ -160,7 +166,7 @@ export default function ServicesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">نوع الطباعة</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">نوع الطباعة (Face Type)</label>
                 <select
                   value={faceType}
                   onChange={(e) => setFaceType(e.target.value)}
@@ -172,12 +178,24 @@ export default function ServicesPage() {
               </div>
             </div>
 
-            {/* Price Preview Card */}
-            <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-300">الإجمالي المحسوب:</span>
-              <span className="text-2xl font-extrabold text-blue-400">
-                {calculatedAmount} <span className="text-xs font-normal text-slate-300">ج.م</span>
-              </span>
+            {/* Price & Tier Preview Breakdown */}
+            <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-300">سعر الورقة / الشريحة:</span>
+                <span className="text-sm font-bold text-blue-300">{unitPrice} ج.م</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-blue-500/20">
+                <span className="text-xs font-semibold text-white">الإجمالي المحسوب (Amount):</span>
+                <span className="text-2xl font-extrabold text-blue-400">
+                  {calculatedAmount} <span className="text-xs font-normal text-slate-300">ج.م</span>
+                </span>
+              </div>
+              {priceKeyName && (
+                <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1">
+                  <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="truncate">الشريحة: {priceKeyName}</span>
+                </div>
+              )}
             </div>
 
             <div>

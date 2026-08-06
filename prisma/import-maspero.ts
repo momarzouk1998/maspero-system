@@ -218,6 +218,27 @@ async function main() {
   }
   console.log(`✓ Imported ${serviceCount} Services with proper Arabic titles.`);
 
+  // 2b. Import Print Prices Table (Services Maspero - Print price.csv)
+  const printPriceRows = parseCSV(path.join(MASPERO_DIR, 'Services Maspero - Print price.csv'));
+  for (const row of printPriceRows) {
+    const keyName = row['Key'];
+    if (!keyName) continue;
+
+    await prisma.print_prices.deleteMany({
+      where: { key_name: keyName }
+    });
+
+    await prisma.print_prices.create({
+      data: {
+        print_type: row['Print Type'] || 'طباعة أسود',
+        face_type: row['Face Type'] || 'وجه واحد',
+        key_name: keyName,
+        price: parseNum(row['Price']) || 1.00,
+      }
+    });
+  }
+  console.log(`✓ Imported ${printPriceRows.length} Tiered Printing Price rules.`);
+
   // 3. Import External Wallets & Fawry Machines
   console.log('\n3. Importing External Wallets & Fawry Machines...');
   const walletRows = parseCSV(path.join(MASPERO_DIR, 'Wallets Maspero - Wallets.csv'));
