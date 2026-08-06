@@ -43,7 +43,7 @@ export async function DELETE(req: Request) {
         if (trans.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بحذف هذا العنصر');
         
         // Revert wallet balance & employee custody based on transaction type
-        const totalAmount = Number(trans.amount) + Number(trans.commission);
+        const totalAmount = Number(trans.amount) + Number(trans.wallet_commission);
         const externalWallet = await tx.external_wallets.findUnique({ where: { id: trans.wallet_id! }});
         if (!externalWallet) throw new Error('المحفظة غير موجودة');
 
