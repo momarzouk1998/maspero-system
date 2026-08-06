@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Printer, Ticket, Wallet, Plus, Trash2, RefreshCw, X, Receipt,
-  CheckCircle2, AlertTriangle, Search
+  CheckCircle2, AlertTriangle, Search, Info
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
@@ -18,6 +18,7 @@ export default function POSPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [employeeName, setEmployeeName] = useState('');
   const [timestamp, setTimestamp] = useState('');
+  const [showPrintHint, setShowPrintHint] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   // Tabs: 'services' | 'tickets' | 'wallets'
@@ -513,6 +514,28 @@ export default function POSPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 flex justify-between items-center mb-1">
+                <button 
+                  onClick={() => setShowPrintHint(!showPrintHint)}
+                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                  <span>كيف أطبع مباشرة بدون نافذة التحميل؟</span>
+                </button>
+              </div>
+
+              {showPrintHint && (
+                <div className="col-span-2 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-2 text-xs text-blue-200 leading-relaxed">
+                  <p className="font-bold mb-1">لطباعة أسرع من ثانية واحدة (تلقائياً):</p>
+                  <ol className="list-decimal list-inside space-y-1 opacity-90">
+                    <li>اضغط كليك يمين على أيقونة (Google Chrome) في سطح المكتب واختر <strong>Properties</strong>.</li>
+                    <li>في خانة مسار الـ Target، أضف في نهايته مسافة ثم اكتب: <code className="bg-black/30 px-1 py-0.5 rounded font-mono text-blue-300">--kiosk-printing</code></li>
+                    <li>اجعل طابعة الكاشير هي الطابعة الافتراضية للويندوز.</li>
+                  </ol>
+                  <p className="mt-1 opacity-80">سيقوم النظام بالطباعة فوراً بمجرد الضغط على الزر أدناه!</p>
+                </div>
+              )}
+
               <button
                 disabled={items.length === 0}
                 onClick={() => handlePrint('cashier')}
