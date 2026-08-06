@@ -63,7 +63,7 @@ export async function GET(req: Request) {
       items.push({
         id: w.id,
         type: 'wallet',
-        name: `${w.transaction_type} ${w.wallet_name} - ${w.notes || ''}`,
+        name: `${w.transaction_type} ${w.wallet_name} - ${w.description || ''}`,
         price: Number(w.amount), // for wallet, price is the amount itself
         count: 1,
         total: Number(w.amount) + Number(w.wallet_commission), // Total collected from customer
