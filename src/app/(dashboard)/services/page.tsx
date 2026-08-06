@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Printer, Plus, Search, FileText, CheckCircle2, ChevronRight, ChevronLeft, Info, Tag } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
+import type { PrintPriceResult } from '@/lib/print-pricing';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
+  const [dbPrices, setDbPrices] = useState<any[]>([]);
   const [entries, setEntries] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
@@ -25,14 +27,20 @@ export default function ServicesPage() {
 
   const fetchCatalogAndEntries = async (page = 1) => {
     try {
-      const [catRes, entriesRes] = await Promise.all([
+      const [catRes, pricesRes, entriesRes] = await Promise.all([
         fetch('/api/services'),
+        fetch('/api/print-prices'),
         fetch(`/api/service-entries?page=${page}&limit=25`)
       ]);
 
       if (catRes.ok) {
         const catData = await catRes.json();
         setServices(catData.services || []);
+      }
+
+      if (pricesRes.ok) {
+        const pricesData = await pricesRes.json();
+        setDbPrices(pricesData.prices || []);
       }
 
       if (entriesRes.ok) {
@@ -55,7 +63,7 @@ export default function ServicesPage() {
   useEffect(() => {
     const isPrintService = serviceName.includes('طباعة');
     if (isPrintService) {
-      const result = calculatePrintPrice(serviceName, faceType, paperCount);
+      const result = calculatePrintPrice(serviceName, faceType, paperCount, dbPrices);
       setUnitPrice(result.unitPrice);
       setTierLabel(result.tierLabel);
       setCalculatedAmount(result.totalAmount);
@@ -63,7 +71,7 @@ export default function ServicesPage() {
       setUnitPrice(calculatedAmount / (paperCount || 1));
       setTierLabel('خدمة مباشرة');
     }
-  }, [serviceName, paperCount, faceType]);
+  }, [serviceName, paperCount, faceType, dbPrices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -17,7 +17,8 @@ import {
   LogOut,
   ArrowLeftRight,
   Menu,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
@@ -85,6 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'الشفتات وساعات العمل', href: '/shifts', icon: Clock },
     ...(isManager ? [
       { name: 'إدارة الموظفين والحسابات', href: '/manager/users', icon: Users },
+      { name: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Settings },
       { name: 'تقارير الأرباح واللوج', href: '/manager/reports', icon: BarChart3 },
       { name: 'محافظ الموظفين والخزينة', href: '/manager/wallets', icon: Users },
     ] : [])
