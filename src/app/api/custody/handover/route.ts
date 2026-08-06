@@ -134,7 +134,7 @@ export async function POST(req: Request) {
           data: {
             wallet_id: walletId,
             wallet_name: item.wallet_name,
-            sender_id: item.custodian_id || null,
+            sender_id: item.custodian_id || undefined,
             sender_name: item.custodian_name || 'النظام',
             receiver_id: user.id,
             receiver_name: user.name,
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
             difference: diff,
             status: 'ACCEPTED',
             review_status: reviewStatus,
-            discrepancy_reason: discrepancyReason || null,
+            discrepancy_reason: discrepancyReason || undefined,
             responded_at: new Date()
           }
         });
