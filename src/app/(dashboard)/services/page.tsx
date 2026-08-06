@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Printer, Plus, Search, FileText, CheckCircle2, ChevronRight, ChevronLeft, Info } from 'lucide-react';
-import { calculatePrintPrice, DEFAULT_PRINT_PRICES } from '@/lib/print-pricing';
+import { Printer, Plus, Search, FileText, CheckCircle2, ChevronRight, ChevronLeft, Info, Tag } from 'lucide-react';
+import { calculatePrintPrice } from '@/lib/print-pricing';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
-  const [printPrices, setPrintPrices] = useState<any[]>([]);
   const [entries, setEntries] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
@@ -19,7 +18,7 @@ export default function ServicesPage() {
   const [pageCount, setPageCount] = useState(1);
   const [faceType, setFaceType] = useState('وجه واحد');
   const [unitPrice, setUnitPrice] = useState(1.0);
-  const [priceKeyName, setPriceKeyName] = useState('');
+  const [tierLabel, setTierLabel] = useState('');
   const [calculatedAmount, setCalculatedAmount] = useState(1.0);
   const [notes, setNotes] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -34,7 +33,6 @@ export default function ServicesPage() {
       if (catRes.ok) {
         const catData = await catRes.json();
         setServices(catData.services || []);
-        setPrintPrices(catData.printPrices || []);
       }
 
       if (entriesRes.ok) {
@@ -53,19 +51,19 @@ export default function ServicesPage() {
     fetchCatalogAndEntries(1);
   }, []);
 
-  // Exact AppSheet Tiered Price Engine Calculation
+  // Modern Dynamic Pricing Engine Calculation
   useEffect(() => {
     const isPrintService = serviceName.includes('طباعة');
     if (isPrintService) {
-      const result = calculatePrintPrice(serviceName, faceType, paperCount, printPrices);
+      const result = calculatePrintPrice(serviceName, faceType, paperCount);
       setUnitPrice(result.unitPrice);
-      setPriceKeyName(result.keyName);
+      setTierLabel(result.tierLabel);
       setCalculatedAmount(result.totalAmount);
     } else {
       setUnitPrice(calculatedAmount / (paperCount || 1));
-      setPriceKeyName('خدمة عامة');
+      setTierLabel('خدمة مباشرة');
     }
-  }, [serviceName, paperCount, faceType, printPrices]);
+  }, [serviceName, paperCount, faceType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,10 +105,10 @@ export default function ServicesPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Printer className="w-7 h-7 text-blue-400" />
-            <span>تسجيل الخدمات المباشرة والطباعة (نظام أسعار AppSheet)</span>
+            <span>تسجيل الخدمات المباشرة والطباعة</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            حساب السعر التلقائي الدقيق حسب شرائح الورق والوجهين/الوجه الواحد
+            حساب السعر التلقائي الذكي حسب شرائح الورق وخصومات الكميات والوجهين
           </p>
         </div>
       </div>
@@ -161,7 +159,7 @@ export default function ServicesPage() {
                   required
                   value={paperCount}
                   onChange={(e) => setPaperCount(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 font-mono text-base font-bold"
                 />
               </div>
 
@@ -178,22 +176,24 @@ export default function ServicesPage() {
               </div>
             </div>
 
-            {/* Price & Tier Preview Breakdown */}
+            {/* Modern Price Breakdown Card */}
             <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-300">سعر الورقة / الشريحة:</span>
-                <span className="text-sm font-bold text-blue-300">{unitPrice} ج.م</span>
+                <span className="text-xs font-medium text-slate-300">سعر الورقة / الوجه:</span>
+                <span className="text-sm font-bold text-blue-300 font-mono">{unitPrice} ج.م</span>
               </div>
+
               <div className="flex items-center justify-between pt-1 border-t border-blue-500/20">
-                <span className="text-xs font-semibold text-white">الإجمالي المحسوب (Amount):</span>
-                <span className="text-2xl font-extrabold text-blue-400">
-                  {calculatedAmount} <span className="text-xs font-normal text-slate-300">ج.م</span>
+                <span className="text-xs font-bold text-white">الإجمالي المحسوب (Amount):</span>
+                <span className="text-2xl font-extrabold text-blue-400 font-mono">
+                  {calculatedAmount} <span className="text-xs font-normal text-slate-300 font-sans">ج.م</span>
                 </span>
               </div>
-              {priceKeyName && (
-                <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1">
-                  <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="truncate">الشريحة: {priceKeyName}</span>
+
+              {tierLabel && (
+                <div className="text-[11px] text-slate-300 flex items-center gap-1.5 pt-1.5 border-t border-blue-500/10">
+                  <Tag className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="truncate font-medium">{tierLabel}</span>
                 </div>
               )}
             </div>
@@ -245,9 +245,9 @@ export default function ServicesPage() {
                 {entries.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-800/30">
                     <td className="px-4 py-3 font-medium text-white">{item.service_name}</td>
-                    <td className="px-4 py-3">{item.paper_count}</td>
+                    <td className="px-4 py-3 font-mono">{item.paper_count}</td>
                     <td className="px-4 py-3">{item.face_type || 'وجه واحد'}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-400">{Number(item.amount).toLocaleString('ar-EG')} ج.م</td>
+                    <td className="px-4 py-3 font-bold text-emerald-400 font-mono">{Number(item.amount).toLocaleString('ar-EG')} ج.م</td>
                     <td className="px-4 py-3 text-slate-400">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">
                       {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}

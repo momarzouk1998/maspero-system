@@ -1,103 +1,63 @@
 // ========================================================
-// AppSheet Tiered Printing Pricing Engine for Maspero System
+// Modern & High-Performance Printing Pricing Engine
+// Maspero Enterprise Cloud System © 2026
 // ========================================================
 
-export interface PrintPriceRule {
-  print_type: string;
-  face_type: string;
-  key_name: string;
-  price: number;
-}
-
-// Default Fallback Rules if database is empty
-export const DEFAULT_PRINT_PRICES: PrintPriceRule[] = [
-  {
-    print_type: 'طباعة أسود',
-    face_type: 'وجه واحد',
-    key_name: 'طباعة أسود وجه واحد أقل من أو يساوي 30',
-    price: 1.00,
-  },
-  {
-    print_type: 'طباعة أسود',
-    face_type: 'وجه واحد',
-    key_name: 'طباعة أسود وجه واحد فوق 30',
-    price: 0.75,
-  },
-  {
-    print_type: 'طباعة أسود',
-    face_type: 'وجهين',
-    key_name: 'طباعة أسود وجهين أقل من أو يساوي 30',
-    price: 1.50,
-  },
-  {
-    print_type: 'طباعة أسود',
-    face_type: 'وجهين',
-    key_name: 'طباعة أسود وجهين فوق 30',
-    price: 1.20,
-  },
-  {
-    print_type: 'طباعة ألوان',
-    face_type: 'وجه واحد',
-    key_name: 'طباعة ألوان وجه واحد',
-    price: 1.50,
-  },
-  {
-    print_type: 'طباعة ألوان',
-    face_type: 'وجهين',
-    key_name: 'طباعة ألوان وجهين',
-    price: 2.00,
-  },
-];
-
-/**
- * Computes the exact AppSheet Key for print price lookup
- */
-export function getPrintPriceKey(serviceName: string, faceType: string, paperCount: number): string {
-  const isColor = serviceName.includes('ألوان');
-
-  if (isColor) {
-    return `طباعة ألوان ${faceType}`;
-  }
-
-  // Black & White (طباعة أسود)
-  if (faceType === 'وجه واحد') {
-    if (paperCount <= 30) {
-      return 'طباعة أسود وجه واحد أقل من أو يساوي 30';
-    } else {
-      return 'طباعة أسود وجه واحد فوق 30';
-    }
-  } else {
-    // Face type "وجهين"
-    // AppSheet logic: <= 15 sheets (30 pages)
-    if (paperCount <= 15) {
-      return 'طباعة أسود وجهين أقل من أو يساوي 30';
-    } else {
-      return 'طباعة أسود وجهين فوق 30';
-    }
-  }
+export interface PrintPriceResult {
+  unitPrice: number;
+  totalAmount: number;
+  tierLabel: string;
 }
 
 /**
- * Calculates unit price and total amount based on AppSheet tiered rules
+ * Modern Clean Price Calculation Engine
+ * 
+ * Logic Summary:
+ * 1. طباعة ألوان:
+ *    - وجه واحد: 1.50 ج.م للورقة
+ *    - وجهين: 2.00 ج.م للورقة
+ * 
+ * 2. طباعة أسود (شرائح الكمية):
+ *    - وجه واحد: <= 30 ورقة (1.00 ج.م) | > 30 ورقة (0.75 ج.م - خصم كميات)
+ *    - وجهين:    <= 15 ورقة (1.50 ج.م) | > 15 ورقة (1.20 ج.م - خصم كميات)
  */
 export function calculatePrintPrice(
   serviceName: string,
-  faceType: string,
-  paperCount: number,
-  customRules?: PrintPriceRule[]
-): { keyName: string; unitPrice: number; totalAmount: number } {
+  faceType: string = 'وجه واحد',
+  paperCount: number = 1
+): PrintPriceResult {
   const count = Math.max(1, Number(paperCount) || 1);
-  const rules = customRules && customRules.length > 0 ? customRules : DEFAULT_PRINT_PRICES;
+  const isColor = serviceName.includes('ألوان');
+  const isDoubleFace = faceType === 'وجهين';
 
-  const keyName = getPrintPriceKey(serviceName, faceType, count);
-  const foundRule = rules.find((r) => r.key_name === keyName);
+  // 1. طباعة ألوان (Color Printing)
+  if (isColor) {
+    const unitPrice = isDoubleFace ? 2.00 : 1.50;
+    return {
+      unitPrice,
+      totalAmount: Number((count * unitPrice).toFixed(2)),
+      tierLabel: isDoubleFace ? 'طباعة ألوان (وجهين)' : 'طباعة ألوان (وجه واحد)'
+    };
+  }
 
-  const unitPrice = foundRule ? Number(foundRule.price) : (serviceName.includes('ألوان') ? 1.50 : 1.00);
-  const totalAmount = Number((count * unitPrice).toFixed(2));
-
-  return {
-    keyName,
-    unitPrice,
-    totalAmount,
-  };
+  // 2. طباعة أسود (Black & White Tiered Pricing)
+  if (isDoubleFace) {
+    // وجهين: الشريحة العادية <= 15 ورقة (1.50 ج.م) / شريحة الجملة > 15 ورقة (1.20 ج.م)
+    const isBulk = count > 15;
+    const unitPrice = isBulk ? 1.20 : 1.50;
+    return {
+      unitPrice,
+      totalAmount: Number((count * unitPrice).toFixed(2)),
+      tierLabel: isBulk ? 'طباعة أسود - وجهين (خصم كميات: فوق 15 ورقة)' : 'طباعة أسود - وجهين (عادي: 15 ورقة فأقل)'
+    };
+  } else {
+    // وجه واحد: الشريحة العادية <= 30 ورقة (1.00 ج.م) / شريحة الجملة > 30 ورقة (0.75 ج.م)
+    const isBulk = count > 30;
+    const unitPrice = isBulk ? 0.75 : 1.00;
+    return {
+      unitPrice,
+      totalAmount: Number((count * unitPrice).toFixed(2)),
+      tierLabel: isBulk ? 'طباعة أسود - وجه واحد (خصم كميات: فوق 30 ورقة)' : 'طباعة أسود - وجه واحد (عادي: 30 ورقة فأقل)'
+    };
+  }
 }
