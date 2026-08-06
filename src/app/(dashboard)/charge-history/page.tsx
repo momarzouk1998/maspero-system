@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Printer, Search, Filter, FileText } from 'lucide-react';
+import { Cpu, Search, Filter } from 'lucide-react';
 
-export default function ServicesHistoryPage() {
-  const [entries, setEntries] = useState<any[]>([]);
+export default function ChargeHistoryPage() {
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -12,6 +12,7 @@ export default function ServicesHistoryPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [employeeId, setEmployeeId] = useState('');
   const [date, setDate] = useState('');
+  const [search, setSearch] = useState('');
   
   const [users, setUsers] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -34,14 +35,15 @@ export default function ServicesHistoryPage() {
         }
       }
 
-      let url = `/api/service-entries?page=${page}&limit=25`;
+      let url = `/api/wallets/transactions?page=${page}&limit=25`;
       if (employeeId) url += `&employee_id=${employeeId}`;
       if (date) url += `&date=${date}`;
+      if (search) url += `&search=${search}`;
 
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setEntries(data.entries || []);
+        setTransactions(data.transactions || []);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
       }
     } catch (e) {
@@ -53,28 +55,38 @@ export default function ServicesHistoryPage() {
 
   useEffect(() => {
     fetchData(1);
-  }, [employeeId, date]);
+  }, [employeeId, date, search]);
 
   return (
     <div className="space-y-6">
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Printer className="w-7 h-7 text-blue-400" />
-            <span>سجل خدمات الطباعة</span>
+            <Cpu className="w-7 h-7 text-cyan-400" />
+            <span>سجل عمليات الشحن والمحافظ</span>
           </h1>
           <p className="text-slate-400 text-sm">
-            عرض وتصفية السجل الكامل لخدمات الطباعة والتصوير
+            عرض وتصفية السجل الكامل لعمليات الإيداع والسحب للمحافظ والماكينات
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="بحث باسم المحفظة، الملاحظات..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-3 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
+            />
+          </div>
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 border border-slate-700 transition-colors"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 border border-slate-700 transition-colors shrink-0"
           >
             <Filter className="w-4 h-4" />
-            <span>تصفية</span>
+            <span className="hidden sm:inline">تصفية</span>
           </button>
         </div>
       </div>
@@ -107,7 +119,7 @@ export default function ServicesHistoryPage() {
           </div>
           <div className="flex items-end gap-2">
             <button
-              onClick={() => { setEmployeeId(''); setDate(''); }}
+              onClick={() => { setEmployeeId(''); setDate(''); setSearch(''); }}
               className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium"
             >
               إعادة ضبط الفلاتر
@@ -119,42 +131,49 @@ export default function ServicesHistoryPage() {
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
         {loading ? (
           <div className="p-10 text-center text-slate-400">جاري تحميل السجل...</div>
-        ) : entries.length === 0 ? (
-          <div className="p-10 text-center text-slate-400">لا توجد خدمات مسجلة تطابق بحثك</div>
+        ) : transactions.length === 0 ? (
+          <div className="p-10 text-center text-slate-400">لا توجد عمليات مسجلة تطابق بحثك</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm text-slate-300">
               <thead className="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
                 <tr>
-                  <th className="px-4 py-3">اسم الخدمة</th>
-                  <th className="px-4 py-3">رقم الفاتورة</th>
-                  <th className="px-4 py-3">الورق</th>
-                  <th className="px-4 py-3">الوجه</th>
+                  <th className="px-4 py-3">النوع</th>
+                  <th className="px-4 py-3">المحفظة / الماكينة</th>
+                  <th className="px-4 py-3">العملية</th>
                   <th className="px-4 py-3">المبلغ</th>
+                  <th className="px-4 py-3">العمولة</th>
                   <th className="px-4 py-3">الموظف</th>
                   <th className="px-4 py-3">التاريخ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {entries.map((item) => (
+                {transactions.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-bold text-white">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-blue-400" />
-                        <span>{item.service_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-cyan-400">{item.invoice_code || '-'}</td>
-                    <td className="px-4 py-3 text-white font-mono">{item.paper_count}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs bg-slate-800 px-2 py-1 rounded-md">{item.face_type}</span>
+                      <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                        {item.wallet_type || item.wallet?.wallet_type || '-'}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 font-extrabold text-emerald-400">
+                    <td className="px-4 py-3 font-bold text-white">{item.wallet_name || item.wallet?.wallet_name || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
+                        item.transaction_type === 'إيداع'
+                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        {item.transaction_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-extrabold text-white">
                       {Number(item.amount).toLocaleString('ar-EG')} ج
+                    </td>
+                    <td className="px-4 py-3 text-emerald-400 font-bold">
+                      {Number(item.wallet_commission).toLocaleString('ar-EG')} ج
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-300">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-400">
-                      {new Date(item.timestamp).toLocaleString('ar-EG')}
+                      {new Date(item.timestamp || item.date).toLocaleString('ar-EG')}
                     </td>
                   </tr>
                 ))}
@@ -169,7 +188,7 @@ export default function ServicesHistoryPage() {
                     onClick={() => fetchData(i + 1)}
                     className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold ${
                       pagination.page === i + 1
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-cyan-600 text-white'
                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                     }`}
                   >

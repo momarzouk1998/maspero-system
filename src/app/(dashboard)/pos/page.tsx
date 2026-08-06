@@ -62,6 +62,28 @@ export default function POSPage() {
     }));
   };
 
+  const saveCurrentInvoice = async () => {
+    if (items.length === 0) return;
+    try {
+      await fetch('/api/invoices/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_number: invoiceCode,
+          total_invoice: total,
+          shift_id: null, // can pull from active shift if needed
+          shift_name: null,
+          shift_cashier: null,
+        })
+      });
+    } catch(e) { console.error(e); }
+  };
+
+  const handleNewInvoiceClick = async () => {
+    await saveCurrentInvoice();
+    generateNewInvoice();
+  };
+
   useEffect(() => {
     generateNewInvoice();
   }, []);
@@ -194,7 +216,8 @@ export default function POSPage() {
   };
 
   // --- Print Logic ---
-  const handlePrint = (mode: 'cashier' | 'normal') => {
+  const handlePrint = async (mode: 'cashier' | 'normal') => {
+    await saveCurrentInvoice();
     const parent = document.body;
     parent.classList.add(mode === 'cashier' ? 'cashier-print' : 'normal-print');
     
@@ -231,10 +254,19 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
         
         {/* Tabs */}
-        <div className="flex gap-2 p-1 bg-slate-900 rounded-2xl">
-          <TabButton id="services" label="الخدمات والطباعة" icon={Printer} />
-          <TabButton id="tickets" label="تذاكر قطارات" icon={Ticket} />
-          <TabButton id="wallets" label="المحافظ والكاش" icon={Wallet} />
+        <div className="flex justify-between items-center bg-slate-900 rounded-2xl p-2 mb-2 border border-slate-800">
+          <div className="flex gap-2">
+            <TabButton id="services" label="الخدمات" icon={Printer} />
+            <TabButton id="tickets" label="التذاكر" icon={Ticket} />
+            <TabButton id="wallets" label="المحافظ" icon={Wallet} />
+          </div>
+          <button
+            onClick={handleNewInvoiceClick}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">فاتورة جديدة</span>
+          </button>
         </div>
 
         {/* Tab Content */}

@@ -18,7 +18,11 @@ import {
   ArrowLeftRight,
   Menu,
   X,
-  Settings
+  Settings,
+  FolderTree,
+  FileText,
+  History,
+  ShoppingCart
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
@@ -78,16 +82,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
-    { name: 'نقطة البيع (POS)', href: '/pos', icon: Receipt },
+    { name: 'إدارة الشفتات', href: '/shifts', icon: Clock },
+    { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
+    { name: 'الفواتير', href: '/invoices', icon: Receipt },
+    { name: 'عمليات الشحن', href: '/charge-history', icon: Cpu },
+    { name: 'الخدمات', href: '/services', icon: Printer },
+    { name: 'التذاكر', href: '/tickets', icon: Train },
     { name: 'محفظتي والتحويلات', href: '/wallet', icon: Wallet, badge: pendingTransfers },
-    { name: 'تسجيل الخدمات والطباعة', href: '/services', icon: Printer },
-    { name: 'حجوزات التذاكر', href: '/tickets', icon: Train },
-    { name: 'الخدمات المالية والماكينات', href: '/machines', icon: Cpu },
     { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
-    { name: 'الشفتات وساعات العمل', href: '/shifts', icon: Clock },
+    { name: 'سجل الشفتات', href: '/shifts-history', icon: History },
     ...(isManager ? [
       { name: 'إدارة الموظفين والحسابات', href: '/manager/users', icon: Users },
       { name: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Settings },
+      { name: 'تصنيفات المصروفات', href: '/manager/categories', icon: FolderTree },
+      { name: 'الملاحظات', href: '/manager/notes', icon: FileText },
       { name: 'تقارير الأرباح واللوج', href: '/manager/reports', icon: BarChart3 },
       { name: 'محافظ الموظفين والخزينة', href: '/manager/wallets', icon: Users },
     ] : [])
