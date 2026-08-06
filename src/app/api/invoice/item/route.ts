@@ -48,20 +48,27 @@ export async function DELETE(req: Request) {
         if (!externalWallet) throw new Error('المحفظة غير موجودة');
 
         if (trans.transaction_type === 'إيداع') {
-          // It was a deposit (we subtracted from custody, added to external wallet)
-          // Revert: Add back to custody, subtract from external wallet
-          await WalletService.adjustEmployeeWallet(trans.employee_id!, totalAmount, tx);
-          await tx.external_wallets.update({
-            where: { id: trans.wallet_id! },
-            data: { actual_balance: { decrement: Number(trans.amount) } }
-          });
-        } else if (trans.transaction_type === 'سحب') {
-          // It was a withdrawal (we added to custody, subtracted from external wallet)
+          // It was a deposit (we subtracted from custody, added to external wallet) -> WAIT NO: 
+          // New logic: It was a deposit (we added to custody, subtracted from external wallet)
           // Revert: Subtract from custody, add back to external wallet
           await WalletService.adjustEmployeeWallet(trans.employee_id!, -totalAmount, tx);
           await tx.external_wallets.update({
             where: { id: trans.wallet_id! },
-            data: { actual_balance: { increment: Number(trans.amount) } }
+            data: { 
+              current_balance: { increment: Number(trans.amount) },
+              actual_balance: { increment: Number(trans.amount) } 
+            }
+          });
+        } else if (trans.transaction_type === 'سحب') {
+          // New logic: It was a withdrawal (we subtracted from custody, added to external wallet)
+          // Revert: Add to custody, subtract from external wallet
+          await WalletService.adjustEmployeeWallet(trans.employee_id!, totalAmount, tx);
+          await tx.external_wallets.update({
+            where: { id: trans.wallet_id! },
+            data: { 
+              current_balance: { decrement: Number(trans.amount) },
+              actual_balance: { decrement: Number(trans.amount) } 
+            }
           });
         }
         

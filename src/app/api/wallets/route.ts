@@ -110,11 +110,12 @@ export async function POST(req: Request) {
         }
       });
 
-      const balanceChange = transactionType === 'إيداع' ? numAmount : -numAmount;
+      const balanceChange = transactionType === 'إيداع' ? -numAmount : numAmount;
       await tx.external_wallets.update({
         where: { id: walletId },
         data: {
-          current_balance: { increment: balanceChange }
+          current_balance: { increment: balanceChange },
+          actual_balance: { increment: balanceChange }
         }
       });
 
