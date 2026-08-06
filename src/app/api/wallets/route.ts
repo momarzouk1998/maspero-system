@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Machine Deposit / Withdrawal transaction
-    const { walletId, transactionType, amount, commission, description } = body;
+    const { walletId, transactionType, amount, commission, description, invoice_code } = body;
 
     const wallet = await db.external_wallets.findUnique({
       where: { id: walletId }
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     const numAmount = Number(amount);
     const numCommission = Number(commission || 0);
     const today = new Date();
-    const invoiceCode = Math.random().toString(36).substring(2, 10);
+    const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
     const transaction = await db.$transaction(async (tx) => {
       const log = await tx.wallet_transactions.create({

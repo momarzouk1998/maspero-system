@@ -41,14 +41,14 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { serviceId, serviceName, paperCount, pageCount, faceType, amount, notes } = await req.json();
+    const { serviceId, serviceName, paperCount, pageCount, faceType, amount, notes, invoice_code } = await req.json();
 
     if (!serviceName || amount === undefined) {
       return NextResponse.json({ error: 'برجاء استكمال البيانات المطلوبة' }, { status: 400 });
     }
 
     const numAmount = Number(amount);
-    const invoiceCode = Math.random().toString(36).substring(2, 10);
+    const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
     const today = new Date();
 
     const result = await db.$transaction(async (tx) => {

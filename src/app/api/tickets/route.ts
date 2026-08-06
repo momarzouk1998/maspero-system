@@ -35,13 +35,13 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { itemCount, ticketPrice, ticketCommission, notes } = await req.json();
+    const { itemCount, ticketPrice, ticketCommission, notes, invoice_code } = await req.json();
 
     const price = Number(ticketPrice || 0);
     const commission = Number(ticketCommission || 0);
     const totalAmount = price + commission;
     const today = new Date();
-    const invoiceCode = Math.random().toString(36).substring(2, 10);
+    const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
     const booking = await db.$transaction(async (tx) => {
       const created = await tx.train_ticket_bookings.create({

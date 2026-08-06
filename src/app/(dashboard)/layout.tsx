@@ -78,6 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
+    { name: 'نقطة البيع (POS)', href: '/pos', icon: Receipt },
     { name: 'محفظتي والتحويلات', href: '/wallet', icon: Wallet, badge: pendingTransfers },
     { name: 'تسجيل الخدمات والطباعة', href: '/services', icon: Printer },
     { name: 'حجوزات التذاكر', href: '/tickets', icon: Train },
