@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Clock, Play, Square, CheckCircle2, Wallet, ArrowRight, AlertCircle, Archive, ArrowUpRight, ArrowDownLeft, Send, CheckCircle, XCircle } from 'lucide-react';
+import { 
+  Clock, Play, Square, CheckCircle2, AlertTriangle, Wallet, ArrowRight, 
+  History, ArrowLeftRight, Check, X, ShieldAlert 
+} from 'lucide-react';
 
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<any[]>([]);
-  const [activeShift, setActiveShift] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -14,49 +16,20 @@ export default function ShiftsPage() {
   const [shiftNote, setShiftNote] = useState('');
   const [msg, setMsg] = useState('');
 
-  // Wallet & Handovers State
-  const [user, setUser] = useState<any>(null);
-  const [externalWallets, setExternalWallets] = useState<any[]>([]);
-  const [transfers, setTransfers] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  
-  // Drawer Modal
-  const [drawerAction, setDrawerAction] = useState<'deposit' | 'claim' | null>(null);
-  const [selectedDrawer, setSelectedDrawer] = useState<any>(null);
-  const [drawerAmount, setDrawerAmount] = useState('');
-  const [drawerNotes, setDrawerNotes] = useState('');
-  
-  // Send Transfer
-  const [receiverId, setReceiverId] = useState('');
+  // Cash / Wallet transfers state
+  const [users, setUsers] = useState<any[]>([]);
+  const [pendingTransfers, setPendingTransfers] = useState<any[]>([]);
+  const [transferReceiverId, setTransferReceiverId] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
   const [transferNote, setTransferNote] = useState('');
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchShifts = async () => {
     try {
-      const [shiftsRes, meRes, empRes, transferRes] = await Promise.all([
-        fetch('/api/shifts?page=1&limit=5'),
-        fetch('/api/auth/me'),
-        fetch('/api/wallets'),
-        fetch('/api/transfers?type=all')
-      ]);
-
-      if (shiftsRes.ok) {
-        const data = await shiftsRes.json();
+      const res = await fetch(`/api/shifts?page=1&limit=10`);
+      if (res.ok) {
+        const data = await res.json();
         setShifts(data.shifts || []);
-        setActiveShift(data.shifts?.find((s: any) => !s.end_time) || null);
-      }
-      if (meRes.ok) {
-        const data = await meRes.json();
-        setUser(data.user);
-      }
-      if (empRes.ok) {
-        const data = await empRes.json();
-        setExternalWallets(data.externalWallets || []);
-        setEmployees(data.employeeWallets || []);
-      }
-      if (transferRes.ok) {
-        const data = await transferRes.json();
-        setTransfers(data.transfers || []);
       }
     } catch (e) {
       console.error(e);
@@ -65,25 +38,47 @@ export default function ShiftsPage() {
     }
   };
 
+  const fetchTransfersData = async () => {
+    try {
+      const [tRes, uRes] = await Promise.all([
+        fetch('/api/transfers?type=pending'),
+        fetch('/api/users')
+      ]);
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        setPendingTransfers(tData.transfers || []);
+      }
+      if (uRes.ok) {
+        const uData = await uRes.json();
+        setUsers(uData.users || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchShifts();
+    fetchTransfersData();
   }, []);
 
   const handleStartShift = async () => {
     setSubmitting(true);
     setMsg('');
+
     try {
       const res = await fetch('/api/shifts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'start', shiftType, shiftNote })
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل بدء الشفت');
 
-      setMsg('تم بدء الشفت بنجاح 🎉 يمكنك الآن استلام العهدة');
+      setMsg('تم بدء الشفت بنجاح 🎉 يمكنك استلام العهدة والمحافظ مباشرة من الأسفل');
       setShiftNote('');
-      fetchData();
+      fetchShifts();
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -91,21 +86,24 @@ export default function ShiftsPage() {
     }
   };
 
+  const activeShift = shifts.find((s) => !s.end_time);
+
   const handleEndShift = async (shiftId: string) => {
-    if(!confirm("هل أنت متأكد من إنهاء الشفت؟ تأكد من تسليم عهدتك النقدية أولاً.")) return;
     setSubmitting(true);
     setMsg('');
+
     try {
       const res = await fetch('/api/shifts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'end', shiftId, shiftNote })
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل إنهاء الشفت');
 
       setMsg('تم إنهاء الشفت بنجاح ✅');
-      fetchData();
+      fetchShifts();
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -113,116 +111,86 @@ export default function ShiftsPage() {
     }
   };
 
-  // Drawer Submit
-  const handleDrawerSubmit = async (e: React.FormEvent) => {
+  // Handle send cash / custody transfer
+  const handleSendTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDrawer || !drawerAction || !drawerAmount || Number(drawerAmount) <= 0) {
-      alert('يرجى إدخال مبلغ صحيح');
-      return;
-    }
-    setSubmitting(true);
+    if (!transferReceiverId || !transferAmount) return;
+
+    setTransferSubmitting(true);
     try {
-      const res = await fetch('/api/wallets/drawer', {
+      const res = await fetch('/api/transfers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          drawerId: selectedDrawer.id,
-          action: drawerAction,
-          amount: Number(drawerAmount),
-          notes: drawerNotes
+          action: 'send',
+          receiverId: transferReceiverId,
+          amount: parseFloat(transferAmount),
+          note: transferNote
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل العملية');
-      alert(data.message || 'تمت العملية بنجاح 🎉');
-      setDrawerAction(null);
-      setSelectedDrawer(null);
-      setDrawerAmount('');
-      setDrawerNotes('');
-      fetchData();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
-  // Send Cash
-  const handleSendTransfer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!receiverId || !transferAmount || Number(transferAmount) <= 0) {
-      alert('يرجى إدخال مبلغ صحيح واختيار موظف');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch('/api/transfers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', receiverId, amount: Number(transferAmount), note: transferNote })
-      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل الإرسال');
-      alert('تم إرسال العهدة بنجاح بانتظار القبول');
+      if (!res.ok) throw new Error(data.error || 'فشل تسليم العهدة');
+
+      alert('تم إرسال العهدة بنجاح بانتظار موافقة المستلم 👍');
       setTransferAmount('');
       setTransferNote('');
-      setReceiverId('');
-      fetchData();
+      fetchTransfersData();
     } catch (err: any) {
       alert(err.message);
     } finally {
-      setSubmitting(false);
+      setTransferSubmitting(false);
     }
   };
 
-  // Accept/Reject Transfer
-  const handleTransferAction = async (transferId: string, action: 'accept' | 'reject') => {
-    setSubmitting(true);
+  // Handle accept/reject transfer
+  const handleRespondTransfer = async (transferId: string, status: 'ACCEPTED' | 'REJECTED') => {
     try {
       const res = await fetch('/api/transfers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, transferId })
+        body: JSON.stringify({
+          action: 'respond',
+          transferId,
+          status
+        })
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل الإجراء');
-      fetchData();
+      if (!res.ok) throw new Error(data.error || 'فشل معالجة الطلب');
+
+      alert(status === 'ACCEPTED' ? 'تم استلام العهدة بنجاح ✅' : 'تم رفض التسليم ❌');
+      fetchTransfersData();
     } catch (err: any) {
       alert(err.message);
-    } finally {
-      setSubmitting(false);
     }
   };
-
-  const drawersList = externalWallets.filter((w) => w.wallet_type === 'درج كاش' || w.wallet_type === 'درج');
-  const pendingIncoming = transfers.filter((t) => t.receiver_id === user?.id && t.status === 'PENDING');
-
-  if (loading) return <div className="text-center p-10 text-slate-400">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
       {/* Title */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Clock className="w-7 h-7 text-cyan-400" />
-            <span>إدارة الشفتات والعهد</span>
-          </h1>
-        </div>
-        <div className="text-left">
-          <p className="text-sm text-slate-400">عهدتك الحالية</p>
-          <p className={`text-2xl font-extrabold ${Number(user?.wallet_balance || 0) < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-            {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')} <span className="text-xs">ج.م</span>
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <Clock className="w-7 h-7 text-cyan-400" />
+          <span>إدارة الشفتات</span>
+        </h1>
+
+        <Link
+          href="/shifts-history"
+          className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-2 transition-all"
+        >
+          <History className="w-4 h-4" />
+          <span>سجل الشفتات الكامل</span>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Active Shift & Actions Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Card 1: Start / End Current Shift */}
         <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-cyan-400" />
-            <span>حالة الشفت</span>
+            <span>حالة الشفت الحالي</span>
           </h2>
 
           {msg && (
@@ -233,131 +201,179 @@ export default function ShiftsPage() {
           )}
 
           {activeShift ? (
-            <div className="p-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 space-y-3 text-right">
+            <div className="p-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 space-y-4 text-right">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2.5 py-1 rounded-lg">شفت نشط الآن</span>
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-lg">
+                  شفت نشط الآن
+                </span>
                 <span className="text-xs text-slate-400">{activeShift.shift_type}</span>
               </div>
-              <p className="text-sm text-slate-300">
-                البداية: <span className="font-bold text-white">{new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}</span>
-              </p>
-              <button
-                onClick={() => handleEndShift(activeShift.id)}
-                disabled={submitting}
-                className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <Square className="w-4 h-4" />
-                <span>إنهاء الشفت</span>
-              </button>
+              
+              <div className="space-y-1">
+                <p className="text-sm text-slate-300">
+                  وقت البداية: <span className="font-bold text-white">{new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}</span>
+                </p>
+                <p className="text-xs text-slate-400">
+                  الموظف: <span className="text-slate-200">{activeShift.employee_name || 'أنت'}</span>
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <input
+                  type="text"
+                  value={shiftNote}
+                  onChange={(e) => setShiftNote(e.target.value)}
+                  placeholder="ملاحظات عند إغلاق الشفت (اختياري)..."
+                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-red-500 mb-3"
+                />
+                <button
+                  onClick={() => handleEndShift(activeShift.id)}
+                  disabled={submitting}
+                  className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Square className="w-4 h-4" />
+                  <span>إنهاء الشفت الحالي</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">نوع الشفت</label>
-                <select value={shiftType} onChange={(e) => setShiftType(e.target.value)} className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm">
+                <select
+                  value={shiftType}
+                  onChange={(e) => setShiftType(e.target.value)}
+                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
+                >
                   <option value="صباحي">صباحي (Morning)</option>
                   <option value="مسائي">مسائي (Evening)</option>
                 </select>
               </div>
+
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">ملاحظات الشفت</label>
-                <input type="text" value={shiftNote} onChange={(e) => setShiftNote(e.target.value)} className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm" />
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">ملاحظات البداية</label>
+                <input
+                  type="text"
+                  value={shiftNote}
+                  onChange={(e) => setShiftNote(e.target.value)}
+                  placeholder="ملاحظات عند بدء الشفت..."
+                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
+                />
               </div>
+
               <button
                 onClick={handleStartShift}
                 disabled={submitting}
                 className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Play className="w-4 h-4" />
-                <span>بدء الشفت</span>
+                <span>بدء شفت جديد</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Wallets & Drawer Handovers */}
-        <div className="lg:col-span-2 space-y-6">
-          {pendingIncoming.length > 0 && (
-            <div className="glass-panel p-5 rounded-3xl border border-amber-500/40 bg-amber-500/5 space-y-3">
-              <h3 className="text-amber-400 font-bold text-sm flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 animate-pulse" />
-                طلبات استلام عهدة مرسلة إليك
+        {/* Card 2: Handover / Receive Custody & Cash Drawer */}
+        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <ArrowLeftRight className="w-5 h-5 text-emerald-400" />
+            <span>تسليم واستلام العهدة والمحافظ والدرج</span>
+          </h2>
+
+          {/* Pending Custody Requests to Accept */}
+          {pendingTransfers.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 animate-pulse" />
+                <span>طلبات استلام معلقة تنتظر موافقتك:</span>
               </h3>
-              {pendingIncoming.map((t) => (
-                <div key={t.id} className="p-3 bg-slate-900/80 rounded-xl border border-amber-500/20 flex items-center justify-between">
+              {pendingTransfers.map((t) => (
+                <div key={t.id} className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
                   <div>
-                    <p className="text-xs text-slate-400">من: <span className="text-white">{t.sender_name}</span></p>
-                    <p className="text-xl font-bold text-emerald-400">{Number(t.amount)} ج</p>
+                    <p className="font-bold text-white">من: {t.sender_name}</p>
+                    <p className="text-amber-300 font-mono font-extrabold mt-0.5">المبلغ: {Number(t.amount).toFixed(2)} ج.م</p>
+                    {t.sender_note && <p className="text-slate-400 text-[10px]">{t.sender_note}</p>}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleTransferAction(t.id, 'accept')} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"><CheckCircle className="w-4 h-4"/> قبول</button>
-                    <button onClick={() => handleTransferAction(t.id, 'reject')} className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-xs font-bold border border-red-500/30">رفض</button>
+                    <button
+                      onClick={() => handleRespondTransfer(t.id, 'ACCEPTED')}
+                      className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1"
+                      title="موافقة واستلام"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>استلام</span>
+                    </button>
+                    <button
+                      onClick={() => handleRespondTransfer(t.id, 'REJECTED')}
+                      className="p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg font-bold flex items-center gap-1"
+                      title="رفض"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Send className="w-5 h-5 text-blue-400" />
-                <span>تسليم نقدية (لموظف آخر)</span>
-              </h2>
-              <form onSubmit={handleSendTransfer} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <select required value={receiverId} onChange={(e) => setReceiverId(e.target.value)} className="p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm">
+          {/* Form to Send/Handover Custody */}
+          <form onSubmit={handleSendTransfer} className="space-y-4 pt-1 border-t border-slate-800">
+            <h3 className="text-xs font-bold text-slate-300">تسليم عهدة / ماكينة لموظف آخر:</h3>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">الموظف المستلم</label>
+                <select
+                  required
+                  value={transferReceiverId}
+                  onChange={(e) => setTransferReceiverId(e.target.value)}
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                >
                   <option value="">-- اختر الموظف --</option>
-                  {employees.filter(emp => emp.id !== user?.id).map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.role === 'manager' ? 'مدير' : 'موظف'})</option>
                   ))}
                 </select>
-                <input required type="number" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} placeholder="المبلغ" className="p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm" />
-                <button type="submit" disabled={submitting} className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold disabled:opacity-50">إرسال العهدة</button>
-              </form>
-          </div>
-
-          <div className="glass-panel p-6 rounded-3xl border border-purple-500/20 bg-purple-950/10 space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Archive className="w-5 h-5 text-purple-400" />
-              <span>استلام وتسليم أدراج الكاش</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {drawersList.map((drawer) => (
-                <div key={drawer.id} className="p-4 rounded-xl border border-purple-500/30 bg-slate-900/80 space-y-3">
-                  <div className="text-center">
-                    <h3 className="font-bold text-white text-sm">{drawer.wallet_name}</h3>
-                    <p className="text-lg font-extrabold text-purple-300">{Number(drawer.current_balance)} <span className="text-xs font-normal">ج</span></p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setSelectedDrawer(drawer); setDrawerAction('deposit'); }} className="flex-1 py-1.5 bg-purple-600/30 text-purple-300 rounded-lg text-xs font-bold">تسليم (إيداع)</button>
-                    <button onClick={() => { setSelectedDrawer(drawer); setDrawerAction('claim'); }} className="flex-1 py-1.5 bg-emerald-600/30 text-emerald-300 rounded-lg text-xs font-bold">استلام (سحب)</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Drawer Action Modal */}
-      {drawerAction && selectedDrawer && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-3xl border border-purple-500/40 bg-slate-900 w-full max-w-sm space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Archive className="w-5 h-5 text-purple-400" />
-              <span>{drawerAction === 'deposit' ? 'تسليم بدرج' : 'استلام من'} {selectedDrawer.wallet_name}</span>
-            </h3>
-            <form onSubmit={handleDrawerSubmit} className="space-y-4">
-              <input type="number" required value={drawerAmount} onChange={(e) => setDrawerAmount(e.target.value)} placeholder="المبلغ" className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" />
-              <textarea value={drawerNotes} onChange={(e) => setDrawerNotes(e.target.value)} placeholder="ملاحظات..." className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white resize-none" />
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { setDrawerAction(null); setSelectedDrawer(null); }} className="flex-1 py-2.5 text-slate-400">إلغاء</button>
-                <button type="submit" disabled={submitting} className={`flex-1 py-2.5 rounded-xl text-white font-bold ${drawerAction === 'deposit' ? 'bg-purple-600' : 'bg-emerald-600'}`}>تأكيد</button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">المبلغ المالي</label>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  required
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  placeholder="المبلغ ج.م"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-400 mb-1">بيان العهدة / ملاحظات التسليم</label>
+              <input
+                type="text"
+                value={transferNote}
+                onChange={(e) => setTransferNote(e.target.value)}
+                placeholder="مثال: تسليم عهدة ماكينة فوري أو كاش الدرج..."
+                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={transferSubmitting}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+              <span>إرسال طلب تسليم العهدة</span>
+            </button>
+          </form>
+        </div>
+
+      </div>
     </div>
   );
 }

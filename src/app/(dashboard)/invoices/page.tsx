@@ -1,56 +1,45 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Receipt, Search, Filter, Printer, X, Eye } from 'lucide-react';
+import { 
+  FileSpreadsheet, Search, Filter, Calendar, X, Printer, Receipt, 
+  ChevronLeft, ChevronRight, RefreshCw, Eye, User
+} from 'lucide-react';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
 
 export default function InvoicesHistoryPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  // Filters
-  const [showFilter, setShowFilter] = useState(false);
-  const [employeeId, setEmployeeId] = useState('');
-  const [date, setDate] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('');
-  
-  const [users, setUsers] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // Selected Invoice for Drawer Details
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [drawerData, setDrawerData] = useState<{
+    invoice_code: string;
+    items: InvoiceItem[];
+    total: number;
+    employeeName: string;
+    timestamp: string;
+  } | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
 
-  // Side Panel State
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [invoiceDetails, setInvoiceDetails] = useState<any>(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  
   const printRef = useRef<HTMLDivElement>(null);
 
-  const fetchData = async (page = 1) => {
+  const fetchInvoices = async (page = 1) => {
     setLoading(true);
     try {
-      // Fetch users for admin filter
-      if (!currentUser) {
-        const meRes = await fetch('/api/auth/me');
-        if (meRes.ok) {
-          const data = await meRes.json();
-          setCurrentUser(data.user);
-          if (data.user?.role === 'manager') {
-            const usersRes = await fetch('/api/users');
-            if (usersRes.ok) {
-              const usersData = await usersRes.json();
-              setUsers(usersData.users || []);
-            }
-          }
-        }
-      }
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        search,
+        startDate,
+        endDate
+      });
 
-      // Fetch invoices
-      let url = `/api/invoices/history?page=${page}&limit=25`;
-      if (employeeId) url += `&employee_id=${employeeId}`;
-      if (date) url += `&date=${date}`;
-      if (invoiceNumber) url += `&invoice_number=${invoiceNumber}`;
-
-      const res = await fetch(url);
+      const res = await fetch(`/api/invoices?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setInvoices(data.invoices || []);
@@ -64,301 +53,307 @@ export default function InvoicesHistoryPage() {
   };
 
   useEffect(() => {
-    fetchData(1);
-  }, [employeeId, date, invoiceNumber]);
+    const timer = setTimeout(() => {
+      fetchInvoices(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, startDate, endDate]);
 
-  const handleOpenDetails = async (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setLoadingDetails(true);
+  // Open Drawer and fetch details for selected invoice
+  const handleOpenDrawer = async (code: string) => {
+    setSelectedCode(code);
+    setDrawerLoading(true);
+    setDrawerData(null);
     try {
-      const res = await fetch(`/api/invoice?code=${invoice.invoice_number}`);
+      const res = await fetch(`/api/invoice?code=${code}`);
       if (res.ok) {
         const data = await res.json();
-        setInvoiceDetails(data);
-      } else {
-        setInvoiceDetails({ items: [], total: invoice.total_invoice });
+        const formattedDate = data.timestamp 
+          ? new Date(data.timestamp).toLocaleString('ar-EG', {
+              year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            })
+          : '';
+
+        setDrawerData({
+          invoice_code: data.invoice_code,
+          items: data.items || [],
+          total: data.total || 0,
+          employeeName: data.employeeName || 'غير محدد',
+          timestamp: formattedDate
+        });
       }
     } catch (e) {
       console.error(e);
-      setInvoiceDetails({ items: [], total: invoice.total_invoice });
     } finally {
-      setLoadingDetails(false);
+      setDrawerLoading(false);
     }
   };
 
-  const handlePrint = () => {
-    if (!printRef.current || !invoiceDetails) return;
+  const handlePrint = (mode: 'cashier' | 'normal') => {
+    const parent = document.body;
+    parent.classList.add(mode === 'cashier' ? 'cashier-print' : 'normal-print');
     
-    // Create print window
-    const printWindow = window.open('', '', 'width=800,height=600');
-    if (!printWindow) return;
-    
-    const isKiosk = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>طباعة الفاتورة - ${selectedInvoice?.invoice_number}</title>
-          <style>
-            @media print {
-              body { margin: 0; padding: 0; background: white; }
-              /* Force cashier print width */
-              .invoice-print-container { width: 80mm !important; margin: 0 auto !important; }
-              .invoice-print-container .container { border: none !important; box-shadow: none !important; }
-            }
-          </style>
-        </head>
-        <body class="cashier-print">
-          ${printRef.current.innerHTML}
-          <script>
-            setTimeout(() => {
-              window.print();
-              ${isKiosk ? '' : 'window.close();'}
-            }, 500);
-          </script>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
+    setTimeout(() => {
+      window.print();
+      parent.classList.remove(mode === 'cashier' ? 'cashier-print' : 'normal-print');
+    }, 100);
   };
 
   return (
-    <div className="flex h-[calc(100vh-80px)] overflow-hidden">
-      {/* Main Content */}
-      <div className={`flex-1 overflow-y-auto space-y-6 pr-2 ${selectedInvoice ? 'hidden lg:block' : 'block'}`}>
-        {/* Title & Actions */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Receipt className="w-7 h-7 text-cyan-400" />
-              <span>سجل الفواتير</span>
-            </h1>
-            <p className="text-slate-400 text-sm">
-              عرض تفاصيل الفواتير المسجلة وإعادة طباعتها
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="رقم الفاتورة..."
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                className="w-full pl-3 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-            <button
-              onClick={() => setShowFilter(!showFilter)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 border border-slate-700 transition-colors shrink-0"
-            >
-              <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">تصفية</span>
-            </button>
-          </div>
+    <div className="space-y-6 relative">
+      {/* Header */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <FileSpreadsheet className="w-7 h-7 text-emerald-400" />
+            <span>سجل الفواتير</span>
+          </h1>
+          <p className="text-slate-400 text-xs mt-1">
+            عرض وتتبع الفواتير الصادرة وإعادة طباعتها عند الحاجة
+          </p>
         </div>
 
-        {/* Filter Modal */}
-        {showFilter && (
-          <div className="glass-panel p-5 rounded-2xl border border-slate-700/60 bg-slate-800/40 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {currentUser?.role === 'manager' && (
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">الموظف</label>
-                <select
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
-                >
-                  <option value="">جميع الموظفين</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">التاريخ</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
-              />
-            </div>
-            <div className="flex items-end gap-2">
+        {/* Filters & Search */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث برقم الفاتورة أو الموظف..."
+              className="pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500 w-64"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none"
+            />
+            <span className="text-slate-500 text-xs">إلى</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Invoices Table */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-4 py-3">رقم الفاتورة</th>
+                <th className="px-4 py-3">التاريخ والوقت</th>
+                <th className="px-4 py-3">الكاشير / الموظف</th>
+                <th className="px-4 py-3">عدد العناصر</th>
+                <th className="px-4 py-3">إجمالي الفاتورة</th>
+                <th className="px-4 py-3 text-center">التفاصيل</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-400" />
+                    <span>جاري تحميل سجل الفواتير...</span>
+                  </td>
+                </tr>
+              ) : invoices.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-slate-500">
+                    لا توجد فواتير مسجلة
+                  </td>
+                </tr>
+              ) : (
+                invoices.map((inv) => (
+                  <tr
+                    key={inv.code}
+                    onClick={() => handleOpenDrawer(inv.code)}
+                    className="hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-4 py-3 font-mono font-bold text-emerald-400 group-hover:underline">
+                      {inv.code}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-400">
+                      {inv.timestamp ? new Date(inv.timestamp).toLocaleString('ar-EG') : '-'}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-white">{inv.employeeName}</td>
+                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">{inv.itemCount} عناصر</td>
+                    <td className="px-4 py-3 font-bold font-mono text-white text-base">
+                      {Number(inv.total).toFixed(2)} ج.م
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDrawer(inv.code);
+                        }}
+                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs flex items-center justify-center gap-1 mx-auto transition-colors"
+                      >
+                        <Eye className="w-4 h-4 text-emerald-400" />
+                        <span>عرض</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+            <span className="text-xs text-slate-400">
+              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+            </span>
+            <div className="flex gap-2">
               <button
-                onClick={() => { setEmployeeId(''); setDate(''); }}
-                className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium"
+                disabled={pagination.page <= 1}
+                onClick={() => fetchInvoices(pagination.page - 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
               >
-                إعادة ضبط الفلاتر
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchInvoices(pagination.page + 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
-
-        {/* Invoices List */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-          {loading ? (
-            <div className="p-10 text-center text-slate-400">جاري تحميل الفواتير...</div>
-          ) : invoices.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">لا توجد فواتير تطابق بحثك</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm text-slate-300">
-                <thead className="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
-                  <tr>
-                    <th className="px-4 py-3">رقم الفاتورة</th>
-                    <th className="px-4 py-3">الموظف</th>
-                    <th className="px-4 py-3">التاريخ والوقت</th>
-                    <th className="px-4 py-3">الإجمالي</th>
-                    <th className="px-4 py-3 text-center">التفاصيل</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {invoices.map((inv) => (
-                    <tr 
-                      key={inv.id} 
-                      className={`hover:bg-slate-800/40 transition-colors ${selectedInvoice?.id === inv.id ? 'bg-slate-800/60 border-l-2 border-cyan-500' : ''}`}
-                    >
-                      <td className="px-4 py-3 font-mono text-cyan-400">{inv.invoice_number}</td>
-                      <td className="px-4 py-3 font-medium text-white">{inv.employee_name || '-'}</td>
-                      <td className="px-4 py-3 text-xs text-slate-400">
-                        {new Date(inv.timestamp || inv.date).toLocaleString('ar-EG')}
-                      </td>
-                      <td className="px-4 py-3 font-extrabold text-emerald-400">
-                        {Number(inv.total_invoice).toLocaleString('ar-EG')} ج
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleOpenDetails(inv)}
-                          className="p-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors inline-flex"
-                          title="عرض التفاصيل"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                  {Array.from({ length: pagination.totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => fetchData(i + 1)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold ${
-                        pagination.page === i + 1
-                          ? 'bg-cyan-600 text-white'
-                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Side Panel for Details */}
-      {selectedInvoice && (
-        <div className="w-full lg:w-96 border-r border-slate-800 bg-slate-900/50 flex flex-col shrink-0 h-full">
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-            <h3 className="font-bold text-white flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-cyan-400" />
-              <span>تفاصيل الفاتورة</span>
-            </h3>
-            <button
-              onClick={() => setSelectedInvoice(null)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="p-5 flex-1 overflow-y-auto space-y-4">
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">رقم الفاتورة</span>
-                <span className="font-mono text-sm text-cyan-400">{selectedInvoice.invoice_number}</span>
+      {/* Slide-over Drawer for Invoice Details */}
+      {selectedCode && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex justify-end">
+          <div className="w-full max-w-lg bg-[#0f172a] h-full border-r border-slate-800 p-6 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto custom-scrollbar">
+            
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-400" />
+                  <span>تفاصيل الفاتورة</span>
+                </h3>
+                <p className="text-xs text-emerald-400 font-mono mt-0.5">{selectedCode}</p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">التاريخ</span>
-                <span className="text-sm text-white">{new Date(selectedInvoice.timestamp || selectedInvoice.date).toLocaleString('ar-EG')}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">الموظف</span>
-                <span className="text-sm text-white">{selectedInvoice.employee_name}</span>
-              </div>
+              <button
+                onClick={() => setSelectedCode(null)}
+                className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/80"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {loadingDetails ? (
-              <div className="text-center p-8 text-slate-400">جاري جلب تفاصيل العناصر...</div>
-            ) : invoiceDetails ? (
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">عناصر الفاتورة ({invoiceDetails.items?.length || 0})</h4>
-                {invoiceDetails.items?.length > 0 ? (
-                  <div className="space-y-2">
-                    {invoiceDetails.items.map((item: any) => (
-                      <div key={item.id} className="p-3 bg-slate-800/30 border border-slate-700/40 rounded-xl">
-                        <div className="flex items-start justify-between mb-1">
-                          <span className="text-sm font-bold text-white">{item.name}</span>
-                          <span className="text-sm font-bold text-emerald-400">{Number(item.total).toLocaleString('ar-EG')} ج</span>
-                        </div>
-                        <div className="flex gap-3 text-xs text-slate-400">
-                          <span>الكمية: {item.count}</span>
-                          {item.price > 0 && <span>السعر: {Number(item.price).toLocaleString('ar-EG')}</span>}
-                          <span>[{item.type}]</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center p-4 text-xs text-slate-500">
-                    لا توجد عناصر مسجلة تحت هذا الكود حالياً (قد تكون تم حذفها أو تجميعها قديماً).
-                  </div>
-                )}
-                
-                <div className="pt-4 border-t border-slate-700 flex justify-between items-center">
-                  <span className="font-bold text-white">إجمالي الفاتورة</span>
-                  <span className="text-xl font-extrabold text-emerald-400">
-                    {Number(invoiceDetails.total || selectedInvoice.total_invoice).toLocaleString('ar-EG')} ج.م
-                  </span>
+            {/* Drawer Content */}
+            <div className="flex-1 py-6 space-y-6">
+              {drawerLoading ? (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-2">
+                  <RefreshCw className="w-7 h-7 text-emerald-400 animate-spin" />
+                  <span className="text-xs">جاري تحميل تفاصيل الفاتورة...</span>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : drawerData ? (
+                <>
+                  {/* Meta Info */}
+                  <div className="grid grid-cols-2 gap-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-xs">
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">الكاشير / الموظف</span>
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-emerald-400" />
+                        {drawerData.employeeName}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">التاريخ والوقت</span>
+                      <span className="font-bold text-white">{drawerData.timestamp}</span>
+                    </div>
+                  </div>
 
-          <div className="p-4 border-t border-slate-800 bg-slate-900">
-            <button
-              onClick={handlePrint}
-              disabled={loadingDetails || !invoiceDetails}
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl shadow-lg border border-slate-700 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-            >
-              <Printer className="w-5 h-5 text-slate-300" />
-              <span>إعادة طباعة كاشير</span>
-            </button>
+                  {/* Items Breakdown Table */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-400">عناصر الفاتورة ({drawerData.items.length}):</h4>
+                    <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+                      <table className="w-full text-right text-xs text-slate-300">
+                        <thead className="bg-slate-800/60 text-slate-400 font-semibold border-b border-slate-800">
+                          <tr>
+                            <th className="px-3 py-2.5">الخدمة / المنتج</th>
+                            <th className="px-3 py-2.5">الكمية</th>
+                            <th className="px-3 py-2.5">السعر</th>
+                            <th className="px-3 py-2.5">الإجمالي</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/50">
+                          {drawerData.items.map((item, idx) => (
+                            <tr key={idx}>
+                              <td className="px-3 py-2.5 font-medium text-white">{item.name}</td>
+                              <td className="px-3 py-2.5 font-mono">{item.count}</td>
+                              <td className="px-3 py-2.5 font-mono">{item.price} ج</td>
+                              <td className="px-3 py-2.5 font-mono font-bold text-emerald-400">{item.total} ج</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Grand Total */}
+                  <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex justify-between items-center">
+                    <span className="text-slate-400 font-bold text-sm">الإجمالي الكلي</span>
+                    <span className="text-2xl font-bold font-mono text-emerald-400">
+                      {drawerData.total} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                    </span>
+                  </div>
+
+                  {/* Print Buttons */}
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                    <button
+                      onClick={() => handlePrint('cashier')}
+                      className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>إعادة طباعة كاشير</span>
+                    </button>
+                    <button
+                      onClick={() => handlePrint('normal')}
+                      className="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                    >
+                      <Receipt className="w-4 h-4" />
+                      <span>طباعة A4</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-slate-500 py-12">تعذر تحميل بيانات الفاتورة</div>
+              )}
+            </div>
           </div>
         </div>
       )}
-      
-      {/* Hidden Print Container */}
-      {selectedInvoice && invoiceDetails && (
+
+      {/* Hidden Print Component */}
+      {drawerData && (
         <InvoicePrint
           ref={printRef}
-          invoiceCode={selectedInvoice.invoice_number}
-          timestamp={new Date(selectedInvoice.timestamp || selectedInvoice.date).toLocaleString('ar-EG')}
-          employeeName={selectedInvoice.employee_name}
-          items={invoiceDetails.items || []}
-          total={invoiceDetails.total || selectedInvoice.total_invoice}
-          isCashierPrint={true}
+          invoiceCode={drawerData.invoice_code}
+          timestamp={drawerData.timestamp}
+          employeeName={drawerData.employeeName}
+          items={drawerData.items}
+          total={drawerData.total}
+          isCashierPrint={false}
         />
       )}
     </div>

@@ -1,46 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cpu, Search, Filter } from 'lucide-react';
+import { 
+  Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
+  ArrowDownLeft, ArrowUpRight, Wallet, User
+} from 'lucide-react';
 
 export default function ChargeHistoryPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
-
-  // Filters
-  const [showFilter, setShowFilter] = useState(false);
-  const [employeeId, setEmployeeId] = useState('');
-  const [date, setDate] = useState('');
-  const [search, setSearch] = useState('');
   
-  const [users, setUsers] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const [transactionType, setTransactionType] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  const fetchData = async (page = 1) => {
+  const fetchTransactions = async (page = 1) => {
     setLoading(true);
     try {
-      if (!currentUser) {
-        const meRes = await fetch('/api/auth/me');
-        if (meRes.ok) {
-          const data = await meRes.json();
-          setCurrentUser(data.user);
-          if (data.user?.role === 'manager') {
-            const usersRes = await fetch('/api/users');
-            if (usersRes.ok) {
-              const usersData = await usersRes.json();
-              setUsers(usersData.users || []);
-            }
-          }
-        }
-      }
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '25',
+        search,
+        transactionType,
+        startDate,
+        endDate
+      });
 
-      let url = `/api/wallets/transactions?page=${page}&limit=25`;
-      if (employeeId) url += `&employee_id=${employeeId}`;
-      if (date) url += `&date=${date}`;
-      if (search) url += `&search=${search}`;
-
-      const res = await fetch(url);
+      const res = await fetch(`/api/charge-history?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setTransactions(data.transactions || []);
@@ -54,149 +42,169 @@ export default function ChargeHistoryPage() {
   };
 
   useEffect(() => {
-    fetchData(1);
-  }, [employeeId, date, search]);
+    const timer = setTimeout(() => {
+      fetchTransactions(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, transactionType, startDate, endDate]);
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Cpu className="w-7 h-7 text-cyan-400" />
-            <span>سجل عمليات الشحن والمحافظ</span>
+            <Zap className="w-7 h-7 text-amber-400" />
+            <span>سجل عمليات الشحن</span>
           </h1>
-          <p className="text-slate-400 text-sm">
-            عرض وتصفية السجل الكامل لعمليات الإيداع والسحب للمحافظ والماكينات
+          <p className="text-slate-400 text-xs mt-1">
+            متابعة حركات الإيداع والسحب لـ ماكينات فوري وبساطة ومحافظ كاش وفودافون كاش
           </p>
         </div>
-        
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="بحث باسم المحفظة، الملاحظات..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-3 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
+              placeholder="بحث بالماكينة، الموظف، رقم الفاتورة..."
+              className="pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500 w-64"
             />
           </div>
-          <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 border border-slate-700 transition-colors shrink-0"
+
+          <select
+            value={transactionType}
+            onChange={(e) => setTransactionType(e.target.value)}
+            className="py-2.5 px-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
           >
-            <Filter className="w-4 h-4" />
-            <span className="hidden sm:inline">تصفية</span>
-          </button>
+            <option value="">نوع العملية: الكل</option>
+            <option value="إيداع">إيداع (Deposit)</option>
+            <option value="سحب">سحب (Withdrawal)</option>
+          </select>
+
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none"
+            />
+            <span className="text-slate-500 text-xs">إلى</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-transparent text-xs text-white focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 
-      {showFilter && (
-        <div className="glass-panel p-5 rounded-2xl border border-slate-700/60 bg-slate-800/40 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {currentUser?.role === 'manager' && (
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">الموظف</label>
-              <select
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
-              >
-                <option value="">جميع الموظفين</option>
-                {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">التاريخ</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
-            />
-          </div>
-          <div className="flex items-end gap-2">
-            <button
-              onClick={() => { setEmployeeId(''); setDate(''); setSearch(''); }}
-              className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-medium"
-            >
-              إعادة ضبط الفلاتر
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Transactions Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-        {loading ? (
-          <div className="p-10 text-center text-slate-400">جاري تحميل السجل...</div>
-        ) : transactions.length === 0 ? (
-          <div className="p-10 text-center text-slate-400">لا توجد عمليات مسجلة تطابق بحثك</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm text-slate-300">
-              <thead className="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-4 py-3">المحفظة / الماكينة</th>
+                <th className="px-4 py-3">نوع العملية</th>
+                <th className="px-4 py-3">المبلغ</th>
+                <th className="px-4 py-3">العمولة</th>
+                <th className="px-4 py-3">الإجمالي المحصل</th>
+                <th className="px-4 py-3">الموظف</th>
+                <th className="px-4 py-3">كود الفاتورة</th>
+                <th className="px-4 py-3">التاريخ والوقت</th>
+                <th className="px-4 py-3">ملاحظات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {loading ? (
                 <tr>
-                  <th className="px-4 py-3">النوع</th>
-                  <th className="px-4 py-3">المحفظة / الماكينة</th>
-                  <th className="px-4 py-3">العملية</th>
-                  <th className="px-4 py-3">المبلغ</th>
-                  <th className="px-4 py-3">العمولة</th>
-                  <th className="px-4 py-3">الموظف</th>
-                  <th className="px-4 py-3">التاريخ</th>
+                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-400" />
+                    <span>جاري تحميل سجل عمليات الشحن...</span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {transactions.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                        {item.wallet_type || item.wallet?.wallet_type || '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-bold text-white">{item.wallet_name || item.wallet?.wallet_name || '-'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
-                        item.transaction_type === 'إيداع'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                      }`}>
-                        {item.transaction_type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-extrabold text-white">
-                      {Number(item.amount).toLocaleString('ar-EG')} ج
-                    </td>
-                    <td className="px-4 py-3 text-emerald-400 font-bold">
-                      {Number(item.wallet_commission).toLocaleString('ar-EG')} ج
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-300">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
-                      {new Date(item.timestamp || item.date).toLocaleString('ar-EG')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                    لا توجد عمليات شحن مسجلة تطابق التصفية
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((item) => {
+                  const amt = Number(item.amount || 0);
+                  const comm = Number(item.wallet_commission || 0);
+                  const totalCollected = item.transaction_type === 'إيداع' ? amt + comm : amt - comm;
 
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
-                {Array.from({ length: pagination.totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => fetchData(i + 1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold ${
-                      pagination.page === i + 1
-                        ? 'bg-cyan-600 text-white'
-                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="px-4 py-3 font-medium text-white flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span>{item.wallet_name || '-'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          item.transaction_type === 'إيداع'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        }`}>
+                          {item.transaction_type === 'إيداع' ? (
+                            <ArrowDownLeft className="w-3 h-3" />
+                          ) : (
+                            <ArrowUpRight className="w-3 h-3" />
+                          )}
+                          <span>{item.transaction_type}</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-white">{amt.toFixed(2)} ج.م</td>
+                      <td className="px-4 py-3 font-mono text-amber-400">{comm.toFixed(2)} ج.م</td>
+                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-400">{totalCollected.toFixed(2)} ج.م</td>
+                      <td className="px-4 py-3 text-xs text-slate-300">
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3 text-slate-500" />
+                          {item.employee_name || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-blue-400">{item.invoice_code || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-400">
+                        {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-400">{item.description || '-'}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+            <span className="text-xs text-slate-400">
+              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={pagination.page <= 1}
+                onClick={() => fetchTransactions(pagination.page - 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchTransactions(pagination.page + 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

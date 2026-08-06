@@ -1,43 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, Search, Filter } from 'lucide-react';
+import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ShiftsHistoryPage() {
   const [shifts, setShifts] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  // Filters
-  const [showFilter, setShowFilter] = useState(false);
-  const [employeeId, setEmployeeId] = useState('');
-  const [date, setDate] = useState('');
-  const [users, setUsers] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // Filter popup modal state
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterType, setFilterType] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [filterEmployeeId, setFilterEmployeeId] = useState('');
+  const [usersList, setUsersList] = useState<any[]>([]);
 
-  const fetchData = async (page = 1) => {
+  const fetchShifts = async (page = 1) => {
     setLoading(true);
     try {
-      // Fetch users for admin filter
-      const meRes = await fetch('/api/auth/me');
-      if (meRes.ok) {
-        const data = await meRes.json();
-        setCurrentUser(data.user);
-        if (data.user?.role === 'manager') {
-          const usersRes = await fetch('/api/users');
-          if (usersRes.ok) {
-            const usersData = await usersRes.json();
-            setUsers(usersData.users || []);
-          }
-        }
-      }
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        search,
+        shiftType: filterType,
+        startDate: filterStartDate,
+        endDate: filterEndDate,
+        employeeId: filterEmployeeId
+      });
 
-      // Fetch shifts
-      let url = `/api/shifts?page=${page}&limit=50`;
-      if (employeeId) url += `&employee_id=${employeeId}`;
-      if (date) url += `&date=${date}`;
-
-      const res = await fetch(url);
+      const res = await fetch(`/api/shifts?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setShifts(data.shifts || []);
@@ -51,115 +44,113 @@ export default function ShiftsHistoryPage() {
   };
 
   useEffect(() => {
-    fetchData(1);
-  }, [employeeId, date]);
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => setUsersList(data.users || []))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchShifts(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, filterType, filterStartDate, filterEndDate, filterEmployeeId]);
+
+  const resetFilters = () => {
+    setFilterType('');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setFilterEmployeeId('');
+    setSearch('');
+    setIsFilterOpen(false);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Title & Actions */}
+      {/* Title */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Clock className="w-7 h-7 text-cyan-400" />
             <span>سجل الشفتات</span>
           </h1>
-          <p className="text-slate-400 text-sm">
-            عرض وتصفية السجل الكامل لشفتات العمل السابقة والحالية
+          <p className="text-slate-400 text-xs mt-1">
+            سجل شامل لمتابعة جميع شفتات العمل وساعات الدوام
           </p>
         </div>
-        
-        <div className="flex gap-2">
+
+        {/* Search & Filter Trigger */}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالاسم أو الملاحظات..."
+              className="pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500 w-60"
+            />
+          </div>
+
           <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 border border-slate-700 transition-colors"
+            onClick={() => setIsFilterOpen(true)}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+              filterType || filterStartDate || filterEndDate || filterEmployeeId
+                ? 'bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/20'
+                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+            }`}
           >
             <Filter className="w-4 h-4" />
-            <span>تصفية متقدمة</span>
+            <span>تصفية</span>
+            {(filterType || filterStartDate || filterEndDate || filterEmployeeId) && (
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Filter Modal */}
-      {showFilter && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Filter className="w-5 h-5 text-cyan-400" />
-              <span>تصفية الشفتات</span>
-            </h3>
-
-            {currentUser?.role === 'manager' && (
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">الموظف</label>
-                <select
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm"
-                >
-                  <option value="">جميع الموظفين</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">التاريخ</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t border-slate-800">
-              <button
-                onClick={() => {
-                  setEmployeeId('');
-                  setDate('');
-                }}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-medium"
-              >
-                إعادة ضبط
-              </button>
-              <button
-                onClick={() => setShowFilter(false)}
-                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium"
-              >
-                تطبيق وإغلاق
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Shifts Log Table */}
+      {/* Shifts Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-        {loading ? (
-          <div className="p-10 text-center text-slate-400">جاري تحميل السجل...</div>
-        ) : shifts.length === 0 ? (
-          <div className="p-10 text-center text-slate-400">لا توجد شفتات مسجلة بهذه المواصفات</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm text-slate-300">
-              <thead className="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-4 py-3">الموظف</th>
+                <th className="px-4 py-3">نوع الشفت</th>
+                <th className="px-4 py-3">تاريخ الشفت</th>
+                <th className="px-4 py-3">وقت البداية</th>
+                <th className="px-4 py-3">وقت النهاية</th>
+                <th className="px-4 py-3">إجمالي الساعات</th>
+                <th className="px-4 py-3">الملاحظات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {loading ? (
                 <tr>
-                  <th className="px-4 py-3">الموظف</th>
-                  <th className="px-4 py-3">النوع</th>
-                  <th className="px-4 py-3">التاريخ</th>
-                  <th className="px-4 py-3">البداية</th>
-                  <th className="px-4 py-3">النهاية</th>
-                  <th className="px-4 py-3">الساعات</th>
+                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                    <span>جاري تحميل سجل الشفتات...</span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {shifts.map((item) => (
+              ) : shifts.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                    لا توجد شفتات مسجلة تطابق التصفية الحالية
+                  </td>
+                </tr>
+              ) : (
+                shifts.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-white">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-cyan-400">{item.shift_type || 'صباحي'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                        item.shift_type === 'صباحي' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                      }`}>
+                        {item.shift_type || 'صباحي'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">
                       {item.shift_date ? new Date(item.shift_date).toLocaleDateString('ar-EG') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400">
@@ -167,19 +158,135 @@ export default function ShiftsHistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400">
                       {item.end_time ? new Date(item.end_time).toLocaleTimeString('ar-EG') : (
-                        <span className="text-emerald-400 font-bold px-2 py-0.5 bg-emerald-500/10 rounded-md">نشط الآن</span>
+                        <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">نشط الآن</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-bold text-white">
-                      {Number(item.total_hours || 0).toFixed(2)} س
+                    <td className="px-4 py-3 font-bold text-white font-mono">
+                      {Number(item.total_hours || 0).toFixed(2)} ساعة
                     </td>
+                    <td className="px-4 py-3 text-xs text-slate-400">{item.shift_note || '-'}</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+            <span className="text-xs text-slate-400">
+              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={pagination.page <= 1}
+                onClick={() => fetchShifts(pagination.page - 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchShifts(pagination.page + 1)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Filter Modal Popup */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Filter className="w-5 h-5 text-cyan-400" />
+                <span>خيارات التصفية</span>
+              </h3>
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">نوع الشفت</label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="">الكل</option>
+                  <option value="صباحي">صباحي</option>
+                  <option value="مسائي">مسائي</option>
+                </select>
+              </div>
+
+              {usersList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">الموظف</label>
+                  <select
+                    value={filterEmployeeId}
+                    onChange={(e) => setFilterEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="">جميع الموظفين</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">من تاريخ</label>
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">إلى تاريخ</label>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => {
+                  fetchShifts(1);
+                  setIsFilterOpen(false);
+                }}
+                className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl"
+              >
+                تطبيق التصفية
+              </button>
+              <button
+                onClick={resetFilters}
+                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
+              >
+                إعادة ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
