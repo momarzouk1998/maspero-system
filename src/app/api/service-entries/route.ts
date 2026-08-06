@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
     const today = new Date();
 
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx: any) => {
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {

@@ -66,9 +66,9 @@ export async function POST(req: Request) {
         where: { is_active: true, custodian_id: user.id }
       });
 
-      const userDrawers = custodyItems.filter(i => i.wallet_type === 'درج كاشير');
-      const userWallets = custodyItems.filter(i => i.wallet_type === 'محفظة');
-      const userMachines = custodyItems.filter(i => i.wallet_type === 'ماكينة');
+      const userDrawers = custodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
+      const userWallets = custodyItems.filter((i: any) => i.wallet_type === 'محفظة');
+      const userMachines = custodyItems.filter((i: any) => i.wallet_type === 'ماكينة');
 
       // Requirement: User cannot end shift without handing over their Cash Drawer
       if (userDrawers.length > 0) {

@@ -26,18 +26,18 @@ export async function checkSalesLock(userId: string, userRole: string): Promise<
     where: { is_active: true }
   });
 
-  const drawers = items.filter(i => i.wallet_type === 'درج كاشير');
-  const wallets = items.filter(i => i.wallet_type === 'محفظة');
-  const machines = items.filter(i => i.wallet_type === 'ماكينة');
+  const drawers = items.filter((i: any) => i.wallet_type === 'درج كاشير');
+  const wallets = items.filter((i: any) => i.wallet_type === 'محفظة');
+  const machines = items.filter((i: any) => i.wallet_type === 'ماكينة');
 
-  const hasDrawer = drawers.some(d => d.custodian_id === userId);
+  const hasDrawer = drawers.some((d: any) => d.custodian_id === userId);
   if (!hasDrawer) {
     return { locked: true, reason: 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً من صفحة إدارة الشفتات.' };
   }
 
   if (isMorningOrSoloShift) {
-    const hasAllWallets = wallets.every(w => w.custodian_id === userId);
-    const hasAllMachines = machines.every(m => m.custodian_id === userId);
+    const hasAllWallets = wallets.every((w: any) => w.custodian_id === userId);
+    const hasAllMachines = machines.every((m: any) => m.custodian_id === userId);
 
     if (!hasAllWallets || !hasAllMachines) {
       return { 

@@ -14,8 +14,8 @@ export async function GET() {
       select: { id: true, employee_id: true, employee_name: true, start_time: true }
     });
 
-    const isUserShiftActive = activeShifts.some(s => s.employee_id === user.id);
-    const activeColleaguesCount = activeShifts.filter(s => s.employee_id !== user.id).length;
+    const isUserShiftActive = activeShifts.some((s: any) => s.employee_id === user.id);
+    const activeColleaguesCount = activeShifts.filter((s: any) => s.employee_id !== user.id).length;
     const isMorningOrSoloShift = activeColleaguesCount === 0;
 
     // 2. Fetch external wallets, machines & cash drawers
@@ -25,12 +25,12 @@ export async function GET() {
     });
 
     // Group items into Wallets, Machines, Cash Drawers
-    const wallets = allCustodyItems.filter(i => i.wallet_type === 'محفظة');
-    const machines = allCustodyItems.filter(i => i.wallet_type === 'ماكينة');
-    const drawers = allCustodyItems.filter(i => i.wallet_type === 'درج كاشير');
+    const wallets = allCustodyItems.filter((i: any) => i.wallet_type === 'محفظة');
+    const machines = allCustodyItems.filter((i: any) => i.wallet_type === 'ماكينة');
+    const drawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
 
     // 3. Check items in current user's custody
-    const itemsInUserCustody = allCustodyItems.filter(i => i.custodian_id === user.id);
+    const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
     // 4. Pending handover requests sent to user
     const pendingHandovers = await db.wallet_custody_handovers.findMany({
@@ -41,9 +41,9 @@ export async function GET() {
     // 5. Check if sales are locked
     // Morning/Solo shift requires drawer + all active wallets + all machines
     // Overlapping shift requires drawer only
-    const hasReceivedDrawer = drawers.some(d => d.custodian_id === user.id);
-    const hasReceivedAllWallets = wallets.every(w => w.custodian_id === user.id);
-    const hasReceivedAllMachines = machines.every(m => m.custodian_id === user.id);
+    const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
+    const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
+    const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
 
     let isSalesLocked = false;
     let lockReason = '';
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
         }
       }
 
-      const updatedItem = await db.$transaction(async (tx) => {
+      const updatedItem = await db.$transaction(async (tx: any) => {
         // 1. Log handover
         await tx.wallet_custody_handovers.create({
           data: {

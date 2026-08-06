@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const today = new Date();
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
-    const booking = await db.$transaction(async (tx) => {
+    const booking = await db.$transaction(async (tx: any) => {
       const created = await tx.train_ticket_bookings.create({
         data: {
           date: today,
