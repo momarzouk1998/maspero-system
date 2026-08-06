@@ -36,9 +36,16 @@ export async function GET(req: Request) {
   });
 }
 
+import { checkSalesLock } from '@/lib/custody-lock';
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  const lockStatus = await checkSalesLock(user.id, user.role);
+  if (lockStatus.locked) {
+    return NextResponse.json({ error: lockStatus.reason }, { status: 403 });
+  }
 
   try {
     const { serviceId, serviceName, paperCount, pageCount, faceType, amount, notes, invoice_code } = await req.json();

@@ -55,6 +55,35 @@ export async function POST(req: Request) {
       const shift = await db.shifts.findUnique({ where: { id: shiftId } });
       if (!shift) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 });
 
+      // 1. Check active colleagues
+      const activeColleaguesCount = await db.shifts.count({
+        where: { end_time: null, NOT: { employee_id: user.id } }
+      });
+      const isLastEmployee = activeColleaguesCount === 0;
+
+      // 2. Fetch custody items held by user
+      const custodyItems = await db.external_wallets.findMany({
+        where: { is_active: true, custodian_id: user.id }
+      });
+
+      const userDrawers = custodyItems.filter(i => i.wallet_type === 'درج كاشير');
+      const userWallets = custodyItems.filter(i => i.wallet_type === 'محفظة');
+      const userMachines = custodyItems.filter(i => i.wallet_type === 'ماكينة');
+
+      // Requirement: User cannot end shift without handing over their Cash Drawer
+      if (userDrawers.length > 0) {
+        return NextResponse.json({ 
+          error: 'عفواً، يجب تسليم عهدة درج الكاشير الخاص بك أولاً قبل إنهاء الشفت.' 
+        }, { status: 400 });
+      }
+
+      // Requirement: Last employee closing day must hand over ALL wallets & machines
+      if (isLastEmployee && (userWallets.length > 0 || userMachines.length > 0)) {
+        return NextResponse.json({ 
+          error: 'عفواً، أنت آخر موظف في اليوم (إغلاق اليوم). يجب تسليم وتأكيد أرصدة جميع المحافظ والماكينات لضمان دقة الأرصدة للشفت الصباحي التالي.' 
+        }, { status: 400 });
+      }
+
       const startTime = shift.start_time || today;
       const hours = Math.max(0.1, (today.getTime() - new Date(startTime).getTime()) / (1000 * 60 * 60));
 

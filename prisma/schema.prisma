@@ -175,22 +175,27 @@ model external_wallets {
 
 // 6b. Machine Custody Handover (تسليم عهدة ماكينة/محفظة فعليّة بين الموظفين)
 model wallet_custody_handovers {
-  id               String    @id @default(uuid()) @db.Uuid
-  wallet_id        String    @db.Uuid
-  wallet_name      String    @db.VarChar(200)
-  sender_id        String    @db.Uuid
-  sender_name      String    @db.VarChar(200)
-  receiver_id      String    @db.Uuid
-  receiver_name    String    @db.VarChar(200)
-  balance_at_time  Decimal   @db.Decimal(15, 2)
-  status           String    @default("PENDING") @db.VarChar(20) // "PENDING" | "ACCEPTED" | "REJECTED"
-  notes            String?   @db.Text
-  created_at       DateTime? @default(now()) @db.Timestamptz()
-  responded_at     DateTime? @db.Timestamptz()
+  id                 String    @id @default(uuid()) @db.Uuid
+  wallet_id          String    @db.Uuid
+  wallet_name        String    @db.VarChar(200)
+  sender_id          String?   @db.Uuid
+  sender_name        String?   @db.VarChar(200)
+  receiver_id        String    @db.Uuid
+  receiver_name      String    @db.VarChar(200)
+  balance_at_time    Decimal   @default(0) @db.Decimal(15, 2)
+  expected_balance   Decimal   @default(0) @db.Decimal(15, 2)
+  actual_balance     Decimal   @default(0) @db.Decimal(15, 2)
+  difference         Decimal   @default(0) @db.Decimal(15, 2)
+  status             String    @default("PENDING") @db.VarChar(20) // "PENDING" | "ACCEPTED" | "REJECTED"
+  review_status      String    @default("تم المطابقة") @db.VarChar(50) // "تم المطابقة" | "الرجاء المراجعة" | "عجز طبيعي" | "زيادة طبيعية"
+  discrepancy_reason String?   @db.Text
+  notes              String?   @db.Text
+  created_at         DateTime? @default(now()) @db.Timestamptz()
+  responded_at       DateTime? @db.Timestamptz()
 
-  wallet           external_wallets @relation(fields: [wallet_id], references: [id])
-  sender           users            @relation("SenderHandovers", fields: [sender_id], references: [id])
-  receiver         users            @relation("ReceiverHandovers", fields: [receiver_id], references: [id])
+  wallet             external_wallets @relation(fields: [wallet_id], references: [id])
+  sender             users?           @relation("SenderHandovers", fields: [sender_id], references: [id])
+  receiver           users            @relation("ReceiverHandovers", fields: [receiver_id], references: [id])
 
   @@map("wallet_custody_handovers")
   @@schema("maspero")
