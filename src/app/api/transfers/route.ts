@@ -66,14 +66,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, transfer });
     }
 
-    // Action 2: Accept incoming Cash Transfer
+    // Action 2: Respond to incoming Cash Transfer (ACCEPT / REJECT)
+    if (action === 'respond') {
+      const { transferId, status } = body;
+      if (status === 'ACCEPTED') {
+        const updated = await WalletService.acceptCashTransfer(transferId, user.id);
+        return NextResponse.json({ success: true, transfer: updated });
+      } else {
+        const updated = await WalletService.rejectCashTransfer(transferId, user.id);
+        return NextResponse.json({ success: true, transfer: updated });
+      }
+    }
+
     if (action === 'accept') {
       const { transferId } = body;
       const updated = await WalletService.acceptCashTransfer(transferId, user.id);
       return NextResponse.json({ success: true, transfer: updated });
     }
 
-    // Action 3: Reject incoming Cash Transfer
     if (action === 'reject') {
       const { transferId } = body;
       const updated = await WalletService.rejectCashTransfer(transferId, user.id);
