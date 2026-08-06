@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { action, shiftType, shiftNote } = await req.json();
+    const { action, shiftType, shiftNote, shiftId } = await req.json();
     const today = new Date();
 
     if (action === 'start') {
@@ -52,7 +52,6 @@ export async function POST(req: Request) {
     }
 
     if (action === 'end') {
-      const { shiftId } = await req.json();
       const shift = await db.shifts.findUnique({ where: { id: shiftId } });
       if (!shift) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 });
 
