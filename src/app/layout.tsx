@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b1329",
+  themeColor: "#f8fafc",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -48,7 +48,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
-      <body className="min-h-screen bg-[#0b1329] text-slate-100 font-sans antialiased selection:bg-rose-600 selection:text-white">
+      <body className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-rose-600 selection:text-white">
         {children}
         <script
           dangerouslySetInnerHTML={{

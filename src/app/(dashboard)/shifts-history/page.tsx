@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ShiftsHistoryPage() {
   const [shifts, setShifts] = useState<any[]>([]);
@@ -46,7 +47,7 @@ export default function ShiftsHistoryPage() {
   useEffect(() => {
     fetch('/api/users')
       .then(res => res.json())
-      .then(data => setUsersList(data.users || []))
+      .then(data => setUsersList(getActiveUsers(data.users || [])))
       .catch(console.error);
   }, []);
 
@@ -69,13 +70,13 @@ export default function ShiftsHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Clock className="w-7 h-7 text-cyan-400" />
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Clock className="w-7 h-7 text-cyan-600" />
             <span>سجل الشفتات</span>
           </h1>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-600 text-xs mt-1">
             سجل شامل لمتابعة جميع شفتات العمل وساعات الدوام
           </p>
         </div>
@@ -83,13 +84,13 @@ export default function ShiftsHistoryPage() {
         {/* Search & Filter Trigger */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث بالاسم أو الملاحظات..."
-              className="pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500 w-60"
+              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 w-60"
             />
           </div>
 
@@ -98,7 +99,7 @@ export default function ShiftsHistoryPage() {
             className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
               filterType || filterStartDate || filterEndDate || filterEmployeeId
                 ? 'bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-500/20'
-                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -111,10 +112,10 @@ export default function ShiftsHistoryPage() {
       </div>
 
       {/* Shifts Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-300">
-            <thead className="bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+          <table className="w-full text-right text-sm text-slate-700">
+            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">نوع الشفت</th>
@@ -125,11 +126,11 @@ export default function ShiftsHistoryPage() {
                 <th className="px-4 py-3">الملاحظات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
                     <span>جاري تحميل سجل الشفتات...</span>
                   </td>
                 </tr>
@@ -141,30 +142,30 @@ export default function ShiftsHistoryPage() {
                 </tr>
               ) : (
                 shifts.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-medium text-white">{item.employee_name || '-'}</td>
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-900">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                        item.shift_type === 'صباحي' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                        item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
                       }`}>
                         {item.shift_type || 'صباحي'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-300 font-mono">
+                    <td className="px-4 py-3 text-xs text-slate-700 font-mono">
                       {item.shift_date ? new Date(item.shift_date).toLocaleDateString('ar-EG') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-xs text-slate-600">
                       {item.start_time ? new Date(item.start_time).toLocaleTimeString('ar-EG') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-xs text-slate-600">
                       {item.end_time ? new Date(item.end_time).toLocaleTimeString('ar-EG') : (
-                        <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">نشط الآن</span>
+                        <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-bold text-white font-mono">
+                    <td className="px-4 py-3 font-bold text-slate-900 font-mono">
                       {Number(item.total_hours || 0).toFixed(2)} ساعة
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{item.shift_note || '-'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">{item.shift_note || '-'}</td>
                   </tr>
                 ))
               )}
@@ -174,22 +175,22 @@ export default function ShiftsHistoryPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-            <span className="text-xs text-slate-400">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+            <span className="text-xs text-slate-600">
               صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
             </span>
             <div className="flex gap-2">
               <button
                 disabled={pagination.page <= 1}
                 onClick={() => fetchShifts(pagination.page - 1)}
-                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
               <button
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => fetchShifts(pagination.page + 1)}
-                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl disabled:opacity-40"
+                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -200,16 +201,16 @@ export default function ShiftsHistoryPage() {
 
       {/* Filter Modal Popup */}
       {isFilterOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-800 space-y-5 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Filter className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-cyan-600" />
                 <span>خيارات التصفية</span>
               </h3>
               <button
                 onClick={() => setIsFilterOpen(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg"
+                className="p-1 text-slate-600 hover:text-slate-900 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -217,11 +218,11 @@ export default function ShiftsHistoryPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">نوع الشفت</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع الشفت</label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                 >
                   <option value="">الكل</option>
                   <option value="صباحي">صباحي</option>
@@ -231,11 +232,11 @@ export default function ShiftsHistoryPage() {
 
               {usersList.length > 0 && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">الموظف</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف</label>
                   <select
                     value={filterEmployeeId}
                     onChange={(e) => setFilterEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                   >
                     <option value="">جميع الموظفين</option>
                     {usersList.map((u) => (
@@ -247,27 +248,27 @@ export default function ShiftsHistoryPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">من تاريخ</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
                   <input
                     type="date"
                     value={filterStartDate}
                     onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">إلى تاريخ</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
                   <input
                     type="date"
                     value={filterEndDate}
                     onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-slate-800">
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
                 onClick={() => {
                   fetchShifts(1);
@@ -279,7 +280,7 @@ export default function ShiftsHistoryPage() {
               </button>
               <button
                 onClick={resetFilters}
-                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
               >
                 إعادة ضبط
               </button>

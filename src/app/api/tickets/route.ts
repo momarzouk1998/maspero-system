@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { itemCount, ticketPrice, ticketCommission, notes, invoice_code } = await req.json();
+    const { itemCount, ticketPrice, ticketCommission, notes, invoice_code, serviceName } = await req.json();
 
     const price = Number(ticketPrice || 0);
     const commission = Number(ticketCommission || 0);
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         data: {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-          service_name: 'قطار',
+          service_name: serviceName || 'قطار',
           item_count: parseInt(itemCount) || 1,
           amount: totalAmount,
           ticket_price: price,

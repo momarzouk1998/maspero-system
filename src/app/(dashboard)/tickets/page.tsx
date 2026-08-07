@@ -1,23 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Train, Plus, CheckCircle2, Ticket } from 'lucide-react';
+import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User } from 'lucide-react';
+import { getActiveUsers } from '@/lib/user-utils';
 
 export default function TicketsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
-  const [itemCount, setItemCount] = useState(1);
-  const [ticketPrice, setTicketPrice] = useState('');
-  const [ticketCommission, setTicketCommission] = useState('');
-  const [notes, setNotes] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  // Search & Filter State
+  const [search, setSearch] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterEmployeeId, setFilterEmployeeId] = useState('');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [usersList, setUsersList] = useState<any[]>([]);
 
   const fetchBookings = async (page = 1) => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/tickets?page=${page}&limit=25`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '25',
+        search,
+        employeeId: filterEmployeeId,
+        startDate: filterStartDate,
+        endDate: filterEndDate,
+      });
+      const res = await fetch(`/api/tickets?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setBookings(data.bookings || []);
@@ -31,202 +42,234 @@ export default function TicketsPage() {
   };
 
   useEffect(() => {
-    fetchBookings(1);
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
   }, []);
 
-  const totalAmount = Number(ticketPrice || 0) + Number(ticketCommission || 0);
+  useEffect(() => {
+    const timer = setTimeout(() => fetchBookings(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, filterEmployeeId, filterStartDate, filterEndDate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSuccessMsg('');
+  const hasActiveFilters = filterEmployeeId || filterStartDate || filterEndDate;
 
-    try {
-      const res = await fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemCount,
-          ticketPrice,
-          ticketCommission,
-          notes
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل حفظ حجز التذكرة');
-
-      setSuccessMsg(`تم حفظ حجز القطار بمبلغ ${totalAmount} ج.م وإضافتها لمحفظتك بنجاح 🎉`);
-      setTicketPrice('');
-      setTicketCommission('');
-      setNotes('');
-      fetchBookings(1);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  const resetFilters = () => {
+    setFilterEmployeeId('');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setIsFilterOpen(false);
   };
 
   return (
     <div className="space-y-6">
-      {/* Title Banner */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex items-center justify-between">
+      {/* Page Header */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Train className="w-7 h-7 text-purple-400" />
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Train className="w-7 h-7 text-purple-600" />
             <span>سجل التذاكر</span>
           </h1>
-          <p className="text-slate-400 text-sm">
-            تسجيل حجوزات القطارات وحساب العمولات وتحديث رصيد المحفظة النقدية
+          <p className="text-slate-600 text-sm">
+            سجل شامل لجميع حجوزات تذاكر القطارات والعمولات
           </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالموظف أو الملاحظات..."
+              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 w-60"
+            />
+          </div>
+
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+              hasActiveFilters
+                ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/20'
+                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            <span>تصفية</span>
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ticket Booking Form */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Plus className="w-5 h-5 text-purple-400" />
-            <span>حجز تذكرة جديد</span>
+      {/* Bookings Table */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Train className="w-5 h-5 text-purple-600" />
+            <span>سجل حجوزات التذاكر</span>
+            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+              {pagination.total}
+            </span>
           </h2>
-
-          {successMsg && (
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">عدد التذاكر</label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={itemCount}
-                onChange={(e) => setItemCount(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">سعر التذكرة (ج.م)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  required
-                  value={ticketPrice}
-                  onChange={(e) => setTicketPrice(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">العمولة (ج.م)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  required
-                  value={ticketCommission}
-                  onChange={(e) => setTicketCommission(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500"
-                />
-              </div>
-            </div>
-
-            {/* Total Amount Preview */}
-            <div className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-300">إجمالي النقدية المستلمة:</span>
-              <span className="text-2xl font-extrabold text-purple-400">
-                {totalAmount.toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-300">ج.م</span>
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">ملاحظات / الدرجة / المحطة</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="محطة الوصول / درجة الركوب..."
-                className="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              <Ticket className="w-5 h-5" />
-              <span>حجز وإضافة للمحفظة</span>
-            </button>
-          </form>
         </div>
 
-        {/* History Table */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Train className="w-5 h-5 text-purple-400" />
-            <span>سجل حجوزات التذاكر ({pagination.total})</span>
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm text-slate-300">
-              <thead className="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm text-slate-700">
+            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3">العدد</th>
+                <th className="px-4 py-3">سعر التذكرة</th>
+                <th className="px-4 py-3">العمولة</th>
+                <th className="px-4 py-3">الإجمالي المحصّل</th>
+                <th className="px-4 py-3">الموظف</th>
+                <th className="px-4 py-3">التاريخ</th>
+                <th className="px-4 py-3">الملاحظات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {loading ? (
                 <tr>
-                  <th className="px-4 py-3">العدد</th>
-                  <th className="px-4 py-3">سعر التذكرة</th>
-                  <th className="px-4 py-3">العمولة</th>
-                  <th className="px-4 py-3">الإجمالي</th>
-                  <th className="px-4 py-3">الموظف</th>
-                  <th className="px-4 py-3">التاريخ</th>
+                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-600" />
+                    <span>جاري تحميل سجل التذاكر...</span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {bookings.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/30">
-                    <td className="px-4 py-3 font-medium text-white">{item.item_count}</td>
-                    <td className="px-4 py-3">{Number(item.ticket_price).toLocaleString('ar-EG')} ج.م</td>
-                    <td className="px-4 py-3 text-purple-400 font-bold">{Number(item.ticket_commission).toLocaleString('ar-EG')} ج.م</td>
-                    <td className="px-4 py-3 text-emerald-400 font-bold">{Number(item.amount).toLocaleString('ar-EG')} ج.م</td>
-                    <td className="px-4 py-3 text-slate-400">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
+              ) : bookings.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                    لا توجد حجوزات مسجلة تطابق التصفية الحالية
+                  </td>
+                </tr>
+              ) : (
+                bookings.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
+                    <td className="px-4 py-3 font-mono text-slate-700">
+                      {Number(item.ticket_price).toLocaleString('ar-EG')} ج.م
+                    </td>
+                    <td className="px-4 py-3 font-bold text-purple-700 font-mono">
+                      {Number(item.ticket_commission).toLocaleString('ar-EG')} ج.م
+                    </td>
+                    <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
+                      {Number(item.amount).toLocaleString('ar-EG')} ج.م
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 text-xs">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3 text-slate-400" />
+                        {item.employee_name || '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 font-mono">
                       {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
                     </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
+                      {item.notes || '-'}
+                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-            <span>الصفحة {pagination.page} من {pagination.totalPages}</span>
-            <div className="flex items-center gap-2">
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+            <span className="text-xs text-slate-600">
+              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+            </span>
+            <div className="flex gap-2">
               <button
                 disabled={pagination.page <= 1}
                 onClick={() => fetchBookings(pagination.page - 1)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-40 cursor-pointer"
+                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
               >
-                السابق
+                <ChevronRight className="w-4 h-4" />
               </button>
               <button
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => fetchBookings(pagination.page + 1)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-40 cursor-pointer"
+                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
               >
-                التالي
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Filter Modal */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-purple-600" />
+                <span>خيارات التصفية</span>
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {usersList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف</label>
+                  <select
+                    value={filterEmployeeId}
+                    onChange={(e) => setFilterEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                  >
+                    <option value="">جميع الموظفين</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
+                  <input
+                    type="date"
+                    value={filterStartDate}
+                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
+                  <input
+                    type="date"
+                    value={filterEndDate}
+                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
+              <button
+                onClick={() => { fetchBookings(1); setIsFilterOpen(false); }}
+                className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl"
+              >
+                تطبيق التصفية
+              </button>
+              <button
+                onClick={resetFilters}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+              >
+                إعادة ضبط
               </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

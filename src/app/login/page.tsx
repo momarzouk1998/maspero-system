@@ -39,14 +39,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#0b1329] to-blue-950">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
       {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-300/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-300/25 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-slate-700/50 shadow-2xl relative z-10">
+      <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-slate-200 shadow-2xl relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white p-2 shadow-xl shadow-slate-950/60 mb-4 border border-slate-700/40">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white p-2 shadow-xl shadow-slate-300/60 mb-4 border border-slate-200">
             <Image
               src="/maspero-logo.png"
               alt="Maspero Logo"
@@ -55,43 +55,43 @@ export default function LoginPage() {
               className="object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">ماسـبيرو للخدمات</h1>
-          <p className="text-slate-400 text-sm mt-1">لخدمات الطباعة والإنترنت والمحافظ الإلكترونية</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-wide">ماسـبيرو للخدمات</h1>
+          <p className="text-slate-600 text-sm mt-1">لخدمات الطباعة والإنترنت والمحافظ الإلكترونية</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-300 text-red-700 text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">اسم المستخدم / رقم الهاتف</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">اسم المستخدم / رقم الهاتف</label>
             <div className="relative">
-              <User className="absolute right-3.5 top-3.5 w-5 h-5 text-slate-400" />
+              <User className="absolute right-3.5 top-3.5 w-5 h-5 text-slate-500" />
               <input
                 type="text"
                 required
                 value={nameOrPhone}
                 onChange={(e) => setNameOrPhone(e.target.value)}
                 placeholder="أدخل اسمك أو رقم هاتفك"
-                className="w-full pr-11 pl-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                className="w-full pr-11 pl-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">كلمة المرور</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">كلمة المرور</label>
             <div className="relative">
-              <Lock className="absolute right-3.5 top-3.5 w-5 h-5 text-slate-400" />
+              <Lock className="absolute right-3.5 top-3.5 w-5 h-5 text-slate-500" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pr-11 pl-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                className="w-full pr-11 pl-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
               />
             </div>
           </div>
