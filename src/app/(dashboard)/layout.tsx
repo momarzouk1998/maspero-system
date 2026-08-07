@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
-    { name: 'إدارة الشفتات', href: '/shifts', icon: Clock },
+    { name: 'إدارة الشفتات', href: '/shifts', icon: Clock, badge: pendingTransfers },
     { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
     { name: 'سجل الشفتات', href: '/shifts-history', icon: History },
     { name: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet },
