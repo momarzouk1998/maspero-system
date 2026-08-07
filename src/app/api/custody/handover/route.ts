@@ -8,7 +8,20 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    // 1. Fetch active shifts
+    // 1. Clean up any auto-created 'درج كاشير 1..3' duplicates if 'درج كاش' items exist
+    const hasOriginalDrawers = await db.external_wallets.findFirst({
+      where: { wallet_name: { contains: 'درج كاش' } }
+    });
+
+    if (hasOriginalDrawers) {
+      await db.external_wallets.deleteMany({
+        where: {
+          wallet_name: { in: ['درج كاشير 1', 'درج كاشير 2', 'درج كاشير 3'] }
+        }
+      });
+    }
+
+    // 2. Fetch active shifts
     const activeShifts = await db.shifts.findMany({
       where: { end_time: null },
       select: { id: true, employee_id: true, employee_name: true, start_time: true }
@@ -18,56 +31,42 @@ export async function GET() {
     const activeColleaguesCount = activeShifts.filter((s: any) => s.employee_id !== user.id).length;
     const isMorningOrSoloShift = activeColleaguesCount === 0;
 
-    // 2. Fetch external wallets, machines & cash drawers
-    let allCustodyItems = await db.external_wallets.findMany({
+    // 3. Fetch external wallets, machines & cash drawers
+    const allCustodyItems = await db.external_wallets.findMany({
       where: { is_active: true },
-      orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
+      orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }, { wallet_name: 'asc' }]
     });
 
-    // Check if Cash Drawers exist. If less than 3 drawers, seed the 3 default drawers
-    const existingDrawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
-    if (existingDrawers.length < 3) {
-      const drawerNames = ['درج كاشير 1', 'درج كاشير 2', 'درج كاشير 3'];
-      for (let idx = 0; idx < 3; idx++) {
-        const name = drawerNames[idx];
-        if (!existingDrawers.some((d: any) => d.wallet_name === name)) {
-          await db.external_wallets.create({
-            data: {
-              wallet_name: name,
-              wallet_type: 'درج كاشير',
-              current_balance: 0,
-              actual_balance: 0,
-              sort: idx + 1,
-              is_active: true
-            }
-          });
-        }
-      }
-      // Re-fetch after seeding drawers
-      allCustodyItems = await db.external_wallets.findMany({
-        where: { is_active: true },
-        orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
-      });
-    }
+    // Group items into Wallets, Machines, Cash Drawers flexible matching
+    const drawers = allCustodyItems.filter((i: any) => 
+      i.wallet_type === 'درج كاشير' || 
+      i.wallet_type === 'درج كاش' || 
+      i.wallet_name.includes('درج')
+    );
 
-    // Group items into Wallets, Machines, Cash Drawers
-    const wallets = allCustodyItems.filter((i: any) => i.wallet_type === 'محفظة');
-    const machines = allCustodyItems.filter((i: any) => i.wallet_type === 'ماكينة');
-    const drawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
+    const drawerIds = new Set(drawers.map((d: any) => d.id));
 
-    // 3. Check items in current user's custody
+    const wallets = allCustodyItems.filter((i: any) => 
+      !drawerIds.has(i.id) && (i.wallet_type === 'محفظة' || i.wallet_type === 'فودافون كاش' || i.wallet_type === 'أورنج كاش' || i.wallet_type === 'اتصالات كاش')
+    );
+
+    const machines = allCustodyItems.filter((i: any) => 
+      !drawerIds.has(i.id) && !wallets.some((w: any) => w.id === i.id)
+    );
+
+    // 4. Check items in current user's custody
     const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
-    // 4. Pending handover requests sent to user
+    // 5. Pending handover requests sent to user
     const pendingHandovers = await db.wallet_custody_handovers.findMany({
       where: { receiver_id: user.id, status: 'PENDING' },
       orderBy: { created_at: 'desc' }
     });
 
-    // 5. Check if sales are locked
+    // 6. Check if sales are locked
     const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
-    const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
-    const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
+    const hasReceivedAllWallets = wallets.length === 0 || wallets.every((w: any) => w.custodian_id === user.id);
+    const hasReceivedAllMachines = machines.length === 0 || machines.every((m: any) => m.custodian_id === user.id);
 
     let isSalesLocked = false;
     let lockReason = '';
@@ -75,9 +74,9 @@ export async function GET() {
     if (!isUserShiftActive) {
       isSalesLocked = true;
       lockReason = 'برجاء بدء الشفت أولاً من صفحة إدارة الشفتات قبل البدء في المبيعات.';
-    } else if (!hasReceivedDrawer) {
+    } else if (drawers.length > 0 && !hasReceivedDrawer) {
       isSalesLocked = true;
-      lockReason = 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً.';
+      lockReason = 'برجاء استلام عهدة درج الكاش الخاص بك أولاً.';
     } else if (isMorningOrSoloShift && (!hasReceivedAllWallets || !hasReceivedAllMachines)) {
       isSalesLocked = true;
       lockReason = 'شفت صباحي/منفرد: برجاء استلام جميع أرصدة المحافظ والماكينات للبدء.';
@@ -121,8 +120,8 @@ export async function POST(req: Request) {
       }
 
       const drawer = await db.external_wallets.findUnique({ where: { id: drawerId } });
-      if (!drawer || drawer.wallet_type !== 'درج كاشير') {
-        return NextResponse.json({ error: 'درج الكاشير غير موجود' }, { status: 404 });
+      if (!drawer) {
+        return NextResponse.json({ error: 'درج الكاش غير موجود' }, { status: 404 });
       }
 
       const today = new Date();
@@ -147,7 +146,7 @@ export async function POST(req: Request) {
         await tx.wallet_transactions.create({
           data: {
             date: today,
-            transaction_type: 'إيداع في درج كاشير',
+            transaction_type: 'إيداع في درج كاش',
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
             amount: depositAmount,
@@ -210,7 +209,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `تم استلام (${item.wallet_name}) وتأكيد المطابقة بنجاح 👍`,
+        message: `تم استلام وتأكيد (${item.wallet_name}) بنجاح 👍`,
         item: updatedItem
       });
     }
