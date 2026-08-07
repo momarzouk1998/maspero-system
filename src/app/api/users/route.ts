@@ -21,10 +21,10 @@ export async function GET() {
       is_active: true,
       wallet_balance: true,
       permissions: true,
-      createdAt: true,
+      created_at: true,
       ...(isManager ? { salary: true } : {})
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { created_at: 'desc' }
   });
 
   return NextResponse.json({ users });
