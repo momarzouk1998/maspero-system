@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Printer, Search, Filter, Calendar, FileText, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, ArrowRight } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
@@ -8,6 +9,7 @@ export default function ServicesPage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -18,6 +20,13 @@ export default function ServicesPage() {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+  }, []);
 
   const fetchEntries = async (page = 1) => {
     setLoading(true);

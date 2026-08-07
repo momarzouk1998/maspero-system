@@ -93,6 +93,7 @@ export async function POST(req: Request) {
         data: {
           employee_id: user.id,
           employee_name: user.name,
+          shift_date: today,
           start_time: today,
           shift_type: shiftType || 'صباحي',
           shift_note: shiftNote || null,

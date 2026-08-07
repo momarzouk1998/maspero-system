@@ -416,11 +416,11 @@ export default function ShiftsPage() {
         </div>
       )}
 
-      {/* Active Shift Card & Peer Transfer Form (Vertical Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Active Shift Card & Peer Transfer Form (Equal Width & Height Layout) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         
         {/* Active Shift Action Card */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+        <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Clock className="w-5 h-5 text-blue-600" />
             <span>حالة الشفت الحالي</span>
@@ -499,8 +499,8 @@ export default function ShiftsPage() {
           )}
         </div>
 
-        {/* Peer-to-Peer Cash Transfer Form (Vertical Stacked Layout) */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+        {/* Peer-to-Peer Cash Transfer Form (Equal Width & Height Layout) */}
+        <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <ArrowLeftRight className="w-5 h-5 text-emerald-600" />
             <span>تحويل نقدية مباشر لموظف آخر</span>

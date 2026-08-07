@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
   ArrowDownLeft, ArrowUpRight, Wallet, User, X, Trash2, ArrowRight
@@ -11,6 +12,7 @@ export default function ChargeHistoryPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [search, setSearch] = useState('');
   const [transactionType, setTransactionType] = useState('');
@@ -22,6 +24,13 @@ export default function ChargeHistoryPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [walletsList, setWalletsList] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+  }, []);
 
   const hasActiveFilters = transactionType || startDate || endDate || filterWalletName || filterEmployeeId;
 

@@ -55,7 +55,10 @@ export default function ShiftsHistoryPage() {
 
   useEffect(() => {
     fetchShifts(1);
-    getActiveUsers().then(setUsersList);
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
   }, [search, filterType, filterStartDate, filterEndDate, filterEmployeeId]);
 
   const handleDeleteShift = async (id: string) => {

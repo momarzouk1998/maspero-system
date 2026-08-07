@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { 
   FileSpreadsheet, Search, Filter, Calendar, X, Printer, Receipt, 
   ChevronLeft, ChevronRight, RefreshCw, Eye, User, Trash2, ArrowRight
@@ -306,7 +307,7 @@ export default function InvoicesHistoryPage() {
                           <span>عرض</span>
                         </button>
 
-                        {user?.role === 'manager' && (
+                        {currentUser?.role === 'manager' && (
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
