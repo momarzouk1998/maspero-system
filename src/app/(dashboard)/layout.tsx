@@ -93,13 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
     { name: 'الخدمات المالية والماكينات', href: '/machines', icon: Cpu },
     ...(isManager ? [
-      { name: 'لوحة المدير (المجمعة)', href: '/manager', icon: ShieldCheck },
-      { name: 'إدارة الموظفين والأذونات', href: '/manager/users', icon: Users },
-      { name: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Settings },
-      { name: 'تصنيفات المصروفات', href: '/manager/categories', icon: FolderTree },
-      { name: 'الملاحظات والعدادات', href: '/manager/notes', icon: FileText },
-      { name: 'تقارير الأرباح واللوج', href: '/manager/reports', icon: BarChart3 },
-      { name: 'محافظ الموظفين والخزينة', href: '/manager/wallets', icon: Wallet },
+      { name: 'لوحة المدير', href: '/manager', icon: ShieldCheck },
     ] : [])
   ];
 
