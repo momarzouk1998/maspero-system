@@ -26,7 +26,8 @@ import {
   FileSpreadsheet,
   Zap,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  ShieldCheck
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
