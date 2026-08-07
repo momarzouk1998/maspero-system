@@ -318,7 +318,7 @@ export async function POST(req: Request) {
               wallet_name: item.wallet_name,
               sender_id: user.id,
               sender_name: user.name,
-              receiver_id: 'maspero',
+              receiver_id: null,
               receiver_name: 'ماسـبيرو (المركز)',
               balance_at_time: expectedBalance,
               expected_balance: expectedBalance,
@@ -332,7 +332,7 @@ export async function POST(req: Request) {
           await tx.external_wallets.update({
             where: { id: walletId },
             data: {
-              custodian_id: 'maspero',
+              custodian_id: null,
               custodian_name: 'ماسـبيرو (المركز)'
             }
           });

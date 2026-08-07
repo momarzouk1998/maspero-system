@@ -182,7 +182,7 @@ export default function ManagerWalletsPage() {
           <div className="glass-card px-6 py-3 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 text-indigo-400 text-left">
             <span className="text-xs text-slate-400 block font-medium">إجمالي عهدة الكاش</span>
             <span className="text-2xl font-black text-white">
-              {totalEmployeesCash.toLocaleString('ar-EG')} <span className="text-xs font-normal text-indigo-400">ج.م</span>
+              {totalEmployeesCash.toLocaleString('ar-EG')}
             </span>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function ManagerWalletsPage() {
                 <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
                 {w.wallet_number && <p className="text-xs text-slate-400 font-mono mt-0.5">{w.wallet_number}</p>}
                 <p className="text-2xl font-extrabold text-emerald-400 mt-1">
-                  {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                  {Number(w.current_balance).toLocaleString('ar-EG')}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">مسؤول العهدة: {w.custodian_name || 'غير محدد'}</p>
               </div>
@@ -285,7 +285,7 @@ export default function ManagerWalletsPage() {
               <div>
                 <h3 className="font-bold text-white text-lg">{w.wallet_name}</h3>
                 <p className="text-2xl font-extrabold text-purple-300 mt-1">
-                  {Number(w.current_balance).toLocaleString('ar-EG')} <span className="text-xs font-normal text-slate-400">ج.م</span>
+                  {Number(w.current_balance).toLocaleString('ar-EG')}
                 </p>
               </div>
             </div>
@@ -318,11 +318,8 @@ export default function ManagerWalletsPage() {
                   <p className="text-xs text-slate-400">{emp.job_title || 'موظف مبيعات'}</p>
                 </div>
 
-                <div className="text-left">
-                  <span className="text-xs text-slate-500 block">رصيد العهدة الكاش</span>
-                  <span className={`text-xl font-black ${Number(emp.wallet_balance || 0) < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    {Number(emp.wallet_balance || 0).toLocaleString('ar-EG')} <span className="text-xs text-slate-300">ج.م</span>
-                  </span>
+                <div className="text-left font-mono font-bold text-lg text-emerald-400">
+                  {Number(emp.wallet_balance || 0).toLocaleString('ar-EG')}
                 </div>
               </div>
             ))}

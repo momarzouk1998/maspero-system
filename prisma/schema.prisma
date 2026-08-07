@@ -180,8 +180,8 @@ model wallet_custody_handovers {
   wallet_name        String    @db.VarChar(200)
   sender_id          String?   @db.Uuid
   sender_name        String?   @db.VarChar(200)
-  receiver_id        String    @db.Uuid
-  receiver_name      String    @db.VarChar(200)
+  receiver_id        String?   @db.Uuid
+  receiver_name      String?   @db.VarChar(200)
   balance_at_time    Decimal   @default(0) @db.Decimal(15, 2)
   expected_balance   Decimal   @default(0) @db.Decimal(15, 2)
   actual_balance     Decimal   @default(0) @db.Decimal(15, 2)
@@ -195,7 +195,7 @@ model wallet_custody_handovers {
 
   wallet             external_wallets @relation(fields: [wallet_id], references: [id])
   sender             users?           @relation("SenderHandovers", fields: [sender_id], references: [id])
-  receiver           users            @relation("ReceiverHandovers", fields: [receiver_id], references: [id])
+  receiver           users?           @relation("ReceiverHandovers", fields: [receiver_id], references: [id])
 
   @@map("wallet_custody_handovers")
   @@schema("maspero")
@@ -413,7 +413,24 @@ model employee_reports {
   @@schema("maspero")
 }
 
-// 15. Financial Summaries (التقارير المالية والأرباح)
+// 15. Services Catalog (جدول الخدمات وإدارة العمولات والأسعار)
+model services_catalog {
+  id                 String    @id @default(uuid()) @db.Uuid
+  legacy_id          String?   @unique @db.VarChar(100)
+  service_name       String    @db.VarChar(200)
+  is_commissionable  Boolean   @default(false)
+  commission_percent Decimal   @default(0) @db.Decimal(5, 2)
+  price              Decimal   @default(0) @db.Decimal(15, 2)
+  description        String?   @db.Text
+  sort               Int       @default(0)
+  is_active          Boolean   @default(true)
+  created_at         DateTime? @default(now()) @db.Timestamptz()
+
+  @@map("services_catalog")
+  @@schema("maspero")
+}
+
+// 16. Financial Summaries (التقارير المالية والأرباح)
 model financial_reports {
   id                             String   @id @default(uuid()) @db.Uuid
   legacy_id                      String?  @unique @db.VarChar(100)

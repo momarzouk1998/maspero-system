@@ -13,7 +13,9 @@ export async function GET(req: Request) {
 
   let where: any = {};
   if (user.role === 'manager') {
-    if (type === 'pending') where = { status: 'PENDING' };
+    if (type === 'pending' || type === 'active') {
+      where = { status: 'PENDING' };
+    }
   } else {
     if (type === 'pending') {
       where = { receiver_id: user.id, status: 'PENDING' };

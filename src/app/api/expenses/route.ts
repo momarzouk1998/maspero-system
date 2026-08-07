@@ -128,3 +128,31 @@ export async function DELETE(req: Request) {
   await db.expenses.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
+
+// PUT: Manager can edit financial transaction by ID
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { id, mainType, expenseType, amount, notes } = await req.json();
+    if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+    const updated = await db.expenses.update({
+      where: { id },
+      data: {
+        main_type: mainType || undefined,
+        expense_type: expenseType || undefined,
+        amount: amount !== undefined ? Number(amount) : undefined,
+        notes: notes !== undefined ? notes : undefined,
+      }
+    });
+
+    return NextResponse.json({ success: true, expense: updated });
+  } catch (error: any) {
+    console.error('Update Expense Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء تعديل المعاملة المالية' }, { status: 500 });
+  }
+}

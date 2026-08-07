@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Receipt, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
-  User, X, ArrowRight, Trash2, DollarSign, Wallet
+  User, X, ArrowRight, Trash2, Edit3, DollarSign, Wallet
 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
@@ -22,6 +22,14 @@ export default function ExpensesHistoryPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
+
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editMainType, setEditMainType] = useState('مصروفات');
+  const [editExpenseType, setEditExpenseType] = useState('نقدي');
+  const [editAmount, setEditAmount] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -74,6 +82,43 @@ export default function ExpensesHistoryPage() {
     setEndDate('');
     setFilterEmployeeId('');
     setIsFilterOpen(false);
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setEditMainType(item.main_type || 'مصروفات');
+    setEditExpenseType(item.expense_type || 'نقدي');
+    setEditAmount((item.amount || 0).toString());
+    setEditNotes(item.notes || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          mainType: editMainType,
+          expenseType: editExpenseType,
+          amount: parseFloat(editAmount),
+          notes: editNotes
+        })
+      });
+
+      if (res.ok) {
+        setEditingItem(null);
+        fetchExpenses(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   return (
@@ -140,7 +185,7 @@ export default function ExpensesHistoryPage() {
                 <th className="px-4 py-3">الموظف المعني</th>
                 <th className="px-4 py-3">ملاحظات</th>
                 <th className="px-4 py-3">التاريخ والوقت</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -172,7 +217,7 @@ export default function ExpensesHistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">{item.expense_type || 'نقدي'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base">
-                      {Number(item.amount).toLocaleString('ar-EG')} <span className="text-xs text-slate-500 font-normal">ج.م</span>
+                      {Number(item.amount).toLocaleString('ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600">{item.notes || '-'}</td>
@@ -181,17 +226,26 @@ export default function ExpensesHistoryPage() {
                     </td>
                     {currentUser?.role === 'manager' && (
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={async () => {
-                            if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
-                            await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
-                            fetchExpenses(pagination.page);
-                          }}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                          title="حذف المصروف"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg border border-rose-200 transition-colors"
+                            title="تعديل المعاملة"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
+                              await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
+                              fetchExpenses(pagination.page);
+                            }}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                            title="حذف المصروف"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -226,6 +280,94 @@ export default function ExpensesHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-rose-600" />
+                <span>تعديل القيد المالي</span>
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">التصنيف الرئيسي</label>
+                <select
+                  value={editMainType}
+                  onChange={(e) => setEditMainType(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-rose-500"
+                >
+                  <option value="مصروفات">مصروفات</option>
+                  <option value="سلفة">سلفة</option>
+                  <option value="قبض">قبض</option>
+                  <option value="دعم مالي">دعم مالي</option>
+                  <option value="مشتريات">مشتريات</option>
+                  <option value="إيرادات">إيرادات</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">طريقة الصرف</label>
+                <select
+                  value={editExpenseType}
+                  onChange={(e) => setEditExpenseType(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-rose-500"
+                >
+                  <option value="نقدي">نقدي</option>
+                  <option value="محفظة">محفظة إلكترونية</option>
+                  <option value="خزينة">خزينة رئيسية</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">المبلغ</label>
+                <input
+                  type="number"
+                  step="1"
+                  required
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="ملاحظات..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Filter Modal */}
       {isFilterOpen && (

@@ -54,6 +54,15 @@ export default function ManagerHubPage() {
       badge: 'إدارة الصلاحيات'
     },
     {
+      id: 'services',
+      title: 'إدارة كود الخدمات والعمولات',
+      description: 'إضافة وتعديل وحذف الخدمات ونسب عمولات الموظفين والأسعار.',
+      icon: Printer,
+      href: '/manager/services',
+      color: 'bg-teal-500/10 text-teal-600 border-teal-200 hover:border-teal-400',
+      badge: 'الخدمات والعمولات'
+    },
+    {
       id: 'categories',
       title: 'تصنيفات المصروفات',
       description: 'إدارة وتخصيص تصنيفات المصروفات والإيرادات والمشتريات للنظام.',
