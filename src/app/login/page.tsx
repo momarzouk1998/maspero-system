@@ -24,15 +24,23 @@ export default function LoginPage() {
         body: JSON.stringify({ nameOrPhone, password })
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = {};
+
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        throw new Error('حدث خطأ في الاتصال بالخادم. برجاء تحديث الصفحة والمحاولة مرة أخرى.');
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'فشل تسجيل الدخول');
+        throw new Error(data.error || 'اسم المستخدم/الهاتف أو كلمة المرور غير صحيحة');
       }
 
       router.push('/');
       router.refresh();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'فشل تسجيل الدخول');
     } finally {
       setLoading(false);
     }
