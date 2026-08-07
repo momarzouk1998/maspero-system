@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Printer, Search, Filter, Calendar, FileText, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, ArrowRight } from 'lucide-react';
+import { Printer, Search, Filter, Calendar, FileText, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, Edit3, ArrowRight } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ServicesPage() {
@@ -21,11 +21,24 @@ export default function ServicesPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editPaperCount, setEditPaperCount] = useState('');
+  const [editFaceType, setEditFaceType] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data.user))
       .catch(() => {});
+
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
   }, []);
 
   const fetchEntries = async (page = 1) => {
@@ -39,8 +52,9 @@ export default function ServicesPage() {
         faceType: filterFaceType,
         employeeId: filterEmployeeId,
         startDate: filterStartDate,
-        endDate: filterEndDate,
+        endDate: filterEndDate
       });
+
       const res = await fetch(`/api/service-entries?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
@@ -53,13 +67,6 @@ export default function ServicesPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetch('/api/users')
-      .then(r => r.json())
-      .then(d => setUsersList(getActiveUsers(d.users || [])))
-      .catch(console.error);
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchEntries(1), 300);
@@ -75,6 +82,43 @@ export default function ServicesPage() {
     setFilterStartDate('');
     setFilterEndDate('');
     setIsFilterOpen(false);
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setEditAmount(item.amount.toString());
+    setEditPaperCount(item.paper_count.toString());
+    setEditFaceType(item.face_type || 'وجه واحد');
+    setEditNotes(item.notes || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch('/api/service-entries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          amount: parseFloat(editAmount),
+          paper_count: parseInt(editPaperCount),
+          face_type: editFaceType,
+          notes: editNotes
+        })
+      });
+
+      if (res.ok) {
+        setEditingItem(null);
+        fetchEntries(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   return (
@@ -108,8 +152,8 @@ export default function ServicesPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث بالخدمة أو الموظف..."
-              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 w-60"
+              placeholder="بحث بالخدمة، الموظف، الملاحظات..."
+              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 w-64"
             />
           </div>
 
@@ -151,20 +195,20 @@ export default function ServicesPage() {
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">التاريخ</th>
                 <th className="px-4 py-3">الملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>جاري تحميل سجل الخدمات...</span>
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد خدمات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
@@ -199,17 +243,26 @@ export default function ServicesPage() {
                     </td>
                     {currentUser?.role === 'manager' && (
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={async () => {
-                            if (!confirm('هل أنت تأكد من رغبتك في حذف هذه الخدمة؟')) return;
-                            await fetch(`/api/service-entries?id=${item.id}`, { method: 'DELETE' });
-                            fetchEntries(pagination.page);
-                          }}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200"
-                          title="حذف الخدمة"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg border border-blue-200 transition-colors"
+                            title="تعديل الخدمة"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذه الخدمة؟')) return;
+                              await fetch(`/api/service-entries?id=${item.id}`, { method: 'DELETE' });
+                              fetchEntries(pagination.page);
+                            }}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                            title="حذف الخدمة"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -245,42 +298,122 @@ export default function ServicesPage() {
         )}
       </div>
 
+      {/* Manager Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-blue-600" />
+                <span>تعديل سجل الخدمة</span>
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">اسم الخدمة</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingItem.service_name}
+                  className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">المبلغ (المحصل)</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">عدد الورق</label>
+                  <input
+                    type="number"
+                    required
+                    value={editPaperCount}
+                    onChange={(e) => setEditPaperCount(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">نوع الطباعة</label>
+                <select
+                  value={editFaceType}
+                  onChange={(e) => setEditFaceType(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                >
+                  <option value="وجه واحد">وجه واحد</option>
+                  <option value="وجهين">وجهين</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="أي ملاحظات إضافية..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Filter Modal */}
       {isFilterOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Filter className="w-5 h-5 text-blue-600" />
                 <span>خيارات التصفية</span>
               </h3>
-              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع الخدمة</label>
-                <select
-                  value={filterServiceName}
-                  onChange={(e) => setFilterServiceName(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-                  <option value="">الكل</option>
-                  <option value="طباعة أسود">طباعة أسود</option>
-                  <option value="طباعة ألوان">طباعة ألوان</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع الوجه</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع الطباعة (الوجه)</label>
                 <select
                   value={filterFaceType}
                   onChange={(e) => setFilterFaceType(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
                 >
-                  <option value="">الكل</option>
+                  <option value="">جميع الأنواع</option>
                   <option value="وجه واحد">وجه واحد</option>
                   <option value="وجهين">وجهين</option>
                 </select>
@@ -292,7 +425,7 @@ export default function ServicesPage() {
                   <select
                     value={filterEmployeeId}
                     onChange={(e) => setFilterEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
                   >
                     <option value="">جميع الموظفين</option>
                     {usersList.map((u) => (
@@ -309,7 +442,7 @@ export default function ServicesPage() {
                     type="date"
                     value={filterStartDate}
                     onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -318,7 +451,7 @@ export default function ServicesPage() {
                     type="date"
                     value={filterEndDate}
                     onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -327,13 +460,13 @@ export default function ServicesPage() {
             <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
                 onClick={() => { fetchEntries(1); setIsFilterOpen(false); }}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl"
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md"
               >
                 تطبيق التصفية
               </button>
               <button
                 onClick={resetFilters}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
               >
                 إعادة ضبط
               </button>

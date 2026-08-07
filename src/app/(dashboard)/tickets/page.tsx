@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, ArrowRight } from 'lucide-react';
+import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, Edit3, ArrowRight } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function TicketsPage() {
@@ -19,11 +19,24 @@ export default function TicketsPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editPrice, setEditPrice] = useState('');
+  const [editCommission, setEditCommission] = useState('');
+  const [editItemCount, setEditItemCount] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data.user))
       .catch(() => {});
+
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
   }, []);
 
   const fetchBookings = async (page = 1) => {
@@ -35,8 +48,9 @@ export default function TicketsPage() {
         search,
         employeeId: filterEmployeeId,
         startDate: filterStartDate,
-        endDate: filterEndDate,
+        endDate: filterEndDate
       });
+
       const res = await fetch(`/api/tickets?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
@@ -51,13 +65,6 @@ export default function TicketsPage() {
   };
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(r => r.json())
-      .then(d => setUsersList(getActiveUsers(d.users || [])))
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
     const timer = setTimeout(() => fetchBookings(1), 300);
     return () => clearTimeout(timer);
   }, [search, filterEmployeeId, filterStartDate, filterEndDate]);
@@ -69,6 +76,43 @@ export default function TicketsPage() {
     setFilterStartDate('');
     setFilterEndDate('');
     setIsFilterOpen(false);
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setEditPrice(item.ticket_price.toString());
+    setEditCommission(item.ticket_commission.toString());
+    setEditItemCount(item.item_count.toString());
+    setEditNotes(item.notes || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch('/api/tickets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          ticketPrice: parseFloat(editPrice),
+          ticketCommission: parseFloat(editCommission),
+          itemCount: parseInt(editItemCount),
+          notes: editNotes
+        })
+      });
+
+      if (res.ok) {
+        setEditingItem(null);
+        fetchBookings(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   return (
@@ -145,20 +189,20 @@ export default function TicketsPage() {
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">التاريخ</th>
                 <th className="px-4 py-3">الملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-600" />
                     <span>جاري تحميل سجل التذاكر...</span>
                   </td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد حجوزات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
@@ -189,17 +233,26 @@ export default function TicketsPage() {
                     </td>
                     {currentUser?.role === 'manager' && (
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={async () => {
-                            if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الحجز؟')) return;
-                            await fetch(`/api/tickets?id=${item.id}`, { method: 'DELETE' });
-                            fetchBookings(pagination.page);
-                          }}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200"
-                          title="حذف الحجز"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg border border-purple-200 transition-colors"
+                            title="تعديل الحجز"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الحجز؟')) return;
+                              await fetch(`/api/tickets?id=${item.id}`, { method: 'DELETE' });
+                              fetchBookings(pagination.page);
+                            }}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                            title="حذف الحجز"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -235,16 +288,99 @@ export default function TicketsPage() {
         )}
       </div>
 
+      {/* Manager Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-purple-600" />
+                <span>تعديل حجز التذكرة</span>
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">سعر التذكرة</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">العمولة</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    value={editCommission}
+                    onChange={(e) => setEditCommission(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-purple-700 text-sm font-bold font-mono focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">عدد التذاكر / العناصر</label>
+                <input
+                  type="number"
+                  required
+                  value={editItemCount}
+                  onChange={(e) => setEditItemCount(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات الحجز</label>
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="ملاحظات..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Filter Modal */}
       {isFilterOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Filter className="w-5 h-5 text-purple-600" />
                 <span>خيارات التصفية</span>
               </h3>
-              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -256,7 +392,7 @@ export default function TicketsPage() {
                   <select
                     value={filterEmployeeId}
                     onChange={(e) => setFilterEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500"
                   >
                     <option value="">جميع الموظفين</option>
                     {usersList.map((u) => (
@@ -273,7 +409,7 @@ export default function TicketsPage() {
                     type="date"
                     value={filterStartDate}
                     onChange={(e) => setFilterStartDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500"
                   />
                 </div>
                 <div>
@@ -282,7 +418,7 @@ export default function TicketsPage() {
                     type="date"
                     value={filterEndDate}
                     onChange={(e) => setFilterEndDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-500"
                   />
                 </div>
               </div>
@@ -291,13 +427,13 @@ export default function TicketsPage() {
             <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
                 onClick={() => { fetchBookings(1); setIsFilterOpen(false); }}
-                className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl"
+                className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md"
               >
                 تطبيق التصفية
               </button>
               <button
                 onClick={resetFilters}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
               >
                 إعادة ضبط
               </button>

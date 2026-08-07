@@ -421,78 +421,95 @@ export default function ShiftsPage() {
         
         {/* Active Shift Action Card */}
         <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <span>حالة الشفت الحالي</span>
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <span>حالة الشفت الحالي</span>
+            </h2>
+            {activeShift && (
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 animate-pulse">
+                ● نشط الآن
+              </span>
+            )}
+          </div>
 
           {activeShift ? (
-            <div className="p-4 rounded-2xl border border-emerald-300 bg-emerald-50/60 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  نشط الآن
-                </span>
-                <span className="text-xs text-slate-600 font-semibold">{activeShift.shift_type}</span>
-              </div>
-              
-              <div className="space-y-1 text-xs text-slate-700">
-                <p>
-                  وقت البداية: <span className="font-bold text-slate-900 font-mono">{new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}</span>
-                </p>
-                <p>
-                  الموظف الحالي: <span className="font-bold text-slate-900">{activeShift.employee_name || 'أنت'}</span>
-                </p>
+            <div className="flex-1 flex flex-col justify-between space-y-4 pt-2">
+              <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">نوع الشفت:</span>
+                  <span className="text-sm font-bold text-slate-900 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
+                    {activeShift.shift_type || 'صباحي'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">وقت البداية:</span>
+                  <span className="text-sm font-bold font-mono text-emerald-800 dir-ltr">
+                    {new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">الموظف الحالي:</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {activeShift.employee_name || 'أنت'}
+                  </span>
+                </div>
               </div>
 
-              <div className="pt-2 border-t border-emerald-200/60 space-y-2">
-                <input
-                  type="text"
-                  value={shiftNote}
-                  onChange={(e) => setShiftNote(e.target.value)}
-                  placeholder="ملاحظات عند الإغلاق..."
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-red-500"
-                />
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">ملاحظات عند الإغلاق (اختياري)</label>
+                  <input
+                    type="text"
+                    value={shiftNote}
+                    onChange={(e) => setShiftNote(e.target.value)}
+                    placeholder="أدخل أي ملاحظات قبل إغلاق الشفت..."
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-red-500 shadow-sm"
+                  />
+                </div>
                 <button
                   onClick={() => handleEndShift(activeShift.id)}
                   disabled={submitting}
-                  className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
                 >
-                  <Square className="w-4 h-4" />
+                  <Square className="w-4 h-4 fill-current" />
                   <span>إنهاء الشفت الحالي</span>
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الشفت</label>
-                <select
-                  value={shiftType}
-                  onChange={(e) => setShiftType(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-500"
-                >
-                  <option value="صباحي">صباحي (Morning)</option>
-                  <option value="مسائي">مسائي (Evening)</option>
-                </select>
-              </div>
+            <div className="flex-1 flex flex-col justify-between space-y-4 pt-2">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الشفت</label>
+                  <select
+                    value={shiftType}
+                    onChange={(e) => setShiftType(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="صباحي">صباحي (Morning)</option>
+                    <option value="مسائي">مسائي (Evening)</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات البداية</label>
-                <input
-                  type="text"
-                  value={shiftNote}
-                  onChange={(e) => setShiftNote(e.target.value)}
-                  placeholder="ملاحظات عند بدء الشفت..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
-                />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات البداية</label>
+                  <input
+                    type="text"
+                    value={shiftNote}
+                    onChange={(e) => setShiftNote(e.target.value)}
+                    placeholder="ملاحظات عند بدء الشفت..."
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <button
                 onClick={handleStartShift}
                 disabled={submitting}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-4 h-4 fill-current" />
                 <span>بدء شفت جديد</span>
               </button>
             </div>
