@@ -91,7 +91,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'إدارة الشفتات', href: '/shifts', icon: Clock, badge: pendingTransfers },
     { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
     { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
-    { name: 'الخدمات المالية والماكينات', href: '/machines', icon: Cpu },
     ...(isManager ? [
       { name: 'لوحة المدير', href: '/manager', icon: ShieldCheck },
     ] : [])

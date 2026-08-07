@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSign, Wallet, Clock, Search, CheckCircle2, AlertCircle, Shield, Check, X } from 'lucide-react';
+import Link from 'next/link';
+import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSign, Wallet, Clock, Search, CheckCircle2, AlertCircle, Shield, Check, X, ArrowRight } from 'lucide-react';
 
 const FEATURES_LIST = [
   { key: 'services', label: 'تسجيل الخدمات والطباعة' },
@@ -236,14 +237,24 @@ export default function ManagerUsersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-7 h-7 text-blue-600" />
-            <span>إدارة الموظفين والحسابات والأذونات</span>
-          </h1>
-          <p className="text-slate-600 text-xs mt-1">
-            إضافة وتعديل الموظفين وضبط أذونات وتراخيص الوصول لكل صفحة بدقة
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/manager"
+            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>لوحة المدير</span>
+          </Link>
+
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Users className="w-7 h-7 text-blue-600" />
+              <span>إدارة الموظفين والحسابات والأذونات</span>
+            </h1>
+            <p className="text-slate-600 text-xs mt-1">
+              إضافة وتعديل الموظفين وضبط أذونات وتراخيص الوصول لكل صفحة بدقة
+            </p>
+          </div>
         </div>
 
         <button

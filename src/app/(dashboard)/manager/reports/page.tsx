@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   BarChart3, TrendingUp, DollarSign, Printer, Train, Cpu, Receipt, 
-  ArrowLeftRight, Filter, Search, Calendar, RefreshCw, CheckCircle2, AlertTriangle, Info 
+  ArrowLeftRight, Filter, Search, Calendar, RefreshCw, CheckCircle2, AlertTriangle, Info, ArrowRight 
 } from 'lucide-react';
 
 export default function ManagerReportsPage() {
@@ -73,14 +74,24 @@ export default function ManagerReportsPage() {
     <div className="space-y-6">
       {/* Title & Tabs */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-blue-400" />
-            <span>لوحة التقارير والرقابة</span>
-          </h1>
-          <p className="text-slate-400 text-xs mt-1">
-            متابعة الأرباح الإجمالية وتقارير تسليم وتأكيد الأرصدة والعهدة
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/manager"
+            className="py-2 px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>لوحة المدير</span>
+          </Link>
+
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <BarChart3 className="w-7 h-7 text-blue-400" />
+              <span>لوحة التقارير والرقابة</span>
+            </h1>
+            <p className="text-slate-400 text-xs mt-1">
+              متابعة الأرباح الإجمالية وتقارير تسليم وتأكيد الأرصدة والعهدة
+            </p>
+          </div>
         </div>
 
         {/* Tab Buttons */}
