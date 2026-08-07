@@ -120,7 +120,7 @@ export default function POSPage() {
   // ─── Wallets data ────────────────────────────────────────
   const [extWallets, setExtWallets] = useState<any[]>([]);
   useEffect(() => {
-    fetch('/api/wallets').then(r => r.json()).then(d => setExtWallets(d.wallets || []));
+    fetch('/api/wallets').then(r => r.json()).then(d => setExtWallets(d.externalWallets || d.wallets || []));
   }, []);
 
   const wallets  = extWallets.filter(w => w.wallet_type === 'محفظة');
@@ -130,11 +130,12 @@ export default function POSPage() {
   const [activeTab, setActiveTab] = useState<'services' | 'tickets' | 'wallets'>('services');
 
   // ─── Service Popup ───────────────────────────────────────
-  const [svcPopup, setSvcPopup] = useState<any | null>(null); // selected service object
-  const [svcFace,  setSvcFace]  = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
-  const [svcPaper, setSvcPaper] = useState(1);
-  const [svcAmt,   setSvcAmt]   = useState(0);
-  const [svcLoading, setSvcLoading] = useState(false);
+  const [svcPopup,    setSvcPopup]    = useState<any | null>(null);
+  const [svcFace,     setSvcFace]     = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
+  const [svcPaper,    setSvcPaper]    = useState(1);
+  const [svcAmt,      setSvcAmt]      = useState(0);
+  const [svcNotes,    setSvcNotes]    = useState('');  // for "أخرى" service
+  const [svcLoading,  setSvcLoading]  = useState(false);
 
   useEffect(() => {
     if (!svcPopup) return;
@@ -149,20 +150,23 @@ export default function POSPage() {
     setSvcFace('وجه واحد');
     setSvcPaper(1);
     setSvcAmt(0);
+    setSvcNotes('');
   };
 
   const handleAddService = async () => {
     if (!svcPopup || !activeInvoiceCode) return;
     setSvcLoading(true);
     try {
+      const isOther = svcPopup.service_name === 'أخرى';
       await fetch('/api/service-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceId: svcPopup.id,
-          serviceName: svcPopup.service_name,
+          serviceName: isOther && svcNotes ? `أخرى: ${svcNotes}` : svcPopup.service_name,
           paperCount: svcPaper, pageCount: 1, faceType: svcFace,
-          amount: svcAmt, invoice_code: activeInvoiceCode,
+          amount: svcAmt, notes: svcNotes || null,
+          invoice_code: activeInvoiceCode,
         }),
       });
       setSvcPopup(null);
@@ -170,16 +174,15 @@ export default function POSPage() {
     } finally { setSvcLoading(false); }
   };
 
-  // ─── Ticket Popup ────────────────────────────────────────
-  const [tktType,     setTktType]     = useState<'قطار' | 'أتوبيس'>('قطار');
-  const [tktPopup,    setTktPopup]    = useState(false);
-  const [tktCount,    setTktCount]    = useState(1);
-  const [tktPrice,    setTktPrice]    = useState(0);
-  const [tktComm,     setTktComm]     = useState(0);
-  const [tktLoading,  setTktLoading]  = useState(false);
+  // ─── Ticket (inline form, no popup) ─────────────────────
+  const [tktType,    setTktType]    = useState<'قطار' | 'أتوبيس' | null>(null);
+  const [tktCount,   setTktCount]   = useState(1);
+  const [tktPrice,   setTktPrice]   = useState(0);
+  const [tktComm,    setTktComm]    = useState(0);
+  const [tktLoading, setTktLoading] = useState(false);
 
   const handleAddTicket = async () => {
-    if (!activeInvoiceCode) return;
+    if (!activeInvoiceCode || !tktType) return;
     setTktLoading(true);
     try {
       await fetch('/api/tickets', {
@@ -191,7 +194,6 @@ export default function POSPage() {
           invoice_code: activeInvoiceCode,
         }),
       });
-      setTktPopup(false);
       fetchInvoice(activeInvoiceCode);
       setTktCount(1); setTktPrice(0); setTktComm(0);
     } finally { setTktLoading(false); }
@@ -272,18 +274,46 @@ export default function POSPage() {
           <div className="glass-panel p-4 rounded-3xl border border-slate-200 flex-1">
             <p className="text-xs text-slate-500 mb-3 font-medium">اضغط على الخدمة لإضافتها للفاتورة</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {services.map((svc) => (
-                <button
-                  key={svc.id}
-                  onClick={() => openSvcPopup(svc)}
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50 hover:shadow-md transition-all text-center group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
-                    <Printer className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 leading-tight">{svc.service_name}</span>
-                </button>
-              ))}
+              {/* Sort: طباعة أسود first, طباعة ألوان second, others, then أخرى last */}
+              {[
+                ...services.filter(s => s.service_name?.includes('طباعة أسود')),
+                ...services.filter(s => s.service_name?.includes('طباعة ألوان')),
+                ...services.filter(s => !s.service_name?.includes('طباعة') && s.service_name !== 'أخرى'),
+                // "أخرى" from DB if exists, else a virtual one
+              ].map((svc) => {
+                const isPrintSvc = svc.service_name?.includes('طباعة');
+                const cardColor = svc.service_name?.includes('أسود')
+                  ? 'border-slate-300 hover:border-slate-500 hover:bg-slate-50 bg-white'
+                  : svc.service_name?.includes('ألوان')
+                  ? 'border-amber-200 hover:border-amber-400 hover:bg-amber-50 bg-white'
+                  : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50 bg-white';
+                const iconColor = svc.service_name?.includes('أسود')
+                  ? 'bg-slate-100 group-hover:bg-slate-200 text-slate-700'
+                  : svc.service_name?.includes('ألوان')
+                  ? 'bg-amber-100 group-hover:bg-amber-200 text-amber-700'
+                  : 'bg-blue-100 group-hover:bg-blue-200 text-blue-600';
+                return (
+                  <button key={svc.id} onClick={() => openSvcPopup(svc)}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${iconColor}`}>
+                      <Printer className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-800 leading-tight">{svc.service_name}</span>
+                  </button>
+                );
+              })}
+              {/* أخرى - always last */}
+              <button
+                onClick={() => openSvcPopup({ id: null, service_name: 'أخرى' })}
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 hover:shadow-md transition-all text-center group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center transition-colors">
+                  <Plus className="w-5 h-5 text-slate-500" />
+                </div>
+                <span className="text-xs font-bold text-slate-600">أخرى</span>
+              </button>
+
               {services.length === 0 && (
                 <div className="col-span-4 py-10 text-center text-slate-400 text-sm">
                   <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
@@ -296,29 +326,105 @@ export default function POSPage() {
 
         {/* ── TAB: TICKETS ──────────────────────────────── */}
         {activeTab === 'tickets' && (
-          <div className="glass-panel p-5 rounded-3xl border border-slate-200 space-y-4">
-            <p className="text-xs text-slate-500 font-medium">اختر نوع التذكرة</p>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => { setTktType('قطار'); setTktPopup(true); setTktCount(1); setTktPrice(0); setTktComm(0); }}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:border-purple-500 hover:bg-purple-100 transition-all group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center transition-colors">
-                  <Train className="w-7 h-7 text-purple-600" />
-                </div>
-                <span className="text-base font-bold text-slate-800">قطار</span>
-              </button>
-
-              <button
-                onClick={() => { setTktType('أتوبيس'); setTktPopup(true); setTktCount(1); setTktPrice(0); setTktComm(0); }}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 hover:border-indigo-500 hover:bg-indigo-100 transition-all group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center transition-colors">
-                  <Bus className="w-7 h-7 text-indigo-600" />
-                </div>
-                <span className="text-base font-bold text-slate-800">أتوبيس</span>
-              </button>
+          <div className="glass-panel p-5 rounded-3xl border border-slate-200 space-y-4 flex-1">
+            {/* Type selector */}
+            <div>
+              <p className="text-xs text-slate-500 font-medium mb-3">اختر نوع التذكرة</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => { setTktType('قطار'); setTktCount(1); setTktPrice(0); setTktComm(0); }}
+                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${
+                    tktType === 'قطار'
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200'
+                      : 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400'
+                  }`}
+                >
+                  <Train className="w-5 h-5" />
+                  <span>قطار</span>
+                </button>
+                <button
+                  onClick={() => { setTktType('أتوبيس'); setTktCount(1); setTktPrice(0); setTktComm(0); }}
+                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${
+                    tktType === 'أتوبيس'
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200'
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400'
+                  }`}
+                >
+                  <Bus className="w-5 h-5" />
+                  <span>أتوبيس</span>
+                </button>
+              </div>
             </div>
+
+            {/* Inline form - shown when type is selected */}
+            {tktType && (
+              <div className={`p-4 rounded-2xl border-2 space-y-4 transition-all ${
+                tktType === 'قطار' ? 'border-purple-200 bg-purple-50/50' : 'border-indigo-200 bg-indigo-50/50'
+              }`}>
+                <p className="text-xs font-bold text-slate-700">تفاصيل تذكرة {tktType}</p>
+
+                {/* Count + Price + Commission in one row */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">العدد</label>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setTktCount(c => Math.max(1, c - 1))}
+                        className="w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-100 shrink-0">−</button>
+                      <input type="number" min="1" value={tktCount}
+                        onChange={e => setTktCount(parseInt(e.target.value) || 1)}
+                        className="w-full p-2 text-center bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
+                      />
+                      <button onClick={() => setTktCount(c => c + 1)}
+                        className="w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold flex items-center justify-center hover:bg-slate-100 shrink-0">+</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">سعر التذكرة</label>
+                    <input type="number" step="0.25" min="0" value={tktPrice || ''}
+                      onChange={e => setTktPrice(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">العمولة</label>
+                    <input type="number" step="0.25" min="0" value={tktComm || ''}
+                      onChange={e => setTktComm(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Summary row + Add button */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-600 bg-white rounded-xl px-3 py-2 border border-slate-200">
+                    <span>الإجمالي:</span>
+                    <span className="font-bold font-mono text-emerald-700 text-sm">
+                      {((tktPrice + tktComm) * tktCount).toFixed(2)} ج.م
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleAddTicket}
+                    disabled={tktLoading || tktPrice <= 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${
+                      tktType === 'قطار'
+                        ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
+                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
+                    }`}
+                  >
+                    {tktLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    إضافة للفاتورة
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!tktType && (
+              <div className="py-8 text-center text-slate-400 text-sm">
+                اختر نوع التذكرة أعلاه لعرض التفاصيل
+              </div>
+            )}
           </div>
         )}
 
@@ -591,6 +697,22 @@ export default function POSPage() {
               </button>
             </div>
 
+            {/* "أخرى" notes field */}
+            {svcPopup.service_name === 'أخرى' && (
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-2">وصف الخدمة / البيان *</label>
+                <input
+                  type="text"
+                  value={svcNotes}
+                  onChange={e => setSvcNotes(e.target.value)}
+                  placeholder="مثال: لامينيشن، فلاشة، سكان..."
+                  autoFocus
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+                <p className="text-xs text-slate-400 mt-1">سيتم حفظه مع الخدمة لمراجعته لاحقاً</p>
+              </div>
+            )}
+
             {/* Face type buttons (only for print) */}
             {isPrint(svcPopup.service_name) && (
               <div>
@@ -630,9 +752,10 @@ export default function POSPage() {
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-2">المبلغ الإجمالي</label>
               <div className="relative">
-                <input type="number" step="0.25" min="0" value={svcAmt}
+                <input type="number" step="0.25" min="0" value={svcAmt || ''}
                   onChange={e => setSvcAmt(parseFloat(e.target.value) || 0)}
                   disabled={isPrint(svcPopup.service_name)}
+                  placeholder="0"
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:bg-slate-50 disabled:text-slate-700"
                 />
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">ج.م</span>
@@ -640,79 +763,15 @@ export default function POSPage() {
             </div>
 
             <div className="flex gap-3 pt-1">
-              <button onClick={handleAddService} disabled={svcLoading || svcAmt <= 0}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md">
+              <button
+                onClick={handleAddService}
+                disabled={svcLoading || svcAmt <= 0 || (svcPopup.service_name === 'أخرى' && !svcNotes.trim())}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
+              >
                 {svcLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 إضافة للفاتورة
               </button>
               <button onClick={() => setSvcPopup(null)}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl">إلغاء</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════
-           POPUP: TICKET
-      ══════════════════════════════════════════════════ */}
-      {tktPopup && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-200">
-
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                {tktType === 'قطار' ? <Train className="w-5 h-5 text-purple-600" /> : <Bus className="w-5 h-5 text-indigo-600" />}
-                تذكرة {tktType}
-              </h3>
-              <button onClick={() => setTktPopup(false)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-2">عدد التذاكر</label>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setTktCount(c => Math.max(1, c - 1))}
-                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-lg flex items-center justify-center border border-slate-200">−</button>
-                <input type="number" min="1" value={tktCount}
-                  onChange={e => setTktCount(parseInt(e.target.value) || 1)}
-                  className="flex-1 p-2.5 text-center bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                />
-                <button onClick={() => setTktCount(c => c + 1)}
-                  className="w-10 h-10 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold text-lg flex items-center justify-center border border-purple-200">+</button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">سعر التذكرة</label>
-                <input type="number" step="0.25" min="0" value={tktPrice}
-                  onChange={e => setTktPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">العمولة</label>
-                <input type="number" step="0.25" min="0" value={tktComm}
-                  onChange={e => setTktComm(parseFloat(e.target.value) || 0)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                />
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between">
-              <span className="text-slate-600">الإجمالي المحصّل:</span>
-              <span className="font-bold font-mono text-emerald-700">{((tktPrice + tktComm) * tktCount).toFixed(2)} ج.م</span>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={handleAddTicket} disabled={tktLoading || tktPrice <= 0}
-                className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md">
-                {tktLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                إضافة للفاتورة
-              </button>
-              <button onClick={() => setTktPopup(false)}
                 className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl">إلغاء</button>
             </div>
           </div>

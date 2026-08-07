@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { 
   Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
-  ArrowDownLeft, ArrowUpRight, Wallet, User
+  ArrowDownLeft, ArrowUpRight, Wallet, User, X
 } from 'lucide-react';
+import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ChargeHistoryPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -15,6 +16,14 @@ export default function ChargeHistoryPage() {
   const [transactionType, setTransactionType] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [filterWalletName, setFilterWalletName] = useState('');
+  const [filterEmployeeId, setFilterEmployeeId] = useState('');
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [walletsList, setWalletsList] = useState<string[]>([]);
+
+  const hasActiveFilters = transactionType || startDate || endDate || filterWalletName || filterEmployeeId;
 
   const fetchTransactions = async (page = 1) => {
     setLoading(true);
@@ -25,7 +34,9 @@ export default function ChargeHistoryPage() {
         search,
         transactionType,
         startDate,
-        endDate
+        endDate,
+        walletName: filterWalletName,
+        employeeId: filterEmployeeId,
       });
 
       const res = await fetch(`/api/charge-history?${params.toString()}`);
@@ -33,6 +44,8 @@ export default function ChargeHistoryPage() {
         const data = await res.json();
         setTransactions(data.transactions || []);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
+        // collect unique wallet names for filter dropdown
+        if (data.walletNames) setWalletsList(data.walletNames);
       }
     } catch (e) {
       console.error(e);
@@ -42,11 +55,33 @@ export default function ChargeHistoryPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchTransactions(1);
-    }, 300);
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
+    // fetch wallet names for filter
+    fetch('/api/wallets')
+      .then(r => r.json())
+      .then(d => {
+        const names = (d.externalWallets || []).map((w: any) => w.wallet_name);
+        setWalletsList(names);
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchTransactions(1), 300);
     return () => clearTimeout(timer);
-  }, [search, transactionType, startDate, endDate]);
+  }, [search, transactionType, startDate, endDate, filterWalletName, filterEmployeeId]);
+
+  const resetFilters = () => {
+    setTransactionType('');
+    setStartDate('');
+    setEndDate('');
+    setFilterWalletName('');
+    setFilterEmployeeId('');
+    setIsFilterOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -75,34 +110,102 @@ export default function ChargeHistoryPage() {
             />
           </div>
 
-          <select
-            value={transactionType}
-            onChange={(e) => setTransactionType(e.target.value)}
-            className="py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+              hasActiveFilters
+                ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20'
+                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+            }`}
           >
-            <option value="">نوع العملية: الكل</option>
-            <option value="إيداع">إيداع (Deposit)</option>
-            <option value="سحب">سحب (Withdrawal)</option>
-          </select>
-
-          <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-xl px-3 py-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-900 focus:outline-none"
-            />
-            <span className="text-slate-500 text-xs">إلى</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-900 focus:outline-none"
-            />
-          </div>
+            <Filter className="w-4 h-4" />
+            <span>تصفية</span>
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+          </button>
         </div>
       </div>
+
+      {/* Filter Modal */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-amber-600" />
+                <span>خيارات التصفية</span>
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع العملية</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['', 'إيداع', 'سحب'].map(t => (
+                    <button key={t} onClick={() => setTransactionType(t)}
+                      className={`py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                        transactionType === t
+                          ? t === 'إيداع' ? 'bg-emerald-600 text-white border-emerald-600'
+                          : t === 'سحب' ? 'bg-red-600 text-white border-red-600'
+                          : 'bg-slate-700 text-white border-slate-700'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                      }`}
+                    >{t === '' ? 'الكل' : t}</button>
+                  ))}
+                </div>
+              </div>
+
+              {walletsList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">المحفظة / الماكينة</label>
+                  <select value={filterWalletName} onChange={e => setFilterWalletName(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
+                    <option value="">الكل</option>
+                    {walletsList.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {usersList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف</label>
+                  <select value={filterEmployeeId} onChange={e => setFilterEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
+                    <option value="">جميع الموظفين</option>
+                    {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
+              <button onClick={() => { fetchTransactions(1); setIsFilterOpen(false); }}
+                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl">
+                تطبيق التصفية
+              </button>
+              <button onClick={resetFilters}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl">
+                إعادة ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Transactions Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">

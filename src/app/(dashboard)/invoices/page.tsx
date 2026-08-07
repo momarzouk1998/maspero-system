@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, RefreshCw, Eye, User
 } from 'lucide-react';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
+import { getActiveUsers } from '@/lib/user-utils';
 
 export default function InvoicesHistoryPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -14,6 +15,14 @@ export default function InvoicesHistoryPage() {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [filterEmployeeId, setFilterEmployeeId] = useState('');
+  const [minTotal, setMinTotal] = useState('');
+  const [maxTotal, setMaxTotal] = useState('');
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
+
+  const hasActiveFilters = startDate || endDate || filterEmployeeId || minTotal || maxTotal;
 
   // Selected Invoice for Drawer Details
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
@@ -36,7 +45,10 @@ export default function InvoicesHistoryPage() {
         limit: '20',
         search,
         startDate,
-        endDate
+        endDate,
+        employeeId: filterEmployeeId,
+        minTotal,
+        maxTotal,
       });
 
       const res = await fetch(`/api/invoices?${params.toString()}`);
@@ -53,11 +65,25 @@ export default function InvoicesHistoryPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchInvoices(1);
-    }, 300);
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchInvoices(1), 300);
     return () => clearTimeout(timer);
-  }, [search, startDate, endDate]);
+  }, [search, startDate, endDate, filterEmployeeId, minTotal, maxTotal]);
+
+  const resetFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setFilterEmployeeId('');
+    setMinTotal('');
+    setMaxTotal('');
+    setIsFilterOpen(false);
+  };
 
   // Open Drawer and fetch details for selected invoice
   const handleOpenDrawer = async (code: string) => {
@@ -127,24 +153,89 @@ export default function InvoicesHistoryPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-xl px-3 py-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-900 focus:outline-none"
-            />
-            <span className="text-slate-500 text-xs">إلى</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-900 focus:outline-none"
-            />
-          </div>
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+              hasActiveFilters
+                ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            <span>تصفية</span>
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+          </button>
         </div>
       </div>
+
+      {/* Filter Modal */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-emerald-600" />
+                <span>خيارات التصفية</span>
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {usersList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف / الكاشير</label>
+                  <select value={filterEmployeeId} onChange={e => setFilterEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200">
+                    <option value="">جميع الموظفين</option>
+                    {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الحد الأدنى للمبلغ</label>
+                  <input type="number" min="0" value={minTotal} onChange={e => setMinTotal(e.target.value)}
+                    placeholder="0"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الحد الأقصى للمبلغ</label>
+                  <input type="number" min="0" value={maxTotal} onChange={e => setMaxTotal(e.target.value)}
+                    placeholder="∞"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
+              <button onClick={() => { fetchInvoices(1); setIsFilterOpen(false); }}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl">
+                تطبيق التصفية
+              </button>
+              <button onClick={resetFilters}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl">
+                إعادة ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invoices Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
