@@ -62,73 +62,68 @@ export async function GET(req: Request) {
           invoice_code: true,
           amount: true,
           wallet_commission: true,
+          transaction_type: true,
           timestamp: true,
           employee_name: true,
-          transaction_type: true,
-          wallet_name: true
+          description: true
         },
         orderBy: { timestamp: 'desc' },
         take: 500
       })
     ]);
 
-    // Aggregate into a Map keyed by invoice_code
-    const invoiceMap = new Map<string, {
-      code: string;
-      itemCount: number;
-      total: number;
-      employeeName: string;
-      timestamp: Date;
-    }>();
+    // Aggregate by invoice_code
+    const invoiceMap = new Map<string, any>();
 
-    services.forEach(s => {
-      if (!s.invoice_code) return;
-      const existing = invoiceMap.get(s.invoice_code);
-      const amt = Number(s.amount || 0);
-      if (existing) {
-        existing.itemCount += 1;
-        existing.total += amt;
+    services.forEach((s) => {
+      const code = s.invoice_code!;
+      if (invoiceMap.has(code)) {
+        const inv = invoiceMap.get(code)!;
+        inv.itemCount += 1;
+        inv.total += Number(s.amount);
       } else {
-        invoiceMap.set(s.invoice_code, {
-          code: s.invoice_code,
+        invoiceMap.set(code, {
+          code,
           itemCount: 1,
-          total: amt,
+          total: Number(s.amount),
           employeeName: s.employee_name || 'غير محدد',
           timestamp: s.timestamp || new Date()
         });
       }
     });
 
-    tickets.forEach(t => {
-      if (!t.invoice_code) return;
-      const existing = invoiceMap.get(t.invoice_code);
-      const amt = Number(t.amount || 0);
-      if (existing) {
-        existing.itemCount += 1;
-        existing.total += amt;
+    tickets.forEach((t) => {
+      const code = t.invoice_code!;
+      if (invoiceMap.has(code)) {
+        const inv = invoiceMap.get(code)!;
+        inv.itemCount += 1;
+        inv.total += Number(t.amount);
       } else {
-        invoiceMap.set(t.invoice_code, {
-          code: t.invoice_code,
+        invoiceMap.set(code, {
+          code,
           itemCount: 1,
-          total: amt,
+          total: Number(t.amount),
           employeeName: t.employee_name || 'غير محدد',
           timestamp: t.timestamp || new Date()
         });
       }
     });
 
-    wallets.forEach(w => {
-      if (!w.invoice_code) return;
-      const existing = invoiceMap.get(w.invoice_code);
-      const amt = Number(w.amount || 0) + Number(w.wallet_commission || 0);
-      if (existing) {
-        existing.itemCount += 1;
-        existing.total += amt;
+    wallets.forEach((w) => {
+      const code = w.invoice_code!;
+      const amt = Number(w.amount || 0);
+      const comm = Number(w.wallet_commission || 0);
+      const totalCollected = w.transaction_type === 'إيداع' ? amt + comm : amt - comm;
+
+      if (invoiceMap.has(code)) {
+        const inv = invoiceMap.get(code)!;
+        inv.itemCount += 1;
+        inv.total += totalCollected;
       } else {
-        invoiceMap.set(w.invoice_code, {
-          code: w.invoice_code,
+        invoiceMap.set(code, {
+          code,
           itemCount: 1,
-          total: amt,
+          total: totalCollected,
           employeeName: w.employee_name || 'غير محدد',
           timestamp: w.timestamp || new Date()
         });
@@ -166,4 +161,25 @@ export async function GET(req: Request) {
     console.error('Invoices list Error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء جلب قائمة الفواتير' }, { status: 500 });
   }
+}
+
+// DELETE: Manager can delete invoice and all related records
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const code = searchParams.get('code');
+
+  if (!code) return NextResponse.json({ error: 'كود الفاتورة مطلوب' }, { status: 400 });
+
+  await Promise.all([
+    db.service_entries.deleteMany({ where: { invoice_code: code } }),
+    db.train_ticket_bookings.deleteMany({ where: { invoice_code: code } }),
+    db.wallet_transactions.deleteMany({ where: { invoice_code: code } })
+  ]);
+
+  return NextResponse.json({ success: true });
 }

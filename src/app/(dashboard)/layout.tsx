@@ -89,11 +89,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
     { name: 'إدارة الشفتات', href: '/shifts', icon: Clock, badge: pendingTransfers },
     { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
-    { name: 'سجل الشفتات', href: '/shifts-history', icon: History },
-    { name: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet },
-    { name: 'سجل عمليات الشحن', href: '/charge-history', icon: Zap },
-    { name: 'سجل الخدمات', href: '/services', icon: Printer },
-    { name: 'سجل التذاكر', href: '/tickets', icon: Train },
     { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
     { name: 'الخدمات المالية والماكينات', href: '/machines', icon: Cpu },
     ...(isManager ? [

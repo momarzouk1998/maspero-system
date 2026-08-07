@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
-  ArrowDownLeft, ArrowUpRight, Wallet, User, X
+  ArrowDownLeft, ArrowUpRight, Wallet, User, X, Trash2, ArrowRight
 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
@@ -87,14 +87,24 @@ export default function ChargeHistoryPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Zap className="w-7 h-7 text-amber-600" />
-            <span>سجل عمليات الشحن</span>
-          </h1>
-          <p className="text-slate-600 text-xs mt-1">
-            متابعة حركات الإيداع والسحب لـ ماكينات فوري وبساطة ومحافظ كاش وفودافون كاش
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>الرئيسية</span>
+          </Link>
+
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Zap className="w-6 h-6 text-amber-600" />
+              <span>سجل عمليات الشحن</span>
+            </h1>
+            <p className="text-slate-600 text-xs mt-0.5">
+              متابعة حركات الإيداع والسحب لـ ماكينات فوري وبساطة ومحافظ كاش وفودافون كاش
+            </p>
+          </div>
         </div>
 
         {/* Filters */}
@@ -222,6 +232,7 @@ export default function ChargeHistoryPage() {
                 <th className="px-4 py-3">كود الفاتورة</th>
                 <th className="px-4 py-3">التاريخ والوقت</th>
                 <th className="px-4 py-3">ملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -278,6 +289,21 @@ export default function ChargeHistoryPage() {
                         {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600">{item.description || '-'}</td>
+                      {currentUser?.role === 'manager' && (
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={async () => {
+                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
+                              await fetch(`/api/charge-history?id=${item.id}`, { method: 'DELETE' });
+                              fetchTransactions(pagination.page);
+                            }}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200"
+                            title="حذف العملية"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

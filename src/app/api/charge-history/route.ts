@@ -60,7 +60,23 @@ export async function GET(req: Request) {
     });
 
   } catch (error) {
-    console.error('Charge history GET error:', error);
-    return NextResponse.json({ error: 'حدث خطأ أثناء جلب سجل حركات الشحن' }, { status: 500 });
+    console.error('Charge history error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء جلب سجل العمليات' }, { status: 500 });
   }
+}
+
+// DELETE: Manager can delete transaction by ID
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  await db.wallet_transactions.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 }

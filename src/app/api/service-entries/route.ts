@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
+import { checkSalesLock } from '@/lib/custody-lock';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -35,8 +36,6 @@ export async function GET(req: Request) {
     }
   });
 }
-
-import { checkSalesLock } from '@/lib/custody-lock';
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -89,4 +88,44 @@ export async function POST(req: Request) {
     console.error('Service entry creation error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء حفظ العملية' }, { status: 500 });
   }
+}
+
+// DELETE: Manager can delete record
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  await db.service_entries.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}
+
+// PUT: Manager can edit record
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { id, amount, notes, paper_count, face_type } = await req.json();
+
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  const updated = await db.service_entries.update({
+    where: { id },
+    data: {
+      amount: amount !== undefined ? Number(amount) : undefined,
+      notes: notes !== undefined ? notes : undefined,
+      paper_count: paper_count !== undefined ? parseInt(paper_count) : undefined,
+      face_type: face_type !== undefined ? face_type : undefined,
+    }
+  });
+
+  return NextResponse.json({ success: true, entry: updated });
 }

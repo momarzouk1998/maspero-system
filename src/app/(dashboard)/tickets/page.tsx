@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User } from 'lucide-react';
+import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, ArrowRight } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function TicketsPage() {
@@ -66,14 +66,24 @@ export default function TicketsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Train className="w-7 h-7 text-purple-600" />
-            <span>سجل التذاكر</span>
-          </h1>
-          <p className="text-slate-600 text-sm">
-            سجل شامل لجميع حجوزات تذاكر القطارات والعمولات
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>الرئيسية</span>
+          </Link>
+
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Train className="w-6 h-6 text-purple-600" />
+              <span>سجل تذاكر القطارات</span>
+            </h1>
+            <p className="text-slate-600 text-xs mt-0.5">
+              سجل شامل لجميع حجوزات تذاكر القطارات والعمولات
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -126,6 +136,7 @@ export default function TicketsPage() {
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">التاريخ</th>
                 <th className="px-4 py-3">الملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -167,6 +178,21 @@ export default function TicketsPage() {
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
                       {item.notes || '-'}
                     </td>
+                    {currentUser?.role === 'manager' && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={async () => {
+                            if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الحجز؟')) return;
+                            await fetch(`/api/tickets?id=${item.id}`, { method: 'DELETE' });
+                            fetchBookings(pagination.page);
+                          }}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200"
+                          title="حذف الحجز"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

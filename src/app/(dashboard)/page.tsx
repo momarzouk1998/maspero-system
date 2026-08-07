@@ -2,200 +2,227 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Printer,
-  Train,
-  Wallet,
-  ArrowLeftRight,
-  PlusCircle,
-  Clock,
-  TrendingUp,
-  Cpu,
-  Receipt
+import { 
+  LayoutDashboard, Clock, ShoppingCart, History, FileSpreadsheet, 
+  Zap, Printer, Train, ArrowLeft, Wallet, ShieldCheck, ArrowRight
 } from 'lucide-react';
 
-export default function DashboardPage() {
+export default function HomePage() {
   const [user, setUser] = useState<any>(null);
-  const [recentEntries, setRecentEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [meRes, entriesRes] = await Promise.all([
-          fetch('/api/auth/me'),
-          fetch('/api/service-entries?limit=10')
-        ]);
-
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          setUser(meData.user);
-        }
-
-        if (entriesRes.ok) {
-          const entriesData = await entriesRes.json();
-          setRecentEntries(entriesData.entries || []);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        setUser(data.user);
         setLoading(false);
-      }
-    };
-
-    fetchData();
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Top Welcome Banner */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">
-              مرحباً بك في لوحة تحكم ماسـبيرو 👋
-            </h1>
-            <p className="text-slate-600 text-sm">
-              نظام إدارة المبيعات والمحافظ الرقمية والتسليم المباشر بين الموظفين
-            </p>
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Header Banner */}
+      <div className="glass-panel p-8 rounded-3xl border border-slate-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+        <div className="space-y-2 text-right">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold border border-blue-200">
+            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <span>نظام ماسبيرو لإدارة خدمات الطباعة والإنترنت</span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/services">
-              <button className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 cursor-pointer transition-all">
-                <PlusCircle className="w-4 h-4" />
-                <span>تسجيل خدمة/طباعة</span>
-              </button>
-            </Link>
-            <Link href="/wallet">
-              <button className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition-all">
-                <ArrowLeftRight className="w-4 h-4" />
-                <span>تحويل رصيد لموظف</span>
-              </button>
-            </Link>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            أهلاً بك، <span className="text-blue-600">{user?.name || 'الكاشير'}</span> 👋
+          </h1>
+          <p className="text-slate-600 text-xs md:text-sm max-w-xl">
+            اختر السجل أو الخدمة المطلوبة من الكروت أدناه للانتقال السريع والمباشر
+          </p>
         </div>
-      </div>
 
-      {/* Quick Access Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Personal Wallet Card */}
-        <div className="glass-card p-5 rounded-2xl border border-emerald-300 bg-emerald-50">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200">
-              محفظتك الشخصية
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-              <Wallet className="w-5 h-5" />
-            </div>
+        {/* User Custody Cash Pill */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-right shrink-0">
+          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+            <Wallet className="w-4 h-4 text-emerald-600" />
+            <span>عهدة الكاش بين يديك</span>
           </div>
-          <p className="text-xs text-slate-600 mb-1">الرصيد النقدي في عهدتك الآن</p>
-          <h3 className="text-2xl font-extrabold text-slate-900">
+          <p className="text-2xl font-extrabold font-mono text-slate-900">
             {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}
-          </h3>
+          </p>
         </div>
-
-        {/* Quick Service Entry Card */}
-        <Link href="/services" className="block">
-          <div className="glass-card p-5 rounded-2xl border border-blue-200 hover:border-blue-400 cursor-pointer hover:shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-lg">
-                الخدمات والطباعة
-              </span>
-              <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
-                <Printer className="w-5 h-5" />
-              </div>
-            </div>
-            <p className="text-xs text-slate-600 mb-1">تسجيل طباعة أوراق وخدمات أونلاين</p>
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1">
-              تسجيل فاتورة جديدة &rarr;
-            </h3>
-          </div>
-        </Link>
-
-        {/* Train Tickets Card */}
-        <Link href="/tickets" className="block">
-          <div className="glass-card p-5 rounded-2xl border border-purple-200 hover:border-purple-400 cursor-pointer hover:shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2.5 py-1 rounded-lg">
-                تذاكر القطارات
-              </span>
-              <div className="p-2 rounded-xl bg-purple-100 text-purple-700">
-                <Train className="w-5 h-5" />
-              </div>
-            </div>
-            <p className="text-xs text-slate-600 mb-1">حجز تذاكر قطارات والعمولات</p>
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1">
-              حجز تذكرة قطار &rarr;
-            </h3>
-          </div>
-        </Link>
-
-        {/* Fawry Machines Card */}
-        <Link href="/machines" className="block">
-          <div className="glass-card p-5 rounded-2xl border border-amber-200 hover:border-amber-400 cursor-pointer hover:shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">
-                الماكينات والفوري
-              </span>
-              <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
-                <Cpu className="w-5 h-5" />
-              </div>
-            </div>
-            <p className="text-xs text-slate-600 mb-1">إيداع وسحب المحافظ والماكينات</p>
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1">
-              عملية ماكينة جديدة &rarr;
-            </h3>
-          </div>
-        </Link>
       </div>
 
-      {/* Recent Activity Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <span>آخر حركات الخدمات المسجلة</span>
-          </h2>
-          <Link href="/services" className="text-xs text-blue-600 hover:underline">
-            عرض الكل
+      {/* Primary Actions Grid */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <LayoutDashboard className="w-5 h-5 text-blue-600" />
+          <span>الوصول السريع للعمليات</span>
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/pos" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/70 hover:border-emerald-400 transition-all shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                  <ShoppingCart className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-800 transition-colors">صفحة البيع (POS)</h3>
+                  <p className="text-xs text-slate-600 mt-0.5">تسجيل الفواتير المباشرة والطباعة للعملاء</p>
+                </div>
+              </div>
+              <ArrowLeft className="w-5 h-5 text-emerald-600 group-hover:-translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          <Link href="/shifts" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 hover:border-blue-400 transition-all shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
+                  <Clock className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-800 transition-colors">إدارة الشفتات والعهد</h3>
+                  <p className="text-xs text-slate-600 mt-0.5">بدء الشفت واستلام وتأكيد المحافظ والأدراج والتحويلات</p>
+                </div>
+              </div>
+              <ArrowLeft className="w-5 h-5 text-blue-600 group-hover:-translate-x-1 transition-transform" />
+            </div>
           </Link>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">جاري التحميل...</div>
-        ) : recentEntries.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">لا توجد حركات مسجلة حديثاً</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm text-slate-700">
-              <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">اسم الخدمة</th>
-                  <th className="px-4 py-3">عدد الورق</th>
-                  <th className="px-4 py-3">الوجه</th>
-                  <th className="px-4 py-3">المبلغ</th>
-                  <th className="px-4 py-3">الموظف</th>
-                  <th className="px-4 py-3">التاريخ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {recentEntries.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900">{item.service_name}</td>
-                    <td className="px-4 py-3">{item.paper_count}</td>
-                    <td className="px-4 py-3">{item.face_type || 'وجه واحد'}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">{Number(item.amount).toLocaleString('ar-EG')}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* The 5 Main Logs Section */}
+      <div className="space-y-4 pt-4">
+        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <History className="w-5 h-5 text-indigo-600" />
+          <span>سجلات العمليات والحركات</span>
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* 1. سجل الشفتات */}
+          <Link href="/shifts-history" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-xl transition-all h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                    <History className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                    سجل مخصص
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">سجل الشفتات</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  عرض وتتبع شفتات الموظفين وساعات العمل مع إمكانية التصفية المتقدمة.
+                </p>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:underline">
+                <span>فتح السجل</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          {/* 2. سجل الفواتير */}
+          <Link href="/invoices" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-xl transition-all h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <FileSpreadsheet className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                    سجل مخصص
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">سجل الفواتير</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  سجل كامل بالفواتير الصادرة وتفاصيل كل فاتورة وإعادة طباعتها عند الحاجة.
+                </p>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600 group-hover:underline">
+                <span>فتح السجل</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          {/* 3. سجل عمليات الشحن */}
+          <Link href="/charge-history" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-amber-300 hover:shadow-xl transition-all h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
+                    سجل مخصص
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors">سجل عمليات الشحن</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  عرض جميع عمليات الإيداع والسحب الخاصة بالمحافظ والماكينات والعمولات.
+                </p>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600 group-hover:underline">
+                <span>فتح السجل</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          {/* 4. سجل الخدمات */}
+          <Link href="/services" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-blue-300 hover:shadow-xl transition-all h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                    <Printer className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                    سجل مخصص
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">سجل الخدمات والطباعة</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  تتبع عمليات طباعة الأوراق وخدمات الأونلاين المسجلة بالنظام.
+                </p>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:underline">
+                <span>فتح السجل</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          {/* 5. سجل التذاكر */}
+          <Link href="/tickets" className="group">
+            <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-purple-300 hover:shadow-xl transition-all h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                    <Train className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">
+                    سجل مخصص
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-600 transition-colors">سجل حجز التذاكر</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  سجل عمليات حجز تذاكر القطارات وأسعار التذاكر والعمولات المحصلة.
+                </p>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-600 group-hover:underline">
+                <span>فتح السجل</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );

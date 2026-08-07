@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
+import { checkSalesLock } from '@/lib/custody-lock';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -29,8 +30,6 @@ export async function GET(req: Request) {
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
   });
 }
-
-import { checkSalesLock } from '@/lib/custody-lock';
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -79,4 +78,57 @@ export async function POST(req: Request) {
     console.error('Ticket booking error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء حجز التذكرة' }, { status: 500 });
   }
+}
+
+// DELETE: Manager can delete ticket booking
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  await db.train_ticket_bookings.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}
+
+// PUT: Manager can edit ticket booking
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { id, itemCount, ticketPrice, ticketCommission, notes } = await req.json();
+
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  const price = ticketPrice !== undefined ? Number(ticketPrice) : undefined;
+  const commission = ticketCommission !== undefined ? Number(ticketCommission) : undefined;
+  let totalAmount = undefined;
+  if (price !== undefined || commission !== undefined) {
+    const existing = await db.train_ticket_bookings.findUnique({ where: { id } });
+    if (existing) {
+      const p = price !== undefined ? price : Number(existing.ticket_price);
+      const c = commission !== undefined ? commission : Number(existing.ticket_commission);
+      totalAmount = p + c;
+    }
+  }
+
+  const updated = await db.train_ticket_bookings.update({
+    where: { id },
+    data: {
+      item_count: itemCount !== undefined ? parseInt(itemCount) : undefined,
+      ticket_price: price,
+      ticket_commission: commission,
+      amount: totalAmount,
+      notes: notes !== undefined ? notes : undefined,
+    }
+  });
+
+  return NextResponse.json({ success: true, booking: updated });
 }

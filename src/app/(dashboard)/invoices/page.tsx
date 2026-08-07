@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   FileSpreadsheet, Search, Filter, Calendar, X, Printer, Receipt, 
-  ChevronLeft, ChevronRight, RefreshCw, Eye, User
+  ChevronLeft, ChevronRight, RefreshCw, Eye, User, Trash2, ArrowRight
 } from 'lucide-react';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
 import { getActiveUsers } from '@/lib/user-utils';
@@ -130,14 +130,24 @@ export default function InvoicesHistoryPage() {
     <div className="space-y-6 relative">
       {/* Header */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FileSpreadsheet className="w-7 h-7 text-emerald-600" />
-            <span>سجل الفواتير</span>
-          </h1>
-          <p className="text-slate-600 text-xs mt-1">
-            عرض وتتبع الفواتير الصادرة وإعادة طباعتها عند الحاجة
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>الرئيسية</span>
+          </Link>
+
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
+              <span>سجل الفواتير</span>
+            </h1>
+            <p className="text-slate-600 text-xs mt-0.5">
+              عرض وتتبع الفواتير الصادرة وإعادة طباعتها عند الحاجة
+            </p>
+          </div>
         </div>
 
         {/* Filters & Search */}
@@ -284,16 +294,33 @@ export default function InvoicesHistoryPage() {
                       {Number(inv.total).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDrawer(inv.code);
-                        }}
-                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs flex items-center justify-center gap-1 mx-auto transition-colors border border-slate-200"
-                      >
-                        <Eye className="w-4 h-4 text-emerald-600" />
-                        <span>عرض</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDrawer(inv.code);
+                          }}
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors border border-slate-200"
+                        >
+                          <Eye className="w-4 h-4 text-emerald-600" />
+                          <span>عرض</span>
+                        </button>
+
+                        {user?.role === 'manager' && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm(`هل أنت تأكد من رغبتك في حذف الفاتورة (${inv.code}) وكافة عناصرها؟`)) return;
+                              await fetch(`/api/invoices?code=${inv.code}`, { method: 'DELETE' });
+                              fetchInvoices(pagination.page);
+                            }}
+                            className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs border border-red-200"
+                            title="حذف الفاتورة"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

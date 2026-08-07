@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ShiftsHistoryPage() {
@@ -9,6 +10,7 @@ export default function ShiftsHistoryPage() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Filter popup modal state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -17,6 +19,13 @@ export default function ShiftsHistoryPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+  }, []);
 
   const fetchShifts = async (page = 1) => {
     setLoading(true);
@@ -45,40 +54,51 @@ export default function ShiftsHistoryPage() {
   };
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => setUsersList(getActiveUsers(data.users || [])))
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchShifts(1);
-    }, 300);
-    return () => clearTimeout(timer);
+    fetchShifts(1);
+    getActiveUsers().then(setUsersList);
   }, [search, filterType, filterStartDate, filterEndDate, filterEmployeeId]);
+
+  const handleDeleteShift = async (id: string) => {
+    if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الشفت؟')) return;
+    try {
+      const res = await fetch(`/api/shifts?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchShifts(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const resetFilters = () => {
     setFilterType('');
     setFilterStartDate('');
     setFilterEndDate('');
     setFilterEmployeeId('');
-    setSearch('');
-    setIsFilterOpen(false);
   };
 
   return (
     <div className="space-y-6">
       {/* Title */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-7 h-7 text-cyan-600" />
-            <span>سجل الشفتات</span>
-          </h1>
-          <p className="text-slate-600 text-xs mt-1">
-            سجل شامل لمتابعة جميع شفتات العمل وساعات الدوام
-          </p>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <ArrowRight className="w-4 h-4" />
+            <span>الرئيسية</span>
+          </Link>
+
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="w-6 h-6 text-cyan-600" />
+              <span>سجل الشفتات</span>
+            </h1>
+            <p className="text-slate-600 text-xs mt-0.5">
+              سجل شامل لمتابعة جميع شفتات العمل وساعات الدوام
+            </p>
+          </div>
         </div>
 
         {/* Search & Filter Trigger */}
@@ -111,7 +131,7 @@ export default function ShiftsHistoryPage() {
         </div>
       </div>
 
-      {/* Shifts Table */}
+      {/* Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700">
@@ -119,24 +139,25 @@ export default function ShiftsHistoryPage() {
               <tr>
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">نوع الشفت</th>
-                <th className="px-4 py-3">تاريخ الشفت</th>
+                <th className="px-4 py-3">التاريخ</th>
                 <th className="px-4 py-3">وقت البداية</th>
                 <th className="px-4 py-3">وقت النهاية</th>
                 <th className="px-4 py-3">إجمالي الساعات</th>
-                <th className="px-4 py-3">الملاحظات</th>
+                <th className="px-4 py-3">ملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
                     <span>جاري تحميل سجل الشفتات...</span>
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد شفتات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
@@ -152,7 +173,7 @@ export default function ShiftsHistoryPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-mono">
-                      {item.shift_date ? new Date(item.shift_date).toLocaleDateString('ar-EG') : '-'}
+                      {item.start_time ? new Date(item.start_time).toLocaleDateString('ar-EG') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">
                       {item.start_time ? new Date(item.start_time).toLocaleTimeString('ar-EG') : '-'}
@@ -166,6 +187,17 @@ export default function ShiftsHistoryPage() {
                       {Number(item.total_hours || 0).toFixed(2)} ساعة
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">{item.shift_note || '-'}</td>
+                    {currentUser?.role === 'manager' && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleDeleteShift(item.id)}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors border border-red-200"
+                          title="حذف الشفت"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -199,19 +231,16 @@ export default function ShiftsHistoryPage() {
         )}
       </div>
 
-      {/* Filter Modal Popup */}
+      {/* Filter Modal */}
       {isFilterOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Filter className="w-5 h-5 text-cyan-600" />
                 <span>خيارات التصفية</span>
               </h3>
-              <button
-                onClick={() => setIsFilterOpen(false)}
-                className="p-1 text-slate-600 hover:text-slate-900 rounded-lg"
-              >
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -224,7 +253,7 @@ export default function ShiftsHistoryPage() {
                   onChange={(e) => setFilterType(e.target.value)}
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                 >
-                  <option value="">الكل</option>
+                  <option value="">جميع الشفتات</option>
                   <option value="صباحي">صباحي</option>
                   <option value="مسائي">مسائي</option>
                 </select>
@@ -270,10 +299,7 @@ export default function ShiftsHistoryPage() {
 
             <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
-                onClick={() => {
-                  fetchShifts(1);
-                  setIsFilterOpen(false);
-                }}
+                onClick={() => { fetchShifts(1); setIsFilterOpen(false); }}
                 className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl"
               >
                 تطبيق التصفية

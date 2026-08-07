@@ -18,31 +18,20 @@ export async function GET() {
     const activeColleaguesCount = activeShifts.filter((s: any) => s.employee_id !== user.id).length;
     const isMorningOrSoloShift = activeColleaguesCount === 0;
 
-    // 2. Fetch external wallets, machines & cash drawers
-    let allCustodyItems = await db.external_wallets.findMany({
-      where: { is_active: true },
-      orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
-    });
-
-    // Deactivate any old dummy drawers with names like "درج كاشير 1" or unneeded items
-    const validDrawerNames = ['درج كاش 1', 'درج كاش 2', 'درج كاش 3'];
-    
-    // Deactivate drawers not in validDrawerNames
-    await db.external_wallets.updateMany({
-      where: {
-        wallet_type: 'درج كاشير',
-        wallet_name: { notIn: validDrawerNames }
-      },
-      data: { is_active: false }
-    });
-
-    // Ensure the 3 exact drawers exist
+    // 2. Ensure the 3 exact cash drawers exist and are active
+    const targetDrawerNames = ['درج كاش 1', 'درج كاش 2', 'درج كاش 3'];
     for (let idx = 0; idx < 3; idx++) {
-      const name = validDrawerNames[idx];
-      const found = await db.external_wallets.findFirst({
-        where: { wallet_name: name }
+      const name = targetDrawerNames[idx];
+      const existing = await db.external_wallets.findFirst({
+        where: {
+          OR: [
+            { wallet_name: name },
+            { wallet_name: `درج كاشير ${idx + 1}` }
+          ]
+        }
       });
-      if (!found) {
+
+      if (!existing) {
         await db.external_wallets.create({
           data: {
             wallet_name: name,
@@ -53,35 +42,39 @@ export async function GET() {
             is_active: true
           }
         });
-      } else if (!found.is_active) {
+      } else {
         await db.external_wallets.update({
-          where: { id: found.id },
-          data: { is_active: true }
+          where: { id: existing.id },
+          data: {
+            wallet_name: name,
+            wallet_type: 'درج كاشير',
+            is_active: true
+          }
         });
       }
     }
 
-    // Re-fetch clean custody items
-    allCustodyItems = await db.external_wallets.findMany({
+    // 3. Fetch all active external wallets, machines & cash drawers
+    const allCustodyItems = await db.external_wallets.findMany({
       where: { is_active: true },
       orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
     });
 
     // Group items into Wallets, Machines, Cash Drawers
-    const wallets = allCustodyItems.filter((i: any) => i.wallet_type === 'محفظة');
-    const machines = allCustodyItems.filter((i: any) => i.wallet_type === 'ماكينة');
-    const drawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
+    const drawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير' || i.wallet_name.includes('درج'));
+    const wallets = allCustodyItems.filter((i: any) => i.wallet_type === 'محفظة' && !i.wallet_name.includes('درج'));
+    const machines = allCustodyItems.filter((i: any) => i.wallet_type === 'ماكينة' && !i.wallet_name.includes('درج'));
 
-    // 3. Check items in current user's custody
+    // 4. Check items in current user's custody
     const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
-    // 4. Pending handover requests sent to user
+    // 5. Pending handover requests sent to user
     const pendingHandovers = await db.wallet_custody_handovers.findMany({
       where: { receiver_id: user.id, status: 'PENDING' },
       orderBy: { created_at: 'desc' }
     });
 
-    // 5. Check if sales are locked
+    // 6. Check if sales are locked
     const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
     const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
     const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
@@ -138,7 +131,7 @@ export async function POST(req: Request) {
       }
 
       const drawer = await db.external_wallets.findUnique({ where: { id: drawerId } });
-      if (!drawer || drawer.wallet_type !== 'درج كاشير') {
+      if (!drawer || (drawer.wallet_type !== 'درج كاشير' && !drawer.wallet_name.includes('درج'))) {
         return NextResponse.json({ error: 'درج الكاشير غير موجود' }, { status: 404 });
       }
 
@@ -227,7 +220,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `تم استلام (${item.wallet_name}) وتأكيد المطابقة بنجاح 👍`,
+        message: `تم استلام وتأكيد (${item.wallet_name}) بنجاح 👍`,
         item: updatedItem
       });
     }
