@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
-  ArrowDownLeft, ArrowUpRight, Wallet, User, X, Trash2, ArrowRight
+  ArrowDownLeft, ArrowUpRight, Wallet, User, X, Trash2, Edit3, ArrowRight
 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
@@ -25,11 +25,23 @@ export default function ChargeHistoryPage() {
   const [usersList, setUsersList] = useState<any[]>([]);
   const [walletsList, setWalletsList] = useState<string[]>([]);
 
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editCommission, setEditCommission] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data.user))
       .catch(() => {});
+
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
   }, []);
 
   const hasActiveFilters = transactionType || startDate || endDate || filterWalletName || filterEmployeeId;
@@ -45,7 +57,7 @@ export default function ChargeHistoryPage() {
         startDate,
         endDate,
         walletName: filterWalletName,
-        employeeId: filterEmployeeId,
+        employeeId: filterEmployeeId
       });
 
       const res = await fetch(`/api/charge-history?${params.toString()}`);
@@ -53,8 +65,10 @@ export default function ChargeHistoryPage() {
         const data = await res.json();
         setTransactions(data.transactions || []);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
-        // collect unique wallet names for filter dropdown
-        if (data.walletNames) setWalletsList(data.walletNames);
+
+        // Extract unique wallet names for filter dropdown
+        const uniqueWallets = Array.from(new Set((data.transactions || []).map((t: any) => t.wallet_name))).filter(Boolean) as string[];
+        setWalletsList(prev => Array.from(new Set([...prev, ...uniqueWallets])));
       }
     } catch (e) {
       console.error(e);
@@ -62,21 +76,6 @@ export default function ChargeHistoryPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetch('/api/users')
-      .then(r => r.json())
-      .then(d => setUsersList(getActiveUsers(d.users || [])))
-      .catch(console.error);
-    // fetch wallet names for filter
-    fetch('/api/wallets')
-      .then(r => r.json())
-      .then(d => {
-        const names = (d.externalWallets || []).map((w: any) => w.wallet_name);
-        setWalletsList(names);
-      })
-      .catch(console.error);
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchTransactions(1), 300);
@@ -90,6 +89,41 @@ export default function ChargeHistoryPage() {
     setFilterWalletName('');
     setFilterEmployeeId('');
     setIsFilterOpen(false);
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setEditAmount(item.amount.toString());
+    setEditCommission((item.wallet_commission || 0).toString());
+    setEditDescription(item.description || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch('/api/charge-history', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          amount: parseFloat(editAmount),
+          wallet_commission: parseFloat(editCommission),
+          description: editDescription
+        })
+      });
+
+      if (res.ok) {
+        setEditingItem(null);
+        fetchTransactions(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   return (
@@ -144,88 +178,6 @@ export default function ChargeHistoryPage() {
         </div>
       </div>
 
-      {/* Filter Modal */}
-      {isFilterOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-amber-600" />
-                <span>خيارات التصفية</span>
-              </h3>
-              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع العملية</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['', 'إيداع', 'سحب'].map(t => (
-                    <button key={t} onClick={() => setTransactionType(t)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
-                        transactionType === t
-                          ? t === 'إيداع' ? 'bg-emerald-600 text-white border-emerald-600'
-                          : t === 'سحب' ? 'bg-red-600 text-white border-red-600'
-                          : 'bg-slate-700 text-white border-slate-700'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
-                      }`}
-                    >{t === '' ? 'الكل' : t}</button>
-                  ))}
-                </div>
-              </div>
-
-              {walletsList.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">المحفظة / الماكينة</label>
-                  <select value={filterWalletName} onChange={e => setFilterWalletName(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
-                    <option value="">الكل</option>
-                    {walletsList.map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-              )}
-
-              {usersList.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف</label>
-                  <select value={filterEmployeeId} onChange={e => setFilterEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
-                    <option value="">جميع الموظفين</option>
-                    {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                  </select>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-3 border-t border-slate-200">
-              <button onClick={() => { fetchTransactions(1); setIsFilterOpen(false); }}
-                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl">
-                تطبيق التصفية
-              </button>
-              <button onClick={resetFilters}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl">
-                إعادة ضبط
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Transactions Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
@@ -241,20 +193,20 @@ export default function ChargeHistoryPage() {
                 <th className="px-4 py-3">كود الفاتورة</th>
                 <th className="px-4 py-3">التاريخ والوقت</th>
                 <th className="px-4 py-3">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={10} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
                     <span>جاري تحميل سجل عمليات الشحن...</span>
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={10} className="text-center py-12 text-slate-500">
                     لا توجد عمليات شحن مسجلة تطابق التصفية
                   </td>
                 </tr>
@@ -300,17 +252,26 @@ export default function ChargeHistoryPage() {
                       <td className="px-4 py-3 text-xs text-slate-600">{item.description || '-'}</td>
                       {currentUser?.role === 'manager' && (
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={async () => {
-                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
-                              await fetch(`/api/charge-history?id=${item.id}`, { method: 'DELETE' });
-                              fetchTransactions(pagination.page);
-                            }}
-                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200"
-                            title="حذف العملية"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-200 transition-colors"
+                              title="تعديل العملية"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
+                                await fetch(`/api/charge-history?id=${item.id}`, { method: 'DELETE' });
+                                fetchTransactions(pagination.page);
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف العملية"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -346,6 +307,188 @@ export default function ChargeHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Manager Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-600" />
+                <span>تعديل عملية الشحن</span>
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">المحفظة / الماكينة</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingItem.wallet_name}
+                  className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">المبلغ الأساسي</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">العمولة</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    value={editCommission}
+                    onChange={(e) => setEditCommission(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-amber-700 text-sm font-bold font-mono focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات / وصف العملية</label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="ملاحظات..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-md"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Filter Modal */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-amber-600" />
+                <span>خيارات التصفية</span>
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع العملية</label>
+                <select
+                  value={transactionType}
+                  onChange={(e) => setTransactionType(e.target.value)}
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">جميع العمليات</option>
+                  <option value="إيداع">إيداع (شحن/تحويل)</option>
+                  <option value="سحب">سحب (استلام نقدية)</option>
+                </select>
+              </div>
+
+              {walletsList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">المحفظة / الماكينة</label>
+                  <select
+                    value={filterWalletName}
+                    onChange={(e) => setFilterWalletName(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">جميع المحافظ والماكينات</option>
+                    {walletsList.map((w) => (
+                      <option key={w} value={w}>{w}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {usersList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">الموظف</label>
+                  <select
+                    value={filterEmployeeId}
+                    onChange={(e) => setFilterEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">جميع الموظفين</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">من تاريخ</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">إلى تاريخ</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
+              <button
+                onClick={() => { fetchTransactions(1); setIsFilterOpen(false); }}
+                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-md"
+              >
+                تطبيق التصفية
+              </button>
+              <button
+                onClick={resetFilters}
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+              >
+                إعادة ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

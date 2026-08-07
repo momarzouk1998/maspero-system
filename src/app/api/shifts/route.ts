@@ -152,6 +152,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, shift: updated });
     }
 
+    if (action === 'edit') {
+      if (user.role !== 'manager') {
+        return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+      }
+
+      const { totalHours } = body;
+      const updated = await db.shifts.update({
+        where: { id: shiftId },
+        data: {
+          shift_type: shiftType !== undefined ? shiftType : undefined,
+          shift_note: shiftNote !== undefined ? shiftNote : undefined,
+          total_hours: totalHours !== undefined ? Number(totalHours) : undefined,
+        }
+      });
+      return NextResponse.json({ success: true, shift: updated });
+    }
+
     return NextResponse.json({ error: 'إجراء غير معرف' }, { status: 400 });
   } catch (error: any) {
     console.error('Shift error:', error);

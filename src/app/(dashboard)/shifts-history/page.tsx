@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2 } from 'lucide-react';
+import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2, Edit3 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ShiftsHistoryPage() {
@@ -19,6 +19,13 @@ export default function ShiftsHistoryPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
+
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editShiftType, setEditShiftType] = useState('');
+  const [editShiftNote, setEditShiftNote] = useState('');
+  const [editTotalHours, setEditTotalHours] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -70,6 +77,42 @@ export default function ShiftsHistoryPage() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setEditShiftType(item.shift_type || 'صباحي');
+    setEditShiftNote(item.shift_note || '');
+    setEditTotalHours((item.total_hours || 0).toString());
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch('/api/shifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'edit',
+          shiftId: editingItem.id,
+          shiftType: editShiftType,
+          shiftNote: editShiftNote,
+          totalHours: parseFloat(editTotalHours)
+        })
+      });
+
+      if (res.ok) {
+        setEditingItem(null);
+        fetchShifts(pagination.page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -147,7 +190,7 @@ export default function ShiftsHistoryPage() {
                 <th className="px-4 py-3">وقت النهاية</th>
                 <th className="px-4 py-3">إجمالي الساعات</th>
                 <th className="px-4 py-3">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">حذف</th>}
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -192,13 +235,22 @@ export default function ShiftsHistoryPage() {
                     <td className="px-4 py-3 text-xs text-slate-600">{item.shift_note || '-'}</td>
                     {currentUser?.role === 'manager' && (
                       <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleDeleteShift(item.id)}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors border border-red-200"
-                          title="حذف الشفت"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 rounded-lg border border-cyan-200 transition-colors"
+                            title="تعديل الشفت"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteShift(item.id)}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                            title="حذف الشفت"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -233,6 +285,86 @@ export default function ShiftsHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Manager Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-cyan-600" />
+                <span>تعديل بيانات الشفت</span>
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">الموظف</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingItem.employee_name}
+                  className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">نوع الشفت</label>
+                <select
+                  value={editShiftType}
+                  onChange={(e) => setEditShiftType(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="صباحي">صباحي</option>
+                  <option value="مسائي">مسائي</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">إجمالي ساعات الدوام</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={editTotalHours}
+                  onChange={(e) => setEditTotalHours(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات الشفت</label>
+                <input
+                  type="text"
+                  value={editShiftNote}
+                  onChange={(e) => setEditShiftNote(e.target.value)}
+                  placeholder="ملاحظات..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-md"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Filter Modal */}
       {isFilterOpen && (

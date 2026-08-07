@@ -80,3 +80,25 @@ export async function DELETE(req: Request) {
   await db.wallet_transactions.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
+
+// PUT: Manager can edit transaction by ID
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  const { id, amount, wallet_commission, description } = await req.json();
+  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  const updated = await db.wallet_transactions.update({
+    where: { id },
+    data: {
+      amount: amount !== undefined ? Number(amount) : undefined,
+      wallet_commission: wallet_commission !== undefined ? Number(wallet_commission) : undefined,
+      description: description !== undefined ? description : undefined,
+    }
+  });
+
+  return NextResponse.json({ success: true, transaction: updated });
+}

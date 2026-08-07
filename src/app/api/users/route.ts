@@ -3,38 +3,28 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
-// GET active users/employees
+// GET active users list
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  // Managers get full user details, employees get active users list for dropdowns
   const isManager = user.role === 'manager';
 
   const users = await db.users.findMany({
-    where: {
-      is_active: true,
-      NOT: [
-        { name: { contains: '<' } },
-        { name: { contains: 'style=' } },
-      ]
-    },
+    where: isManager ? {} : { is_active: true },
     select: {
       id: true,
-      legacy_id: true,
       name: true,
       phone: true,
       role: true,
       job_title: true,
-      salary: isManager,
-      wallet_balance: true,
       is_active: true,
-      permissions: isManager,
-      created_at: true,
+      wallet_balance: true,
+      permissions: true,
+      createdAt: true,
+      ...(isManager ? { salary: true } : {})
     },
-    orderBy: [{ name: 'asc' }]
+    orderBy: { createdAt: 'desc' }
   });
 
   return NextResponse.json({ users });
@@ -70,7 +60,7 @@ export async function POST(req: Request) {
         role: role || 'employee',
         job_title: jobTitle || 'كاشير',
         salary: salary ? parseFloat(salary) : 0,
-        permissions: permissions || [],
+        permissions: permissions || {},
         is_active: true,
       }
     });
@@ -79,5 +69,42 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Create User Error:', error);
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء إضافة الموظف' }, { status: 500 });
+  }
+}
+
+// Manager Edit User / Update Permissions
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { userId, name, phone, password, role, jobTitle, salary, permissions, isActive } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'معرف الموظف مطلوب' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+
+    if (name) updateData.name = name.trim();
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (password) updateData.password_hash = await bcrypt.hash(password, 10);
+    if (role) updateData.role = role;
+    if (jobTitle !== undefined) updateData.job_title = jobTitle;
+    if (salary !== undefined) updateData.salary = parseFloat(salary);
+    if (permissions !== undefined) updateData.permissions = permissions;
+    if (isActive !== undefined) updateData.is_active = isActive;
+
+    const updatedUser = await db.users.update({
+      where: { id: userId },
+      data: updateData
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (error: any) {
+    console.error('Update User Error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تحديث بيانات الموظف' }, { status: 500 });
   }
 }
