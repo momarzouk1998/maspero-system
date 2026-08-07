@@ -44,7 +44,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ transfers, pendingCount });
 }
 
-// POST create transfer request OR action (accept/reject)
+// POST create transfer request OR action (accept/reject/cancel)
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
@@ -66,7 +66,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, transfer });
     }
 
-    // Action 2: Respond to incoming Cash Transfer (ACCEPT / REJECT)
+    // Action 2: Cancel pending Cash Transfer (by Sender before recipient accepts)
+    if (action === 'cancel') {
+      const { transferId } = body;
+      if (!transferId) return NextResponse.json({ error: 'معرف التحويل مطلوب' }, { status: 400 });
+
+      const transfer = await db.employee_transfers.findUnique({ where: { id: transferId } });
+      if (!transfer) return NextResponse.json({ error: 'التحويل غير موجود' }, { status: 404 });
+
+      if (transfer.sender_id !== user.id && user.role !== 'manager') {
+        return NextResponse.json({ error: 'غير مصرح لك بإلغاء هذا التحويل' }, { status: 403 });
+      }
+
+      if (transfer.status !== 'PENDING') {
+        return NextResponse.json({ error: 'لا يمكن إلغاء التحويل لأنه تم التفاعل معه بالفعل' }, { status: 400 });
+      }
+
+      const updated = await db.employee_transfers.update({
+        where: { id: transferId },
+        data: {
+          status: 'CANCELLED',
+          responded_at: new Date()
+        }
+      });
+
+      return NextResponse.json({ success: true, message: 'تم إلغاء التحويل بنجاح', transfer: updated });
+    }
+
+    // Action 3: Respond to incoming Cash Transfer (ACCEPT / REJECT)
     if (action === 'respond') {
       const { transferId, status } = body;
       if (status === 'ACCEPTED') {

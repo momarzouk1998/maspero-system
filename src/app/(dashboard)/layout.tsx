@@ -6,22 +6,24 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  Clock,
+  Wallet,
   Printer,
   Train,
-  Wallet,
+  Cpu,
   Receipt,
+  Clock,
   BarChart3,
   Users,
   LogOut,
+  ArrowLeftRight,
   Menu,
   X,
-  FileSpreadsheet,
-  ArrowLeftRight,
-  ShieldCheck,
-  Tag,
+  Settings,
+  FolderTree,
+  FileText,
   History,
   ShoppingCart,
+  FileSpreadsheet,
   Zap,
   ChevronRight,
   ChevronLeft
@@ -37,35 +39,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/login');
-          return null;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.user) {
-          setUser(data.user);
-        }
-        setLoading(false);
-      })
-      .catch(() => {
+  const fetchUserAndPending = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) {
         router.push('/login');
-      });
+        return;
+      }
+      const data = await res.json();
+      setUser(data.user);
 
-    // Check pending cash transfers
-    fetch('/api/transfers')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.transfers) {
-          setPendingTransfers(data.transfers.length);
-        }
-      })
-      .catch(() => {});
-  }, [router]);
+      const transferRes = await fetch('/api/transfers?type=pending');
+      if (transferRes.ok) {
+        const transferData = await transferRes.json();
+        setPendingTransfers(transferData.pendingCount || 0);
+      }
+    } catch (e) {
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserAndPending();
+    const interval = setInterval(fetchUserAndPending, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -74,10 +74,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-100 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-semibold text-slate-400">جاري تحميل النظام...</p>
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-600 text-sm">جاري تحميل نظام ماسبيرو...</p>
         </div>
       </div>
     );
@@ -85,46 +85,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isManager = user?.role === 'manager';
 
-  // Navigation Items with updated labels and order
   const navItems = [
     { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
     { name: 'إدارة الشفتات', href: '/shifts', icon: Clock },
-    { name: 'سجل الشفتات', href: '/shifts-history', icon: History },
     { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
+    { name: 'سجل الشفتات', href: '/shifts-history', icon: History },
     { name: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet },
     { name: 'سجل عمليات الشحن', href: '/charge-history', icon: Zap },
     { name: 'سجل الخدمات', href: '/services', icon: Printer },
     { name: 'سجل التذاكر', href: '/tickets', icon: Train },
-    { name: 'خزينة الكاش والتحويلات', href: '/wallet', icon: Wallet, badge: pendingTransfers },
-    { name: 'سجل المصروفات والسلف', href: '/expenses', icon: Receipt },
-    { name: 'الماكينات والمحافظ', href: '/machines', icon: ShieldCheck },
+    { name: 'المصروفات والسلف', href: '/expenses', icon: Receipt },
+    { name: 'الخدمات المالية والماكينات', href: '/machines', icon: Cpu },
     ...(isManager ? [
-      { name: 'إدارة أسعار الخدمات', href: '/manager/pricing', icon: Tag },
-      { name: 'إدارة الموظفين والرواتب', href: '/manager/users', icon: Users },
+      { name: 'إدارة الموظفين والحسابات', href: '/manager/users', icon: Users },
+      { name: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Settings },
+      { name: 'تصنيفات المصروفات', href: '/manager/categories', icon: FolderTree },
+      { name: 'الملاحظات', href: '/manager/notes', icon: FileText },
       { name: 'تقارير الأرباح واللوج', href: '/manager/reports', icon: BarChart3 },
       { name: 'محافظ الموظفين والخزينة', href: '/manager/wallets', icon: Users },
     ] : [])
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 font-sans">
+    <div className="min-h-screen flex bg-slate-50 text-slate-900">
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar (Desktop + Mobile Drawer) */}
-      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} glass-panel border-l border-slate-800 flex flex-col justify-between fixed md:sticky top-0 h-screen z-50 transition-all duration-300 ${
+      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} glass-panel border-l border-slate-200 flex flex-col justify-between fixed md:sticky top-0 h-screen z-50 transition-all duration-300 ${
         isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
       }`}>
         <div>
           {/* Logo Header */}
-          <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-100/90">
             <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'justify-center w-full' : ''}`}>
-              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-slate-800 p-0.5 shadow-sm border border-slate-700 flex items-center justify-center shrink-0">
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
                 <Image
                   src="/maspero-logo.png"
                   alt="Maspero Logo"
@@ -135,8 +135,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               {!isSidebarCollapsed && (
                 <div>
-                  <h1 className="font-bold text-white text-sm leading-none">ماسـبيرو</h1>
-                  <p className="text-[10px] text-pink-400 font-semibold mt-0.5">لخدمات الطباعة والإنترنت</p>
+                  <h1 className="font-bold text-slate-900 text-sm leading-none">ماسـبيرو</h1>
+                  <p className="text-[10px] text-pink-600 font-semibold mt-0.5">لخدمات الطباعة والإنترنت</p>
                 </div>
               )}
             </div>
@@ -144,24 +144,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Mobile Close Button */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden text-slate-400 hover:text-white p-1 cursor-pointer"
+              className="md:hidden text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
 
             {/* Desktop Collapse Toggle Button */}
             {!isMobileMenuOpen && (
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="hidden md:block text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                className="hidden md:block text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
                 title={isSidebarCollapsed ? 'فتح القائمة' : 'طي القائمة'}
               >
-                {isSidebarCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                {isSidebarCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
             )}
           </div>
 
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-220px)]">
+          <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-230px)]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
@@ -171,18 +171,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   title={isSidebarCollapsed ? item.name : ''}
-                  className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3.5'} py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                     active
-                      ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 text-white border border-cyan-500/50 font-bold shadow-md shadow-cyan-900/20'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300 font-semibold shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <div className={`flex items-center ${isSidebarCollapsed ? '' : 'gap-2.5'}`}>
-                    <Icon className={`w-4 h-4 ${active ? 'text-cyan-400' : 'text-slate-400'}`} />
+                  <div className={`flex items-center ${isSidebarCollapsed ? '' : 'gap-3'}`}>
+                    <Icon className={`w-5 h-5 ${active ? 'text-blue-700' : 'text-slate-600'}`} />
                     {!isSidebarCollapsed && <span>{item.name}</span>}
                   </div>
                   {!isSidebarCollapsed && item.badge && item.badge > 0 ? (
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-950 rounded-full animate-pulse">
+                    <span className="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full animate-pulse">
                       {item.badge}
                     </span>
                   ) : null}
@@ -196,32 +196,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User Card & PWA Install Button bottom sidebar */}
-        <div className="p-3 border-t border-slate-800 space-y-2 bg-slate-900/90">
+        <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-100">
           {!isSidebarCollapsed && <PwaInstallButton />}
 
-          <div className={`glass-card p-2.5 rounded-xl flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border border-slate-800 bg-slate-900/60`}>
+          <div className={`glass-card p-3 rounded-xl flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border border-slate-200`}>
             {isSidebarCollapsed ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-xs">
+                <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-sm">
                   {user?.name?.charAt(0) || 'م'}
                 </div>
                 <button
                   onClick={handleLogout}
                   title="تسجيل الخروج"
-                  className="text-slate-400 hover:text-red-400 p-1 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
+                  className="text-slate-600 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-sm">
                     {user?.name?.charAt(0) || 'م'}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-xs font-bold text-white truncate">{user?.name}</p>
-                    <p className="text-[10px] text-cyan-400 truncate font-semibold">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
+                    <p className="text-[11px] text-blue-600 truncate font-semibold">
                       {isManager ? 'مدير النظام' : 'موظف مبيعات'}
                     </p>
                   </div>
@@ -229,7 +229,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={handleLogout}
                   title="تسجيل الخروج"
-                  className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
+                  className="text-slate-600 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -242,44 +242,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-14 glass-panel border-b border-slate-800 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md">
+        <header className="h-16 glass-panel border-b border-slate-200 px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
           <div className="flex items-center gap-3">
             {/* Mobile 3-Bars Hamburger Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-slate-300 hover:text-white p-2 rounded-xl bg-slate-800 border border-slate-700 cursor-pointer"
+              className="md:hidden text-slate-700 hover:text-slate-900 p-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
               aria-label="فتح القائمة الجانبية"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
 
-            <h2 className="text-xs font-semibold text-slate-400">
-              أهلاً بك، <span className="text-white font-bold">{user?.name}</span>
+            <h2 className="text-sm font-semibold text-slate-600">
+              أهلاً بك، <span className="text-slate-900 font-bold">{user?.name}</span>
             </h2>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Live Employee Wallet Balance Badge */}
-            <Link href="/wallet">
-              <div className="glass-card px-3 py-1.5 rounded-xl flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer">
-                <Wallet className="w-4 h-4 text-emerald-400" />
+            <Link href="/shifts">
+              <div className="glass-card px-3 md:px-4 py-2 rounded-xl flex items-center gap-2.5 border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer">
+                <Wallet className="w-4 h-4 text-emerald-700" />
                 <div className="text-xs">
-                  <span className="text-slate-400 block text-[9px]">عهدة الكاش</span>
-                  <span className="font-extrabold text-xs font-mono">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}</span>
+                  <span className="text-slate-600 block text-[10px]">عهدة الكاش</span>
+                  <span className="font-extrabold text-sm">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}</span>
                 </div>
               </div>
             </Link>
 
             {/* Pending P2P Transfers Notification Badge */}
-            <Link href="/wallet">
-              <div className={`p-2 rounded-xl border relative transition-all cursor-pointer ${
-                pendingTransfers > 0
-                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 animate-bounce'
-                  : 'bg-slate-900 border-slate-800 text-slate-400'
-              }`}>
-                <ArrowLeftRight className="w-4 h-4" />
+            <Link href="/shifts">
+              <div className="relative p-2.5 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors">
+                <ArrowLeftRight className="w-4 h-4 text-emerald-600" />
                 {pendingTransfers > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-950 text-[10px] font-extrabold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce shadow-md">
                     {pendingTransfers}
                   </span>
                 )}
@@ -288,8 +284,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Page Body Content */}
-        <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto space-y-6">
+        {/* Main View Area */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
         </main>
       </div>
