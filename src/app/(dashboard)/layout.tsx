@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
-export default function DashboardLayout({ children }: { children: React.NodeNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
