@@ -238,12 +238,6 @@ export default function FinancialAndHROperationsPage() {
               <DollarSign className="w-5 h-5 text-emerald-600" />
               <span>التعاملات المالية والمصروفات</span>
             </h2>
-            <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              تسجيل قيود الخزينة والنقدية
-            </span>
-          </div>
-              تسجيل قيود الخزينة والنقدية
-            </span>
           </div>
 
           {/* Categories Selector Pills */}
