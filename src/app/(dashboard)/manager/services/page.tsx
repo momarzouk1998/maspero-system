@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { 
   Printer, ArrowRight, Plus, Edit3, Trash2, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck, Percent
 } from 'lucide-react';
+import ServiceIcon from '@/components/ServiceIcon';
 
 export default function ManagerServicesPage() {
   const [services, setServices] = useState<any[]>([]);
@@ -194,7 +195,7 @@ export default function ManagerServicesPage() {
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-slate-600 text-xs font-bold">#{item.sort || 0}</td>
                     <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                      <Printer className="w-4 h-4 text-blue-600 shrink-0" />
+                      <ServiceIcon name={item.service_name} className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>{item.service_name}</span>
                     </td>
                     <td className="px-4 py-3">

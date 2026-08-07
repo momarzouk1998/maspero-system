@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
+import ServiceIcon from '@/components/ServiceIcon';
 
 // ─── Types ───────────────────────────────────────────────
 interface OpenInvoice {
@@ -297,7 +298,7 @@ export default function POSPage() {
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${iconColor}`}>
-                      <Printer className="w-5 h-5" />
+                      <ServiceIcon name={svc.service_name} className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-bold text-slate-800 leading-tight">{svc.service_name}</span>
                   </button>
