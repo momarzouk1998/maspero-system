@@ -289,18 +289,60 @@ export async function POST(req: Request) {
       });
     }
 
-    // --- Action: Deliver Custody to another employee ---
+    // --- Action: Deliver Custody to another employee or Maspero Center ---
     if (action === 'deliver') {
       if (item.custodian_id !== user.id && user.role !== 'manager') {
         return NextResponse.json({ error: 'أنت لست المرافق الحالي لهذه العهدة' }, { status: 403 });
       }
 
       if (!receiverId) {
-        return NextResponse.json({ error: 'برجاء اختيار الموظف المستلم' }, { status: 400 });
+        return NextResponse.json({ error: 'برجاء اختيار الموظف المستلم أو (ماسـبيرو)' }, { status: 400 });
       }
 
-      const receiver = await db.users.findUnique({ where: { id: receiverId } });
-      if (!receiver) return NextResponse.json({ error: 'الموظف المستلم غير موجود' }, { status: 404 });
+      let rId = receiverId;
+      let rName = 'ماسـبيرو (المركز)';
+
+      if (receiverId !== 'maspero') {
+        const receiver = await db.users.findUnique({ where: { id: receiverId } });
+        if (!receiver) return NextResponse.json({ error: 'الموظف المستلم غير موجود' }, { status: 404 });
+        rId = receiver.id;
+        rName = receiver.name;
+      }
+
+      // If delivered to Maspero Center directly, update item custodian to Maspero
+      if (receiverId === 'maspero') {
+        await db.$transaction(async (tx: any) => {
+          await tx.wallet_custody_handovers.create({
+            data: {
+              wallet_id: walletId,
+              wallet_name: item.wallet_name,
+              sender_id: user.id,
+              sender_name: user.name,
+              receiver_id: 'maspero',
+              receiver_name: 'ماسـبيرو (المركز)',
+              balance_at_time: expectedBalance,
+              expected_balance: expectedBalance,
+              actual_balance: expectedBalance,
+              difference: 0,
+              status: 'ACCEPTED',
+              review_status: 'تم المطابقة التسليم لماسبيرو'
+            }
+          });
+
+          await tx.external_wallets.update({
+            where: { id: walletId },
+            data: {
+              custodian_id: 'maspero',
+              custodian_name: 'ماسـبيرو (المركز)'
+            }
+          });
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `تم تسليم (${item.wallet_name}) إلى (ماسـبيرو - المركز) بنجاح.`
+        });
+      }
 
       await db.wallet_custody_handovers.create({
         data: {
@@ -308,8 +350,8 @@ export async function POST(req: Request) {
           wallet_name: item.wallet_name,
           sender_id: user.id,
           sender_name: user.name,
-          receiver_id: receiver.id,
-          receiver_name: receiver.name,
+          receiver_id: rId,
+          receiver_name: rName,
           balance_at_time: expectedBalance,
           expected_balance: expectedBalance,
           actual_balance: expectedBalance,
@@ -321,7 +363,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ 
         success: true, 
-        message: `تم إرسال طلب تسليم (${item.wallet_name}) إلى (${receiver.name}).` 
+        message: `تم إرسال طلب تسليم (${item.wallet_name}) إلى (${rName}).` 
       });
     }
 

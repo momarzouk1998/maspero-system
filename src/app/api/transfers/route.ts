@@ -17,6 +17,13 @@ export async function GET(req: Request) {
   } else {
     if (type === 'pending') {
       where = { receiver_id: user.id, status: 'PENDING' };
+    } else if (type === 'active') {
+      where = {
+        OR: [
+          { receiver_id: user.id, status: 'PENDING' },
+          { sender_id: user.id, status: 'PENDING' }
+        ]
+      };
     } else if (type === 'sent') {
       where = { sender_id: user.id };
     } else if (type === 'received') {

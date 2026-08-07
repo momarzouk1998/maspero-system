@@ -64,8 +64,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     fetchUserAndPending();
-    const interval = setInterval(fetchUserAndPending, 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchUserAndPending, 5000);
+
+    const handleBalanceUpdate = () => {
+      fetchUserAndPending();
+    };
+
+    window.addEventListener('maspero:balance-updated', handleBalanceUpdate);
+    window.addEventListener('focus', handleBalanceUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('maspero:balance-updated', handleBalanceUpdate);
+      window.removeEventListener('focus', handleBalanceUpdate);
+    };
   }, []);
 
   const handleLogout = async () => {

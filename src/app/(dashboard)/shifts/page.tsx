@@ -9,6 +9,8 @@ import {
   PlusCircle, Send, Ban, User
 } from 'lucide-react';
 
+import { getActiveUsers } from '@/lib/user-utils';
+
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ export default function ShiftsPage() {
         fetch('/api/shifts?page=1&limit=10'),
         fetch('/api/custody/handover'),
         fetch('/api/users'),
-        fetch('/api/transfers?type=all')
+        fetch('/api/transfers?type=active')
       ]);
 
       if (sRes.ok) {
@@ -91,7 +93,7 @@ export default function ShiftsPage() {
 
       if (uRes.ok) {
         const uData = await uRes.json();
-        setUsers(uData.users || []);
+        setUsers(getActiveUsers(uData.users || []));
       }
 
       if (tRes.ok) {
@@ -1073,7 +1075,8 @@ export default function ShiftsPage() {
                   onChange={(e) => setDeliverReceiverId(e.target.value)}
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-amber-500"
                 >
-                  <option value="">-- اختر الموظف --</option>
+                  <option value="">-- اختر الموظف المستلم أو المركز --</option>
+                  <option value="maspero">🏢 ماسـبيرو (المركز نفسه)</option>
                   {users.filter(u => u.id !== activeShift?.employee_id).map((u) => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
