@@ -180,6 +180,7 @@ export default function POSPage() {
   const [tktCount,   setTktCount]   = useState(1);
   const [tktPrice,   setTktPrice]   = useState(0);
   const [tktComm,    setTktComm]    = useState(0);
+  const [tktNotes,   setTktNotes]   = useState('');
   const [tktLoading, setTktLoading] = useState(false);
 
   const handleAddTicket = async () => {
@@ -192,11 +193,12 @@ export default function POSPage() {
         body: JSON.stringify({
           itemCount: tktCount, ticketPrice: tktPrice,
           ticketCommission: tktComm, serviceName: tktType,
+          notes: tktNotes || null,
           invoice_code: activeInvoiceCode,
         }),
       });
       fetchInvoice(activeInvoiceCode);
-      setTktCount(1); setTktPrice(0); setTktComm(0);
+      setTktCount(1); setTktPrice(0); setTktComm(0); setTktNotes('');
     } finally { setTktLoading(false); }
   };
 
@@ -395,6 +397,18 @@ export default function POSPage() {
                       className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
                     />
                   </div>
+                </div>
+
+                {/* Notes Input Field */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">ملاحظات التذكرة (اختياري)</label>
+                  <input
+                    type="text"
+                    value={tktNotes}
+                    onChange={(e) => setTktNotes(e.target.value)}
+                    placeholder="رقم القطار / اسم الراكب / المحطة..."
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-400"
+                  />
                 </div>
 
                 {/* Summary row + Add button */}
@@ -760,6 +774,18 @@ export default function POSPage() {
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:bg-slate-50 disabled:text-slate-700"
                 />
               </div>
+            </div>
+
+            {/* Notes field for all services */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-2">ملاحظات (اختياري)</label>
+              <input
+                type="text"
+                value={svcNotes}
+                onChange={e => setSvcNotes(e.target.value)}
+                placeholder="أدخل أي ملاحظات تفصيلية هنا..."
+                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              />
             </div>
 
             <div className="flex gap-3 pt-1">
