@@ -19,9 +19,17 @@ export default function InvoicesHistoryPage() {
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
   const [minTotal, setMinTotal] = useState('');
   const [maxTotal, setMaxTotal] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+  }, []);
 
   const hasActiveFilters = startDate || endDate || filterEmployeeId || minTotal || maxTotal;
 
