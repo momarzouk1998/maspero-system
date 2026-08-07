@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { 
   Clock, Play, Square, CheckCircle2, AlertTriangle, Wallet, ArrowRight, 
   History, ArrowLeftRight, Check, X, ShieldAlert, Cpu, Lock, CheckCircle, 
-  UserCheck, RefreshCw, AlertCircle, Info, MessageSquare
+  UserCheck, RefreshCw, AlertCircle, Info, MessageSquare, ThumbsUp, ThumbsDown, 
+  PlusCircle, Send
 } from 'lucide-react';
 
 export default function ShiftsPage() {
@@ -15,7 +16,7 @@ export default function ShiftsPage() {
 
   const [shiftType, setShiftType] = useState('صباحي');
   const [shiftNote, setShiftNote] = useState('');
-  const [msg, setMsg] = useState('');
+  const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Custody & Handover data
   const [custodyData, setCustodyData] = useState<{
@@ -42,7 +43,7 @@ export default function ShiftsPage() {
     pendingHandovers: []
   });
 
-  // Modal State for Receiving Custody Item
+  // Modal State for Receiving Custody Item (Dislike 👎)
   const [receiveModalItem, setReceiveModalItem] = useState<any | null>(null);
   const [actualBalanceInput, setActualBalanceInput] = useState<string>('');
   const [discrepancyReasonInput, setDiscrepancyReasonInput] = useState<string>('');
@@ -53,8 +54,17 @@ export default function ShiftsPage() {
   const [deliverReceiverId, setDeliverReceiverId] = useState<string>('');
   const [deliverSubmitting, setDeliverSubmitting] = useState(false);
 
-  // Users List for Peer Transfers / Handovers
+  // Modal State for Deposit to Cash Drawer (إيداع في الدرج)
+  const [drawerDepositItem, setDrawerDepositItem] = useState<any | null>(null);
+  const [depositAmountInput, setDepositAmountInput] = useState<string>('');
+  const [depositSubmitting, setDepositSubmitting] = useState(false);
+
+  // Peer Cash Transfers State
   const [users, setUsers] = useState<any[]>([]);
+  const [peerReceiverId, setPeerReceiverId] = useState<string>('');
+  const [peerAmount, setPeerAmount] = useState<string>('');
+  const [peerNote, setPeerNote] = useState<string>('');
+  const [peerSubmitting, setPeerSubmitting] = useState(false);
 
   const fetchShiftsAndCustody = async () => {
     setLoading(true);
@@ -90,10 +100,13 @@ export default function ShiftsPage() {
     fetchShiftsAndCustody();
   }, []);
 
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setFeedbackMsg({ text, type });
+    setTimeout(() => setFeedbackMsg(null), 4000);
+  };
+
   const handleStartShift = async () => {
     setSubmitting(true);
-    setMsg('');
-
     try {
       const res = await fetch('/api/shifts', {
         method: 'POST',
@@ -104,11 +117,11 @@ export default function ShiftsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل بدء الشفت');
 
-      setMsg('تم بدء الشفت بنجاح 🎉 برجاء استلام العهدة والمحافظ المطلوبة من الجدول أدناه للبدء.');
+      showToast('تم بدء الشفت بنجاح 🎉 برجاء تأكيد الأرصدة والعهد من الجداول أدناه.');
       setShiftNote('');
       fetchShiftsAndCustody();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -118,8 +131,6 @@ export default function ShiftsPage() {
 
   const handleEndShift = async (shiftId: string) => {
     setSubmitting(true);
-    setMsg('');
-
     try {
       const res = await fetch('/api/shifts', {
         method: 'POST',
@@ -130,24 +141,46 @@ export default function ShiftsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل إنهاء الشفت');
 
-      setMsg('تم إنهاء الشفت بنجاح ✅');
+      showToast('تم إنهاء الشفت بنجاح ✅');
       fetchShiftsAndCustody();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Open Receive Modal
-  const openReceiveModal = (item: any) => {
+  // 1-Click Fast Like 👍 Receive Action (Exact balance match)
+  const handleFastLikeReceive = async (item: any) => {
+    try {
+      const res = await fetch('/api/custody/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'fast_receive',
+          walletId: item.id
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تأكيد الاستلام');
+
+      showToast(`تم استلام وتأكيد (${item.wallet_name}) بنجاح 👍`);
+      fetchShiftsAndCustody();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Open Dislike 👎 Modal (For entering actual typed balance)
+  const openDislikeReceiveModal = (item: any) => {
     setReceiveModalItem(item);
     const expected = Number(item.actual_balance || item.current_balance || 0);
     setActualBalanceInput(expected.toString());
     setDiscrepancyReasonInput('');
   };
 
-  // Submit Receive Custody Form
+  // Submit Receive Custody Form (Dislike Modal)
   const handleConfirmReceive = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!receiveModalItem) return;
@@ -168,11 +201,11 @@ export default function ShiftsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل استلام العهدة');
 
-      alert(data.message || 'تم استلام العهدة بنجاح ✅');
+      showToast(data.message || 'تم إدخال الرصيد الفعلي واستلام العهدة ✅');
       setReceiveModalItem(null);
       fetchShiftsAndCustody();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setReceiveSubmitting(false);
     }
@@ -198,18 +231,81 @@ export default function ShiftsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل إرسال التسليم');
 
-      alert(data.message || 'تم إرسال طلب التسليم بنجاح 👍');
+      showToast(data.message || 'تم إرسال طلب التسليم بنجاح 👍');
       setDeliverModalItem(null);
       setDeliverReceiverId('');
       fetchShiftsAndCustody();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setDeliverSubmitting(false);
     }
   };
 
-  // Helper for difference calculation in Receive Modal
+  // Submit Deposit to Cash Drawer Action
+  const handleConfirmDepositToDrawer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!drawerDepositItem || !depositAmountInput) return;
+
+    setDepositSubmitting(true);
+    try {
+      const res = await fetch('/api/custody/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deposit_to_drawer',
+          walletId: drawerDepositItem.id,
+          amount: parseFloat(depositAmountInput)
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل الإيداع في الدرج');
+
+      showToast(data.message || 'تم تحويل النقدية وإيداعها في الدرج بنجاح 💰');
+      setDrawerDepositItem(null);
+      setDepositAmountInput('');
+      fetchShiftsAndCustody();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setDepositSubmitting(false);
+    }
+  };
+
+  // Handle Send Peer-to-Peer Cash Transfer
+  const handleSendPeerTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!peerReceiverId || !peerAmount) return;
+
+    setPeerSubmitting(true);
+    try {
+      const res = await fetch('/api/transfers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send',
+          receiverId: peerReceiverId,
+          amount: parseFloat(peerAmount),
+          note: peerNote
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل إرسال التحويل');
+
+      showToast('تم إرسال تحويل النقدية إلى الموظف بانتظار موافقته 👍');
+      setPeerAmount('');
+      setPeerNote('');
+      fetchShiftsAndCustody();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setPeerSubmitting(false);
+    }
+  };
+
+  // Helper for difference calculation in Dislike Modal
   const expectedVal = receiveModalItem ? Number(receiveModalItem.actual_balance || receiveModalItem.current_balance || 0) : 0;
   const actualVal = parseFloat(actualBalanceInput || '0');
   const diffVal = actualVal - expectedVal;
@@ -225,166 +321,104 @@ export default function ShiftsPage() {
     }
   }
 
-  // Render Table Component for a section (Wallets, Machines, Drawers)
-  const CustodyTableSection = ({ title, icon: Icon, items, badgeColor }: any) => (
-    <div className="glass-panel p-5 rounded-3xl border border-slate-200 space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Icon className={`w-5 h-5 ${badgeColor}`} />
-          <span>{title}</span>
-          <span className="text-xs font-mono font-normal text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-            {items.length}
-          </span>
-        </h2>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-right text-sm text-slate-700">
-          <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3">العهدة</th>
-              <th className="px-4 py-3">الرصيد</th>
-              <th className="px-4 py-3 text-center">الإجراء</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {items.map((item: any) => {
-              const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
-
-              return (
-                <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-900">{item.wallet_name}</span>
-                      {item.wallet_number && (
-                        <span className="text-xs text-slate-500 font-mono">({item.wallet_number})</span>
-                      )}
-                      {item.custodian_name ? (
-                        <span className={`text-xs mt-1 px-2 py-0.5 rounded inline-block w-fit ${
-                          isCustodyOfUser 
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold' 
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {isCustodyOfUser ? '✓ في عهدتك' : `مع: ${item.custodian_name}`}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-amber-600 mt-1">⚠️ غير مستلم</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono font-bold text-slate-900">
-                    {Number(item.actual_balance || item.current_balance || 0).toFixed(2)} <span className="text-xs text-slate-600">ج.م</span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {isCustodyOfUser ? (
-                      <button
-                        onClick={() => setDeliverModalItem(item)}
-                        className="py-2 px-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition-all shadow-sm"
-                      >
-                        تسليم
-                      </button>
-                    ) : item.custodian_name ? (
-                      <span className="text-xs text-slate-500">مستلم</span>
-                    ) : (
-                      <button
-                        onClick={() => openReceiveModal(item)}
-                        className="py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-md shadow-emerald-600/20 transition-all"
-                      >
-                        استلام
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Header */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Clock className="w-7 h-7 text-cyan-600" />
+      <div className="glass-panel px-6 py-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <Clock className="w-6 h-6 text-cyan-400" />
           <span>إدارة الشفتات</span>
         </h1>
+
+        <Link
+          href="/shifts-history"
+          className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all"
+        >
+          <History className="w-4 h-4" />
+          <span>سجل الشفتات</span>
+        </Link>
       </div>
+
+      {/* Inline Feedback Toast Banner */}
+      {feedbackMsg && (
+        <div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all animate-in fade-in duration-200 ${
+          feedbackMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'
+        }`}>
+          <div className="flex items-center gap-2">
+            {feedbackMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            <span>{feedbackMsg.text}</span>
+          </div>
+          <button onClick={() => setFeedbackMsg(null)} className="text-slate-400 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Sales Lock Warning Banner */}
       {custodyData.isSalesLocked && (
-        <div className="p-4 rounded-2xl border border-red-300 bg-red-50 text-red-700 flex items-start gap-3">
-          <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5 animate-bounce" />
+        <div className="p-3.5 rounded-2xl border border-red-500/40 bg-red-500/10 text-red-300 flex items-start gap-2.5">
+          <Lock className="w-4 h-4 text-red-400 shrink-0 mt-0.5 animate-bounce" />
           <div className="text-xs leading-relaxed">
-            <span className="font-extrabold text-red-700 block mb-0.5">⚠️ المبيعات مقفولة حالياً:</span>
+            <span className="font-bold text-red-400 block mb-0.5">⚠️ المبيعات مقفولة حالياً:</span>
             <span>{custodyData.lockReason}</span>
           </div>
         </div>
       )}
 
       {/* Active Shift Card & Instructions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
         {/* Active Shift Action Card */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-5">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-cyan-600" />
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-cyan-400" />
             <span>حالة الشفت الحالي</span>
           </h2>
 
-          {msg && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{msg}</span>
-            </div>
-          )}
-
           {activeShift ? (
-            <div className="p-5 rounded-2xl border border-emerald-300 bg-emerald-50 space-y-4 text-right">
+            <div className="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 space-y-3 text-right">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200">
-                  شفت نشط الآن
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded">
+                  نشط الآن
                 </span>
-                <span className="text-xs text-slate-600">{activeShift.shift_type}</span>
+                <span className="text-xs text-slate-400">{activeShift.shift_type}</span>
               </div>
               
-              <div className="space-y-1">
-                <p className="text-sm text-slate-700">
-                  وقت البداية: <span className="font-bold text-slate-900">{new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}</span>
+              <div className="space-y-0.5">
+                <p className="text-xs text-slate-300">
+                  البداية: <span className="font-bold text-white">{new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}</span>
                 </p>
-                <p className="text-xs text-slate-600">
-                  الموظف: <span className="text-slate-800">{activeShift.employee_name || 'أنت'}</span>
+                <p className="text-[11px] text-slate-400">
+                  الموظف: <span className="text-slate-200">{activeShift.employee_name || 'أنت'}</span>
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <input
                   type="text"
                   value={shiftNote}
                   onChange={(e) => setShiftNote(e.target.value)}
-                  placeholder="ملاحظات عند إغلاق الشفت (اختياري)..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 mb-3"
+                  placeholder="ملاحظات الإغلاق..."
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-red-500 mb-2.5"
                 />
                 <button
                   onClick={() => handleEndShift(activeShift.id)}
                   disabled={submitting}
-                  className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Square className="w-4 h-4" />
-                  <span>إنهاء الشفت الحالي</span>
+                  <span>إنهاء الشفت</span>
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">نوع الشفت</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">نوع الشفت</label>
                 <select
                   value={shiftType}
                   onChange={(e) => setShiftType(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
                 >
                   <option value="صباحي">صباحي (Morning)</option>
                   <option value="مسائي">مسائي (Evening)</option>
@@ -392,20 +426,20 @@ export default function ShiftsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">ملاحظات البداية</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">ملاحظات البداية</label>
                 <input
                   type="text"
                   value={shiftNote}
                   onChange={(e) => setShiftNote(e.target.value)}
-                  placeholder="ملاحظات عند بدء الشفت..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                  placeholder="ملاحظات عند البدء..."
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <button
                 onClick={handleStartShift}
                 disabled={submitting}
-                className="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-cyan-600/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Play className="w-4 h-4" />
                 <span>بدء شفت جديد</span>
@@ -414,111 +448,350 @@ export default function ShiftsPage() {
           )}
         </div>
 
-        {/* Instructions & System Rules Panel */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 text-xs leading-relaxed text-slate-700">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200">
-            <Info className="w-4 h-4 text-cyan-600" />
-            <span>ضوابط استلام وتسليم العهدة والشفتات</span>
-          </h3>
+        {/* Peer-to-Peer Cash Transfer Form */}
+        <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
+            <span>تحويل نقدية مباشرة بين الموظفين</span>
+          </h2>
 
-          <ul className="list-disc list-inside space-y-2 text-slate-700">
-            <li><strong className="text-slate-900">الشفت الصباحي / المنفرد:</strong> يتطلب استلام جميع المحافظ والماكينات ودرج الكاش لتأكيد فتح المبيعات.</li>
-            <li><strong className="text-slate-900">الشفت المتداخل:</strong> يتطلب استلام درج الكاش فقط، وتستمر المحافظ والماكينات بالعمل مع الزميل المتواجد.</li>
-            <li><strong className="text-slate-900">فروق الأرصدة:</strong> يجب إدخال المبلغ الفعلي في يدك بدقة. إذا وجد فارق، يلزم كتابة سبب الاختلاف للمراجعة.</li>
-            <li><strong className="text-amber-700">إغلاق اليوم (آخر موظف):</strong> يرفض النظام إنهاء الشفت لآخر موظف حتى يقوم بتسليم وتأكيد أرصدة جميع المحافظ والماكينات للشفت التالي.</li>
-          </ul>
+          <form onSubmit={handleSendPeerTransfer} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-400 mb-1">الموظف المستلم</label>
+              <select
+                required
+                value={peerReceiverId}
+                onChange={(e) => setPeerReceiverId(e.target.value)}
+                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">-- اختر الموظف --</option>
+                {users.filter(u => u.id !== activeShift?.employee_id).map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-400 mb-1">المبلغ المالي</label>
+              <input
+                type="number"
+                step="0.25"
+                min="0.25"
+                required
+                value={peerAmount}
+                onChange={(e) => setPeerAmount(e.target.value)}
+                placeholder="المبلغ"
+                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-slate-400 mb-1">بيان التحويل</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={peerNote}
+                  onChange={(e) => setPeerNote(e.target.value)}
+                  placeholder="ملاحظات..."
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
+                />
+                <button
+                  type="submit"
+                  disabled={peerSubmitting}
+                  className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-1 shrink-0 disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>إرسال</span>
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
 
       </div>
 
-      {/* Custody Sections Tables */}
-      <div className="space-y-6">
-        <CustodyTableSection
-          title="المحافظ الإلكترونية"
-          icon={Wallet}
-          items={custodyData.wallets}
-          badgeColor="text-blue-600"
-        />
+      {/* ── CUSTODY TABLES (Wallets, Machines, Cash Drawers) ── */}
 
-        <CustodyTableSection
-          title="الماكينات (فوري / بسطة / أمان)"
-          icon={Cpu}
-          items={custodyData.machines}
-          badgeColor="text-amber-600"
-        />
+      {/* 1. WALLETS TABLE */}
+      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-blue-400" />
+          <span>جدول المحافظ</span>
+        </h2>
 
-        <CustodyTableSection
-          title="أدراج الكاشير"
-          icon={Wallet}
-          items={custodyData.drawers}
-          badgeColor="text-emerald-600"
-        />
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-3 py-2">المحفظة</th>
+                <th className="px-3 py-2">الرقم</th>
+                <th className="px-3 py-2">الحالة</th>
+                <th className="px-3 py-2">الرصيد</th>
+                <th className="px-3 py-2 text-center">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {custodyData.wallets.map((item: any) => {
+                const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+
+                return (
+                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-3 py-2 font-bold text-white">{item.wallet_name}</td>
+                    <td className="px-3 py-2 text-[11px] font-mono text-slate-400">{item.wallet_number || '-'}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        isCustodyOfUser ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono font-bold text-white">
+                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {isCustodyOfUser ? (
+                        <button
+                          onClick={() => setDeliverModalItem(item)}
+                          className="py-1 px-3 bg-amber-600/80 hover:bg-amber-500 text-white font-bold rounded text-[11px]"
+                        >
+                          تسليم
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleFastLikeReceive(item)}
+                            className="py-1 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] flex items-center gap-1 shadow-sm"
+                            title="مطابق واستلام بنقرة واحدة 👍"
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                            <span>تأكيد</span>
+                          </button>
+
+                          <button
+                            onClick={() => openDislikeReceiveModal(item)}
+                            className="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded text-[11px] flex items-center gap-1"
+                            title="تعديل الرصيد الفعلي 👎"
+                          >
+                            <ThumbsDown className="w-3 h-3 text-red-400" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* RECEIVE CUSTODY MODAL */}
+      {/* 2. MACHINES TABLE */}
+      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-amber-400" />
+          <span>جدول المكن</span>
+        </h2>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-3 py-2">المكن</th>
+                <th className="px-3 py-2">الحالة</th>
+                <th className="px-3 py-2">الرصيد</th>
+                <th className="px-3 py-2 text-center">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {custodyData.machines.map((item: any) => {
+                const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+
+                return (
+                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-3 py-2 font-bold text-white">{item.wallet_name}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        isCustodyOfUser ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono font-bold text-white">
+                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {isCustodyOfUser ? (
+                        <button
+                          onClick={() => setDeliverModalItem(item)}
+                          className="py-1 px-3 bg-amber-600/80 hover:bg-amber-500 text-white font-bold rounded text-[11px]"
+                        >
+                          تسليم
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleFastLikeReceive(item)}
+                            className="py-1 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] flex items-center gap-1 shadow-sm"
+                            title="مطابق واستلام بنقرة واحدة 👍"
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                            <span>تأكيد</span>
+                          </button>
+
+                          <button
+                            onClick={() => openDislikeReceiveModal(item)}
+                            className="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded text-[11px] flex items-center gap-1"
+                            title="تعديل الرصيد الفعلي 👎"
+                          >
+                            <ThumbsDown className="w-3 h-3 text-red-400" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 3. CASH DRAWERS TABLE */}
+      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-emerald-400" />
+          <span>جدول الأدراج</span>
+        </h2>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th className="px-3 py-2">الدرج</th>
+                <th className="px-3 py-2">الحالة</th>
+                <th className="px-3 py-2">الرصيد</th>
+                <th className="px-3 py-2 text-center">الإجراءات والتحويل</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {custodyData.drawers.map((item: any) => {
+                const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+
+                return (
+                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-3 py-2 font-bold text-white">{item.wallet_name}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        isCustodyOfUser ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono font-bold text-white">
+                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Deposit to Drawer Action Button */}
+                        <button
+                          onClick={() => {
+                            setDrawerDepositItem(item);
+                            setDepositAmountInput('');
+                          }}
+                          className="py-1 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded text-[11px] flex items-center gap-1 shadow-sm"
+                        >
+                          <PlusCircle className="w-3 h-3" />
+                          <span>إيداع بالدرج</span>
+                        </button>
+
+                        {isCustodyOfUser ? (
+                          <button
+                            onClick={() => setDeliverModalItem(item)}
+                            className="py-1 px-3 bg-amber-600/80 hover:bg-amber-500 text-white font-bold rounded text-[11px]"
+                          >
+                            تسليم
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleFastLikeReceive(item)}
+                              className="py-1 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] flex items-center gap-1 shadow-sm"
+                              title="مطابق واستلام 👍"
+                            >
+                              <ThumbsUp className="w-3 h-3" />
+                            </button>
+
+                            <button
+                              onClick={() => openDislikeReceiveModal(item)}
+                              className="py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded text-[11px]"
+                              title="تعديل الرصيد 👎"
+                            >
+                              <ThumbsDown className="w-3 h-3 text-red-400" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* DISLIKE RECEIVE MODAL (For entering typed actual balance) */}
       {receiveModalItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmReceive} className="glass-panel w-full max-w-lg p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleConfirmReceive} className="glass-panel w-full max-w-md p-5 rounded-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  <span>استلام عهدة ({receiveModalItem.wallet_name})</span>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <ThumbsDown className="w-4 h-4 text-red-400" />
+                  <span>تعديل رصيد ({receiveModalItem.wallet_name})</span>
                 </h3>
-                <p className="text-xs text-slate-600 mt-0.5">نوع العهدة: {receiveModalItem.wallet_type}</p>
               </div>
-              <button type="button" onClick={() => setReceiveModalItem(null)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
-                <X className="w-5 h-5" />
+              <button type="button" onClick={() => setReceiveModalItem(null)} className="p-1 text-slate-400 hover:text-white rounded-lg">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Expected Balance Display */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex justify-between items-center text-xs">
-                <span className="text-slate-600">الرصيد المتوقع في النظام:</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">{expectedVal.toFixed(2)} ج.م</span>
+            <div className="space-y-3">
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                <span className="text-slate-400">الرصيد المتوقع بالسيستم:</span>
+                <span className="font-bold text-white font-mono">{expectedVal.toFixed(2)}</span>
               </div>
 
-              {/* Actual Balance Input */}
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">أدخل المبلغ الفعلي بين يديك الآن *</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">أدخل المبلغ الفعلي بين يديك *</label>
                 <input
                   type="number"
                   step="0.25"
                   required
                   value={actualBalanceInput}
                   onChange={(e) => setActualBalanceInput(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-lg font-bold focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-base font-bold focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
-              {/* Difference & Audit Status Evaluation */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">الفارق بين الفعلي والمتوقع:</span>
-                  <span className={`font-bold font-mono ${diffVal < 0 ? 'text-red-600' : diffVal > 0 ? 'text-blue-600' : 'text-emerald-600'}`}>
-                    {diffVal > 0 ? `+${diffVal.toFixed(2)}` : diffVal.toFixed(2)} ج.م
+                  <span className="text-slate-400">الفارق:</span>
+                  <span className={`font-bold font-mono ${diffVal < 0 ? 'text-red-400' : diffVal > 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
+                    {diffVal > 0 ? `+${diffVal.toFixed(2)}` : diffVal.toFixed(2)}
                   </span>
                 </div>
-
-                <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                  <span className="text-slate-600">تقييم المراجعة الآلي:</span>
-                  <span className={`px-2.5 py-0.5 rounded border text-[11px] font-bold ${
-                    auditTag.text === 'مطابق' 
-                      ? 'text-emerald-700 bg-emerald-100 border-emerald-300'
-                      : auditTag.text.includes('طبيعي')
-                      ? 'text-blue-700 bg-blue-100 border-blue-300'
-                      : 'text-red-700 bg-red-100 border-red-300'
-                  }`}>
+                <div className="flex justify-between items-center pt-1.5 border-t border-slate-800/60">
+                  <span className="text-slate-400">حالة التقييم:</span>
+                  <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${auditTag.color}`}>
                     {auditTag.text}
                   </span>
                 </div>
               </div>
 
-              {/* Reason for Discrepancy (Mandatory if diff != 0) */}
               {diffVal !== 0 && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-amber-700 flex items-center gap-1">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-amber-400 flex items-center gap-1">
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>توضيح سبب الاختلاف (إجباري) *</span>
                   </label>
@@ -527,25 +800,79 @@ export default function ShiftsPage() {
                     rows={2}
                     value={discrepancyReasonInput}
                     onChange={(e) => setDiscrepancyReasonInput(e.target.value)}
-                    placeholder="مثال: رسوم تحويلات سابقة، أو عمولة شبكة..."
-                    className="w-full p-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    placeholder="سبب الاختلاف..."
+                    className="w-full p-2.5 bg-slate-900 border border-amber-500/40 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
                   />
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-slate-200">
+            <div className="flex gap-2.5 pt-2 border-t border-slate-800">
               <button
                 type="submit"
                 disabled={receiveSubmitting}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 disabled:opacity-50"
               >
-                تأكيد واستلام العهدة
+                تأكيد واستلام
               </button>
               <button
                 type="button"
                 onClick={() => setReceiveModalItem(null)}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* DEPOSIT TO CASH DRAWER MODAL */}
+      {drawerDepositItem && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleConfirmDepositToDrawer} className="glass-panel w-full max-w-md p-5 rounded-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-blue-400" />
+                <span>إيداع نقدية في ({drawerDepositItem.wallet_name})</span>
+              </h3>
+              <button type="button" onClick={() => setDrawerDepositItem(null)} className="p-1 text-slate-400 hover:text-white rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                سيتم تحويل المبلغ المالي من عهدتك النقدية وإضافته مباشرة إلى رصيد {drawerDepositItem.wallet_name}.
+              </p>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">المبلغ المراد إيداعه *</label>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  required
+                  value={depositAmountInput}
+                  onChange={(e) => setDepositAmountInput(e.target.value)}
+                  placeholder="المبلغ"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-base font-bold focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 pt-2 border-t border-slate-800">
+              <button
+                type="submit"
+                disabled={depositSubmitting}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 disabled:opacity-50"
+              >
+                تأكيد الإيداع بالدرج
+              </button>
+              <button
+                type="button"
+                onClick={() => setDrawerDepositItem(null)}
+                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
               >
                 إلغاء
               </button>
@@ -556,26 +883,26 @@ export default function ShiftsPage() {
 
       {/* DELIVER CUSTODY MODAL */}
       {deliverModalItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmDeliver} className="glass-panel w-full max-w-md p-6 rounded-3xl border border-slate-200 space-y-5 animate-in fade-in zoom-in duration-200 bg-white">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <ArrowLeftRight className="w-5 h-5 text-amber-600" />
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleConfirmDeliver} className="glass-panel w-full max-w-md p-5 rounded-2xl border border-slate-800 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-amber-400" />
                 <span>تسليم عهدة ({deliverModalItem.wallet_name})</span>
               </h3>
-              <button type="button" onClick={() => setDeliverModalItem(null)} className="p-1 text-slate-600 hover:text-slate-900 rounded-lg">
-                <X className="w-5 h-5" />
+              <button type="button" onClick={() => setDeliverModalItem(null)} className="p-1 text-slate-400 hover:text-white rounded-lg">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">اختر الموظف المستلم *</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">اختر الموظف المستلم *</label>
                 <select
                   required
                   value={deliverReceiverId}
                   onChange={(e) => setDeliverReceiverId(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-amber-500"
                 >
                   <option value="">-- اختر الموظف --</option>
                   {users.filter(u => u.id !== activeShift?.employee_id).map((u) => (
@@ -585,18 +912,18 @@ export default function ShiftsPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-slate-200">
+            <div className="flex gap-2.5 pt-2 border-t border-slate-800">
               <button
                 type="submit"
                 disabled={deliverSubmitting}
-                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-600/20 disabled:opacity-50"
+                className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-600/20 disabled:opacity-50"
               >
                 إرسال طلب التسليم
               </button>
               <button
                 type="button"
                 onClick={() => setDeliverModalItem(null)}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
               >
                 إلغاء
               </button>

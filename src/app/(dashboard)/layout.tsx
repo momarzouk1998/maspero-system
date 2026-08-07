@@ -123,21 +123,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }`}>
         <div>
           {/* Logo Header */}
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-100">
-            <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center w-full' : ''}`}>
-              <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-white p-1 shadow-md shadow-slate-300/50 flex items-center justify-center shrink-0">
+          <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-100/90">
+            <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'justify-center w-full' : ''}`}>
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
                 <Image
                   src="/maspero-logo.png"
                   alt="Maspero Logo"
-                  width={40}
-                  height={40}
+                  width={28}
+                  height={28}
                   className="object-contain"
                 />
               </div>
               {!isSidebarCollapsed && (
                 <div>
-                  <h1 className="font-bold text-slate-900 tracking-wide text-lg">ماسـبيرو</h1>
-                  <p className="text-[11px] text-pink-600 font-semibold">لخدمات الطباعة والإنترنت</p>
+                  <h1 className="font-bold text-slate-900 text-sm leading-none">ماسـبيرو</h1>
+                  <p className="text-[10px] text-pink-600 font-semibold mt-0.5">لخدمات الطباعة والإنترنت</p>
                 </div>
               )}
             </div>
@@ -266,7 +266,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Wallet className="w-4 h-4 text-emerald-700" />
                 <div className="text-xs">
                   <span className="text-slate-600 block text-[10px]">عهدة الكاش</span>
-                  <span className="font-extrabold text-sm">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')} ج.م</span>
+                  <span className="font-extrabold text-sm">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}</span>
                 </div>
               </div>
             </Link>

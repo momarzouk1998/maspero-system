@@ -163,7 +163,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
-                      {Number(item.amount).toLocaleString('ar-EG')} ج.م
+                      {Number(item.amount).toLocaleString('ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs">
                       <span className="flex items-center gap-1">

@@ -147,13 +147,13 @@ export default function TicketsPage() {
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
                     <td className="px-4 py-3 font-mono text-slate-700">
-                      {Number(item.ticket_price).toLocaleString('ar-EG')} ج.م
+                      {Number(item.ticket_price).toLocaleString('ar-EG')}
                     </td>
                     <td className="px-4 py-3 font-bold text-purple-700 font-mono">
-                      {Number(item.ticket_commission).toLocaleString('ar-EG')} ج.م
+                      {Number(item.ticket_commission).toLocaleString('ar-EG')}
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
-                      {Number(item.amount).toLocaleString('ar-EG')} ج.م
+                      {Number(item.amount).toLocaleString('ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs">
                       <span className="flex items-center gap-1">

@@ -281,7 +281,7 @@ export default function InvoicesHistoryPage() {
                     <td className="px-4 py-3 font-medium text-slate-900">{inv.employeeName}</td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-mono">{inv.itemCount} عناصر</td>
                     <td className="px-4 py-3 font-bold font-mono text-slate-900 text-base">
-                      {Number(inv.total).toFixed(2)} ج.م
+                      {Number(inv.total).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
@@ -392,8 +392,8 @@ export default function InvoicesHistoryPage() {
                             <tr key={idx}>
                               <td className="px-3 py-2.5 font-medium text-slate-900">{item.name}</td>
                               <td className="px-3 py-2.5 font-mono">{item.count}</td>
-                              <td className="px-3 py-2.5 font-mono">{item.price} ج</td>
-                              <td className="px-3 py-2.5 font-mono font-bold text-emerald-700">{item.total} ج</td>
+                              <td className="px-3 py-2.5 font-mono">{item.price}</td>
+                              <td className="px-3 py-2.5 font-mono font-bold text-emerald-700">{item.total}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -405,7 +405,7 @@ export default function InvoicesHistoryPage() {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex justify-between items-center">
                     <span className="text-slate-700 font-bold text-sm">الإجمالي الكلي</span>
                     <span className="text-2xl font-bold font-mono text-emerald-700">
-                      {drawerData.total} <span className="text-xs font-normal text-slate-600">ج.م</span>
+                      {drawerData.total}
                     </span>
                   </div>
 

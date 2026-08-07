@@ -264,9 +264,9 @@ export default function ChargeHistoryPage() {
                           <span>{item.transaction_type}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900">{amt.toFixed(2)} ج.م</td>
-                      <td className="px-4 py-3 font-mono text-amber-700">{comm.toFixed(2)} ج.م</td>
-                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700">{totalCollected.toFixed(2)} ج.م</td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900">{amt.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono text-amber-700">{comm.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700">{totalCollected.toFixed(2)}</td>
                       <td className="px-4 py-3 text-xs text-slate-700">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3 text-slate-500" />

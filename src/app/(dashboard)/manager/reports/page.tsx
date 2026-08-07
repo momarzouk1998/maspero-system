@@ -125,7 +125,7 @@ export default function ManagerReportsPage() {
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-white">
-                    {Number(metrics?.totalRevenue || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-emerald-400">ج.م</span>
+                    {Number(metrics?.totalRevenue || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">خدمات + عمولات التذاكر</p>
                 </div>
@@ -136,7 +136,7 @@ export default function ManagerReportsPage() {
                     <Printer className="w-5 h-5 text-blue-400" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-white">
-                    {Number(metrics?.serviceValue || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-blue-400">ج.م</span>
+                    {Number(metrics?.serviceValue || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">من إجمالي {metrics?.totalServiceEntries} عملية</p>
                 </div>
@@ -147,7 +147,7 @@ export default function ManagerReportsPage() {
                     <Train className="w-5 h-5 text-purple-400" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-white">
-                    {Number(metrics?.ticketCommission || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-purple-400">ج.م</span>
+                    {Number(metrics?.ticketCommission || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">من {metrics?.totalTicketBookings} حجز قطار</p>
                 </div>
@@ -158,7 +158,7 @@ export default function ManagerReportsPage() {
                     <Receipt className="w-5 h-5 text-rose-400" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-white">
-                    {Number(metrics?.expensesValue || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-rose-400">ج.م</span>
+                    {Number(metrics?.expensesValue || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">خصم تشغيلي</p>
                 </div>
@@ -175,7 +175,7 @@ export default function ManagerReportsPage() {
                 </div>
                 <div className="text-left">
                   <span className="text-4xl font-black text-emerald-400">
-                    {Number(metrics?.netProfit || 0).toLocaleString('ar-EG')} <span className="text-lg font-normal text-white">ج.م</span>
+                    {Number(metrics?.netProfit || 0).toLocaleString('ar-EG')}
                   </span>
                 </div>
               </div>
@@ -266,10 +266,10 @@ export default function ManagerReportsPage() {
                           <td className="px-4 py-3 font-bold text-white">{item.wallet_name}</td>
                           <td className="px-4 py-3 text-slate-300">{item.sender_name || 'النظام'}</td>
                           <td className="px-4 py-3 font-semibold text-emerald-400">{item.receiver_name}</td>
-                          <td className="px-4 py-3 font-mono text-slate-300">{Number(item.expected_balance || 0).toFixed(2)} ج.م</td>
-                          <td className="px-4 py-3 font-mono font-bold text-white">{Number(item.actual_balance || 0).toFixed(2)} ج.م</td>
+                          <td className="px-4 py-3 font-mono text-slate-300">{Number(item.expected_balance || 0).toFixed(2)}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-white">{Number(item.actual_balance || 0).toFixed(2)}</td>
                           <td className={`px-4 py-3 font-mono font-bold ${diff < 0 ? 'text-red-400' : diff > 0 ? 'text-blue-400' : 'text-slate-400'}`}>
-                            {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)} ج.م
+                            {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-slate-300 max-w-[200px] truncate" title={item.discrepancy_reason || ''}>
                             {item.discrepancy_reason || '-'}

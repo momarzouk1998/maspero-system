@@ -401,7 +401,7 @@ export default function POSPage() {
                   <div className="flex items-center gap-2 text-xs text-slate-600 bg-white rounded-xl px-3 py-2 border border-slate-200">
                     <span>الإجمالي:</span>
                     <span className="font-bold font-mono text-emerald-700 text-sm">
-                      {((tktPrice + tktComm) * tktCount).toFixed(2)} ج.م
+                      {((tktPrice + tktComm) * tktCount).toFixed(2)}
                     </span>
                   </div>
                   <button
@@ -456,7 +456,7 @@ export default function POSPage() {
                             {w.wallet_number && <span className="text-xs text-slate-400 mr-1 font-mono">({w.wallet_number})</span>}
                           </td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-800">
-                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)} ج.م
+                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
@@ -500,7 +500,7 @@ export default function POSPage() {
                         <tr key={w.id} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-medium text-slate-900">{w.wallet_name}</td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-800">
-                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)} ج.م
+                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
@@ -639,7 +639,7 @@ export default function POSPage() {
             <div className="flex justify-between items-center">
               <span className="text-slate-600 font-bold text-sm">الإجمالي الكلي</span>
               <span className={`text-2xl font-bold font-mono ${(activeInvoice?.total ?? 0) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                {Math.abs(activeInvoice?.total ?? 0)} <span className="text-xs font-normal text-slate-500">ج.م</span>
+                {Math.abs(activeInvoice?.total ?? 0)}
               </span>
             </div>
 
@@ -758,7 +758,6 @@ export default function POSPage() {
                   placeholder="0"
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:bg-slate-50 disabled:text-slate-700"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">ج.م</span>
               </div>
             </div>
 
@@ -792,7 +791,7 @@ export default function POSPage() {
                   {wltPopup.wallet_name}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  الرصيد الحالي: <span className="font-mono font-bold">{Number(wltPopup.actual_balance || wltPopup.current_balance || 0).toFixed(2)} ج.م</span>
+                  الرصيد الحالي: <span className="font-mono font-bold">{Number(wltPopup.actual_balance || wltPopup.current_balance || 0).toFixed(2)}</span>
                 </p>
               </div>
               <button onClick={() => setWltPopup(null)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
@@ -858,7 +857,7 @@ export default function POSPage() {
             }`}>
               <span className="text-slate-600">الإجمالي المحصّل:</span>
               <span className={`font-bold font-mono ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
-                {(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm).toFixed(2)} ج.م
+                {(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm).toFixed(2)}
               </span>
             </div>
 

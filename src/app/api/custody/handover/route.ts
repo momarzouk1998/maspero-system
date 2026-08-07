@@ -19,10 +19,36 @@ export async function GET() {
     const isMorningOrSoloShift = activeColleaguesCount === 0;
 
     // 2. Fetch external wallets, machines & cash drawers
-    const allCustodyItems = await db.external_wallets.findMany({
+    let allCustodyItems = await db.external_wallets.findMany({
       where: { is_active: true },
       orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
     });
+
+    // Check if Cash Drawers exist. If less than 3 drawers, seed the 3 default drawers
+    const existingDrawers = allCustodyItems.filter((i: any) => i.wallet_type === 'درج كاشير');
+    if (existingDrawers.length < 3) {
+      const drawerNames = ['درج كاشير 1', 'درج كاشير 2', 'درج كاشير 3'];
+      for (let idx = 0; idx < 3; idx++) {
+        const name = drawerNames[idx];
+        if (!existingDrawers.some((d: any) => d.wallet_name === name)) {
+          await db.external_wallets.create({
+            data: {
+              wallet_name: name,
+              wallet_type: 'درج كاشير',
+              current_balance: 0,
+              actual_balance: 0,
+              sort: idx + 1,
+              is_active: true
+            }
+          });
+        }
+      }
+      // Re-fetch after seeding drawers
+      allCustodyItems = await db.external_wallets.findMany({
+        where: { is_active: true },
+        orderBy: [{ wallet_type: 'asc' }, { sort: 'asc' }]
+      });
+    }
 
     // Group items into Wallets, Machines, Cash Drawers
     const wallets = allCustodyItems.filter((i: any) => i.wallet_type === 'محفظة');
@@ -39,8 +65,6 @@ export async function GET() {
     });
 
     // 5. Check if sales are locked
-    // Morning/Solo shift requires drawer + all active wallets + all machines
-    // Overlapping shift requires drawer only
     const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
     const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
     const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
@@ -78,25 +102,120 @@ export async function GET() {
   }
 }
 
-// POST: Receive or Deliver custody item
+// POST: Receive, Fast Confirm (Like 👍), Deliver, or Deposit to Drawer
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
     const body = await req.json();
-    const { action, walletId, actualBalance, discrepancyReason, receiverId } = body;
+    const { action, walletId, actualBalance, discrepancyReason, receiverId, amount } = body;
+
+    // --- Action: Deposit Cash from Employee Custody into Cash Drawer ---
+    if (action === 'deposit_to_drawer') {
+      const drawerId = walletId;
+      const depositAmount = Number(amount || 0);
+
+      if (!drawerId || depositAmount <= 0) {
+        return NextResponse.json({ error: 'برجاء تحديد الدرج والمبلغ المراد إيداعه' }, { status: 400 });
+      }
+
+      const drawer = await db.external_wallets.findUnique({ where: { id: drawerId } });
+      if (!drawer || drawer.wallet_type !== 'درج كاشير') {
+        return NextResponse.json({ error: 'درج الكاشير غير موجود' }, { status: 404 });
+      }
+
+      const today = new Date();
+
+      await db.$transaction(async (tx: any) => {
+        // 1. Deduct amount from employee cash custody
+        await tx.users.update({
+          where: { id: user.id },
+          data: { wallet_balance: { decrement: depositAmount } }
+        });
+
+        // 2. Increase drawer balance
+        await tx.external_wallets.update({
+          where: { id: drawerId },
+          data: {
+            current_balance: { increment: depositAmount },
+            actual_balance: { increment: depositAmount }
+          }
+        });
+
+        // 3. Log transaction
+        await tx.wallet_transactions.create({
+          data: {
+            date: today,
+            transaction_type: 'إيداع في درج كاشير',
+            wallet_id: drawerId,
+            wallet_name: drawer.wallet_name,
+            amount: depositAmount,
+            employee_id: user.id,
+            employee_name: user.name,
+            description: `إيداع نقدية من عهدة الموظف إلى ${drawer.wallet_name}`,
+            timestamp: today
+          }
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `تم إيداع مبلغ ${depositAmount} بنجاح في ${drawer.wallet_name}`
+      });
+    }
 
     if (!walletId) {
       return NextResponse.json({ error: 'معرف العهدة/المحفظة مطلوب' }, { status: 400 });
     }
 
     const item = await db.external_wallets.findUnique({ where: { id: walletId } });
-    if (!item) return NextResponse.json({ error: 'الجرام/المحفظة غير موجودة' }, { status: 404 });
+    if (!item) return NextResponse.json({ error: 'العنصر غير موجود' }, { status: 404 });
 
     const expectedBalance = Number(item.actual_balance || item.current_balance || 0);
 
-    // --- Action 1: Receive Custody (استلام) ---
+    // --- Action: Fast Like 👍 Confirm (Receive with exact balance in 1 click) ---
+    if (action === 'fast_receive') {
+      const numActual = expectedBalance;
+
+      const updatedItem = await db.$transaction(async (tx: any) => {
+        await tx.wallet_custody_handovers.create({
+          data: {
+            wallet_id: walletId,
+            wallet_name: item.wallet_name,
+            sender_id: item.custodian_id || undefined,
+            sender_name: item.custodian_name || 'النظام',
+            receiver_id: user.id,
+            receiver_name: user.name,
+            balance_at_time: expectedBalance,
+            expected_balance: expectedBalance,
+            actual_balance: numActual,
+            difference: 0,
+            status: 'ACCEPTED',
+            review_status: 'تم المطابقة',
+            responded_at: new Date()
+          }
+        });
+
+        return await tx.external_wallets.update({
+          where: { id: walletId },
+          data: {
+            custodian_id: user.id,
+            custodian_name: user.name,
+            actual_balance: numActual,
+            current_balance: numActual
+          }
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `تم استلام (${item.wallet_name}) وتأكيد المطابقة بنجاح 👍`,
+        item: updatedItem
+      });
+    }
+
+    // --- Action: Custom Receive (Dislike 👎 or entering typed actual balance) ---
     if (action === 'receive') {
       if (actualBalance === undefined || actualBalance === null) {
         return NextResponse.json({ error: 'برجاء كتابة المبلغ الفعلي في يدك' }, { status: 400 });
@@ -105,18 +224,12 @@ export async function POST(req: Request) {
       const numActual = Number(actualBalance);
       const diff = numActual - expectedBalance;
 
-      // Mandate reason if there is a discrepancy
       if (diff !== 0 && (!discrepancyReason || !discrepancyReason.trim())) {
         return NextResponse.json({ 
-          error: `يوجد فارق قدره (${diff > 0 ? '+' : ''}${diff.toFixed(2)} ج.م) بين المتوقع والفعلي. برجاء توضيح سبب الاختلاف.` 
+          error: `يوجد فارق قدره (${diff > 0 ? '+' : ''}${diff.toFixed(2)}) بين المتوقع والفعلي. برجاء توضيح سبب الاختلاف.` 
         }, { status: 400 });
       }
 
-      // Automated Review Status Evaluation:
-      // - Wallet shortage 3 to 10 EGP -> Normal fee shortage
-      // - Machine surplus 20 to 30 EGP -> Normal company commission surplus
-      // - No diff -> Matched
-      // - Else -> Needs Review
       let reviewStatus = 'تم المطابقة';
       if (diff !== 0) {
         if (item.wallet_type === 'محفظة' && diff <= -3 && diff >= -10) {
@@ -129,7 +242,6 @@ export async function POST(req: Request) {
       }
 
       const updatedItem = await db.$transaction(async (tx: any) => {
-        // 1. Log handover
         await tx.wallet_custody_handovers.create({
           data: {
             wallet_id: walletId,
@@ -149,7 +261,6 @@ export async function POST(req: Request) {
           }
         });
 
-        // 2. Update custody & balance on external_wallets
         return await tx.external_wallets.update({
           where: { id: walletId },
           data: {
@@ -163,12 +274,12 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ 
         success: true, 
-        message: `تم استلام (${item.wallet_name}) بنجاح 🎉`,
+        message: `تم تحديث واستلام (${item.wallet_name}) بنجاح`,
         item: updatedItem 
       });
     }
 
-    // --- Action 2: Deliver Custody to another employee (تسليم) ---
+    // --- Action: Deliver Custody to another employee ---
     if (action === 'deliver') {
       if (item.custodian_id !== user.id && user.role !== 'manager') {
         return NextResponse.json({ error: 'أنت لست المرافق الحالي لهذه العهدة' }, { status: 403 });
@@ -200,7 +311,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ 
         success: true, 
-        message: `تم إرسال طلب تسليم (${item.wallet_name}) إلى (${receiver.name}) بانتظار استلامه.` 
+        message: `تم إرسال طلب تسليم (${item.wallet_name}) إلى (${receiver.name}).` 
       });
     }
 

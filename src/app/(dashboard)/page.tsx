@@ -91,7 +91,7 @@ export default function DashboardPage() {
           </div>
           <p className="text-xs text-slate-600 mb-1">الرصيد النقدي في عهدتك الآن</p>
           <h3 className="text-2xl font-extrabold text-slate-900">
-            {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')} <span className="text-sm font-normal text-emerald-700">ج.م</span>
+            {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}
           </h3>
         </div>
 
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                     <td className="px-4 py-3 font-medium text-slate-900">{item.service_name}</td>
                     <td className="px-4 py-3">{item.paper_count}</td>
                     <td className="px-4 py-3">{item.face_type || 'وجه واحد'}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">{Number(item.amount).toLocaleString('ar-EG')} ج.م</td>
+                    <td className="px-4 py-3 font-bold text-emerald-700">{Number(item.amount).toLocaleString('ar-EG')}</td>
                     <td className="px-4 py-3 text-slate-600">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">
                       {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
