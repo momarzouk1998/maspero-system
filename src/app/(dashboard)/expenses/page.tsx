@@ -215,31 +215,6 @@ export default function FinancialAndHROperationsPage() {
           </div>
         </div>
 
-        {/* Tab Selector Buttons */}
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1 border border-slate-200">
-          <button
-            onClick={() => setActiveTab('financial')}
-            className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'financial'
-                ? 'bg-white text-emerald-700 shadow-sm border border-slate-200'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-            <span>التعاملات المالية والرواتب</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('hr')}
-            className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'hr'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Gift className="w-4 h-4 text-indigo-600" />
-            <span>الحوافز والإجازات بالساعات</span>
-          </button>
-        </div>
       </div>
 
       {/* Toast Feedback */}
@@ -254,8 +229,9 @@ export default function FinancialAndHROperationsPage() {
         </div>
       )}
 
-      {/* MODULE A: التعاملات المالية (Financial Operations) */}
-      {activeTab === 'financial' && (
+      {/* 2-Column Split Layout for Financials & HR */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* MODULE A: التعاملات المالية والمصروفات */}
         <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-6">
           <div className="flex items-center justify-between border-b pb-4 border-slate-200">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -263,6 +239,9 @@ export default function FinancialAndHROperationsPage() {
               <span>التعاملات المالية والمصروفات</span>
             </h2>
             <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+              تسجيل قيود الخزينة والنقدية
+            </span>
+          </div>
               تسجيل قيود الخزينة والنقدية
             </span>
           </div>
@@ -415,10 +394,8 @@ export default function FinancialAndHROperationsPage() {
             </button>
           </form>
         </div>
-      )}
 
-      {/* MODULE B: الحوافز والإجازات بالساعات (HR Operations) */}
-      {activeTab === 'hr' && (
+        {/* MODULE B: الحوافز والإجازات بالساعات (HR Operations) */}
         <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-6">
           <div className="flex items-center justify-between border-b pb-4 border-slate-200">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -538,8 +515,7 @@ export default function FinancialAndHROperationsPage() {
             </button>
           </form>
         </div>
-      )}
-
+      </div>
     </div>
   );
 }

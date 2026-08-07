@@ -27,7 +27,8 @@ import {
   Zap,
   ChevronRight,
   ChevronLeft,
-  ShieldCheck
+  ShieldCheck,
+  User
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
 
@@ -103,6 +104,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'إدارة الشفتات', href: '/shifts', icon: Clock, badge: pendingTransfers },
     { name: 'صفحة البيع', href: '/pos', icon: ShoppingCart },
     { name: 'التعاملات المالية', href: '/expenses', icon: Receipt },
+    { name: 'الصفحة الشخصية', href: '/profile', icon: User },
     ...(isManager ? [
       { name: 'لوحة المدير', href: '/manager', icon: ShieldCheck },
     ] : [])
@@ -217,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2.5">
+                <Link href="/profile" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                   <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-sm">
                     {user?.name?.charAt(0) || 'م'}
                   </div>
@@ -227,7 +229,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {isManager ? 'مدير النظام' : 'موظف مبيعات'}
                     </p>
                   </div>
-                </div>
+                </Link>
                 <button
                   onClick={handleLogout}
                   title="تسجيل الخروج"
