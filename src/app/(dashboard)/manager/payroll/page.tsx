@@ -64,7 +64,7 @@ export default function EmployeePayrollReportPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-7 h-7 text-indigo-600" />
-              <span>كشف مستحقات الموظفين</span>
+              <span>مستحقات الموظفين</span>
             </h1>
           </div>
         </div>

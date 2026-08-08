@@ -594,14 +594,14 @@ export default function ShiftsPage() {
         </h2>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700">
+          <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">المحفظة</th>
-                <th className="px-4 py-3">الرقم</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3">الرصيد</th>
-                <th className="px-4 py-3 text-center">الإجراء</th>
+                <th className="px-4 py-3 whitespace-nowrap">المحفظة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الرقم</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الرصيد</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراء</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -610,19 +610,19 @@ export default function ShiftsPage() {
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900">{item.wallet_name}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-500">{item.wallet_number || '-'}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-slate-500 whitespace-nowrap">{item.wallet_number || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                         isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
                         {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                       {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
                         <button
                           onClick={() => setDeliverModalItem(item)}
@@ -667,13 +667,13 @@ export default function ShiftsPage() {
         </h2>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700">
+          <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">المكن</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3">الرصيد</th>
-                <th className="px-4 py-3 text-center">الإجراء</th>
+                <th className="px-4 py-3 whitespace-nowrap">المكن</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الرصيد</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراء</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -682,18 +682,18 @@ export default function ShiftsPage() {
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900">{item.wallet_name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                         isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
                         {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                       {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
                         <button
                           onClick={() => setDeliverModalItem(item)}
@@ -738,13 +738,13 @@ export default function ShiftsPage() {
         </h2>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700">
+          <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">الدرج</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3">الرصيد</th>
-                <th className="px-4 py-3 text-center">الإجراءات والتحويل</th>
+                <th className="px-4 py-3 whitespace-nowrap">الدرج</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الرصيد</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات والتحويل</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -753,18 +753,18 @@ export default function ShiftsPage() {
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900">{item.wallet_name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                         isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
                         {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                       {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
                         {/* Deposit to Drawer Action Button */}
                         <button
@@ -823,16 +823,16 @@ export default function ShiftsPage() {
         </h2>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700">
+          <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                <th className="px-4 py-3">المحوّل (المرسل)</th>
-                <th className="px-4 py-3">المستلم</th>
-                <th className="px-4 py-3">المبلغ</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3">ملاحظات</th>
-                <th className="px-4 py-3 text-center">الإجراءات</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                <th className="px-4 py-3 whitespace-nowrap">المحوّل (المرسل)</th>
+                <th className="px-4 py-3 whitespace-nowrap">المستلم</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -850,15 +850,15 @@ export default function ShiftsPage() {
 
                   return (
                     <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 text-slate-600 font-mono">
+                      <td className="px-4 py-3 text-slate-600 font-mono whitespace-nowrap">
                         {t.created_at ? new Date(t.created_at).toLocaleString('ar-EG') : '-'}
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-900">{t.sender_name}</td>
-                      <td className="px-4 py-3 font-semibold text-blue-700">{t.receiver_name}</td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                      <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{t.sender_name}</td>
+                      <td className="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">{t.receiver_name}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                         {Number(t.amount).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                           t.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                           t.status === 'REJECTED' ? 'bg-red-100 text-red-800 border-red-300' :
@@ -870,10 +870,10 @@ export default function ShiftsPage() {
                            t.status === 'CANCELLED' ? 'ملغى' : 'قيد الانتظار ⏳'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 max-w-[180px] truncate" title={t.note || ''}>
+                      <td className="px-4 py-3 text-slate-600 max-w-[180px] truncate whitespace-nowrap" title={t.note || ''}>
                         {t.note || '-'}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
                           {isPending && isSender && (
                             <button

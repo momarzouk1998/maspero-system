@@ -162,15 +162,15 @@ export default function ManagerServicesPage() {
       {/* Services Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">الترتيب</th>
-                <th className="px-4 py-3">اسم الخدمة</th>
-                <th className="px-4 py-3">نوع العمولة</th>
-                <th className="px-4 py-3">نسبة العمولة</th>
-                <th className="px-4 py-3">السعر المبدئي</th>
-                <th className="px-4 py-3 text-center">إجراءات المدير</th>
+                <th className="px-4 py-3 whitespace-nowrap">الترتيب</th>
+                <th className="px-4 py-3 whitespace-nowrap">اسم الخدمة</th>
+                <th className="px-4 py-3 whitespace-nowrap">نوع العمولة</th>
+                <th className="px-4 py-3 whitespace-nowrap">نسبة العمولة</th>
+                <th className="px-4 py-3 whitespace-nowrap">السعر المبدئي</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -190,25 +190,25 @@ export default function ManagerServicesPage() {
               ) : (
                 services.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-slate-600 text-xs font-bold">#{item.sort || 0}</td>
-                    <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                    <td className="px-4 py-3 font-mono text-slate-600 text-xs font-bold whitespace-nowrap">#{item.sort || 0}</td>
+                    <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
                       <ServiceIcon name={item.service_name} className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>{item.service_name}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                         item.is_commissionable ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-100 text-slate-700 border-slate-300'
                       }`}>
                         {item.is_commissionable ? 'عمولة 💰' : 'بدون عمولة'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-amber-700 text-sm">
+                    <td className="px-4 py-3 font-mono font-bold text-amber-700 text-sm whitespace-nowrap">
                       {item.is_commissionable ? `${Number(item.commission_percent)}%` : '0%'}
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                       {Number(item.price || 0).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => openEditModal(item)}

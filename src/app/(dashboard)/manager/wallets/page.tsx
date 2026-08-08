@@ -178,15 +178,15 @@ export default function ManagerWalletsPage() {
       {/* Wallets & Machines Simple Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">اسم العهدة / المحفظة</th>
-                <th className="px-4 py-3">النوع</th>
-                <th className="px-4 py-3">رقم الهاتف / الكود</th>
-                <th className="px-4 py-3">الرصيد الحالي</th>
-                <th className="px-4 py-3">المسؤول الحالي</th>
-                <th className="px-4 py-3 text-center">إجراءات المدير</th>
+                <th className="px-4 py-3 whitespace-nowrap">اسم العهدة / المحفظة</th>
+                <th className="px-4 py-3 whitespace-nowrap">النوع</th>
+                <th className="px-4 py-3 whitespace-nowrap">رقم الهاتف / الكود</th>
+                <th className="px-4 py-3 whitespace-nowrap">الرصيد الحالي</th>
+                <th className="px-4 py-3 whitespace-nowrap">المسؤول الحالي</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -206,7 +206,7 @@ export default function ManagerWalletsPage() {
               ) : (
                 wallets.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                    <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
                       {item.wallet_type === 'ماكينة' ? (
                         <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
                       ) : item.wallet_type === 'درج كاشير' ? (
@@ -216,7 +216,7 @@ export default function ManagerWalletsPage() {
                       )}
                       <span>{item.wallet_name}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                         item.wallet_type === 'ماكينة'
                           ? 'bg-amber-100 text-amber-800 border-amber-300'
@@ -227,12 +227,12 @@ export default function ManagerWalletsPage() {
                         {item.wallet_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-600">{item.wallet_number || '-'}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base">
+                    <td className="px-4 py-3 text-xs font-mono text-slate-600 whitespace-nowrap">{item.wallet_number || '-'}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
                       {Number(item.current_balance || 0).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 text-xs font-bold text-slate-800">{item.custodian_name || 'ماسـبيرو (المركز)'}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.custodian_name || 'ماسـبيرو (المركز)'}</td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => openEditModal(item)}

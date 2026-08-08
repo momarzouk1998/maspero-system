@@ -539,26 +539,26 @@ export default function ManagerReportsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs text-slate-700">
+              <table className="w-full text-right text-xs text-slate-700 table-auto">
                 <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
                   <tr>
-                    <th className="px-3 py-3">تاريخ الحركة</th>
-                    <th className="px-3 py-3">التصنيف</th>
-                    <th className="px-3 py-3">البند / البيان</th>
-                    <th className="px-3 py-3">المبلغ</th>
-                    <th className="px-3 py-3">الموظف المعني</th>
-                    <th className="px-3 py-3">الملاحظات</th>
+                    <th className="px-3 py-3 whitespace-nowrap">تاريخ الحركة</th>
+                    <th className="px-3 py-3 whitespace-nowrap">التصنيف</th>
+                    <th className="px-3 py-3 whitespace-nowrap">البند / البيان</th>
+                    <th className="px-3 py-3 whitespace-nowrap">المبلغ</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الموظف المعني</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الملاحظات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {activeMonthReport.items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 font-mono text-slate-600">{item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}</td>
-                      <td className="px-3 py-3 font-bold text-slate-900">{item.main_type}</td>
-                      <td className="px-3 py-3 font-bold text-blue-700">{item.items || '-'}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900">{Number(item.amount).toFixed(2)}</td>
-                      <td className="px-3 py-3 text-slate-700">{item.employee_name || '-'}</td>
-                      <td className="px-3 py-3 text-slate-500">{item.notes || '-'}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}</td>
+                      <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap">{item.main_type}</td>
+                      <td className="px-3 py-3 font-bold text-blue-700 whitespace-nowrap">{item.items || '-'}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{Number(item.amount).toFixed(2)}</td>
+                      <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{item.employee_name || '-'}</td>
+                      <td className="px-3 py-3 text-slate-500 whitespace-nowrap">{item.notes || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -599,26 +599,26 @@ export default function ManagerReportsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs text-slate-700">
+              <table className="w-full text-right text-xs text-slate-700 table-auto">
                 <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
                   <tr>
-                    <th className="px-3 py-3">التاريخ</th>
-                    <th className="px-3 py-3">الشهر</th>
-                    <th className="px-3 py-3">البند / البيان</th>
-                    <th className="px-3 py-3">المبلغ</th>
-                    <th className="px-3 py-3">الموظف المعني</th>
-                    <th className="px-3 py-3">الملاحظات</th>
+                    <th className="px-3 py-3 whitespace-nowrap">التاريخ</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
+                    <th className="px-3 py-3 whitespace-nowrap">البند / البيان</th>
+                    <th className="px-3 py-3 whitespace-nowrap">المبلغ</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الموظف المعني</th>
+                    <th className="px-3 py-3 whitespace-nowrap">الملاحظات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {activeCategoryReport.items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 font-mono text-slate-600">{item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-700">{item.month || '-'}</td>
-                      <td className="px-3 py-3 font-bold text-purple-700">{item.items || '-'}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900">{Number(item.amount).toFixed(2)}</td>
-                      <td className="px-3 py-3 text-slate-700">{item.employee_name || '-'}</td>
-                      <td className="px-3 py-3 text-slate-500">{item.notes || '-'}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-700 whitespace-nowrap">{item.month || '-'}</td>
+                      <td className="px-3 py-3 font-bold text-purple-700 whitespace-nowrap">{item.items || '-'}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{Number(item.amount).toFixed(2)}</td>
+                      <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{item.employee_name || '-'}</td>
+                      <td className="px-3 py-3 text-slate-500 whitespace-nowrap">{item.notes || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -131,7 +131,7 @@ export default function TicketsPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Train className="w-6 h-6 text-purple-600" />
-              <span>سجل تذاكر القطارات</span>
+              <span>سجل التذاكر</span>
             </h1>
           </div>
         </div>

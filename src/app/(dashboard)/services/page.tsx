@@ -182,17 +182,17 @@ export default function ServicesPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">اسم الخدمة</th>
-                <th className="px-4 py-3">الورق</th>
-                <th className="px-4 py-3">الوجه</th>
-                <th className="px-4 py-3">المبلغ</th>
-                <th className="px-4 py-3">الموظف</th>
-                <th className="px-4 py-3">التاريخ</th>
-                <th className="px-4 py-3">الملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap">اسم الخدمة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الورق</th>
+                <th className="px-4 py-3 whitespace-nowrap">الوجه</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
+                <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -212,9 +212,9 @@ export default function ServicesPage() {
               ) : (
                 entries.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900">{item.service_name}</td>
-                    <td className="px-4 py-3 font-mono text-slate-700">{item.paper_count}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.service_name}</td>
+                    <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{item.paper_count}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                         item.face_type === 'وجهين'
                           ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
@@ -223,23 +223,23 @@ export default function ServicesPage() {
                         {item.face_type || 'وجه واحد'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
+                    <td className="px-4 py-3 font-bold text-emerald-700 font-mono whitespace-nowrap">
                       {Number(item.amount).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">
+                    <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1">
                         <User className="w-3 h-3 text-slate-400" />
                         {item.employee_name || '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 font-mono">
+                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
                       {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate">
+                    <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate whitespace-nowrap">
                       {item.notes || '-'}
                     </td>
                     {currentUser?.role === 'manager' && (
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => openEditModal(item)}

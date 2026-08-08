@@ -177,17 +177,17 @@ export default function ShiftsHistoryPage() {
       {/* Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">الموظف</th>
-                <th className="px-4 py-3">نوع الشفت</th>
-                <th className="px-4 py-3">التاريخ</th>
-                <th className="px-4 py-3">وقت البداية</th>
-                <th className="px-4 py-3">وقت النهاية</th>
-                <th className="px-4 py-3">إجمالي الساعات</th>
-                <th className="px-4 py-3">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
+                <th className="px-4 py-3 whitespace-nowrap">وقت البداية</th>
+                <th className="px-4 py-3 whitespace-nowrap">وقت النهاية</th>
+                <th className="px-4 py-3 whitespace-nowrap">إجمالي الساعات</th>
+                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -207,31 +207,31 @@ export default function ShiftsHistoryPage() {
               ) : (
                 shifts.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                         item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
                       }`}>
                         {item.shift_type || 'صباحي'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-700 font-mono">
+                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
                       {item.start_time ? new Date(item.start_time).toLocaleDateString('ar-EG') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                       {item.start_time ? new Date(item.start_time).toLocaleTimeString('ar-EG') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                       {item.end_time ? new Date(item.end_time).toLocaleTimeString('ar-EG') : (
                         <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-bold text-slate-900 font-mono">
+                    <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
                       {Number(item.total_hours || 0).toFixed(2)} ساعة
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{item.shift_note || '-'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
                     {currentUser?.role === 'manager' && (
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => openEditModal(item)}

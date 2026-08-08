@@ -256,15 +256,15 @@ export default function InvoicesHistoryPage() {
       {/* Invoices Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">رقم الفاتورة</th>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                <th className="px-4 py-3">الكاشير / الموظف</th>
-                <th className="px-4 py-3">عدد العناصر</th>
-                <th className="px-4 py-3">إجمالي الفاتورة</th>
-                <th className="px-4 py-3 text-center">التفاصيل</th>
+                <th className="px-4 py-3 whitespace-nowrap">رقم الفاتورة</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
+                <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -288,18 +288,18 @@ export default function InvoicesHistoryPage() {
                     onClick={() => handleOpenDrawer(inv.code)}
                     className="hover:bg-slate-50 cursor-pointer transition-colors group"
                   >
-                    <td className="px-4 py-3 font-mono font-bold text-emerald-700 group-hover:underline">
+                    <td className="px-4 py-3 font-mono font-bold text-emerald-700 group-hover:underline whitespace-nowrap">
                       {inv.code}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                       {inv.timestamp ? new Date(inv.timestamp).toLocaleString('ar-EG') : '-'}
                     </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{inv.employeeName}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 font-mono">{inv.itemCount} عناصر</td>
-                    <td className="px-4 py-3 font-bold font-mono text-slate-900 text-base">
+                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{inv.employeeName}</td>
+                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">{inv.itemCount} عناصر</td>
+                    <td className="px-4 py-3 font-bold font-mono text-slate-900 text-base whitespace-nowrap">
                       {Number(inv.total).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={(e) => {
@@ -411,22 +411,22 @@ export default function InvoicesHistoryPage() {
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-slate-700">عناصر الفاتورة ({drawerData.items.length}):</h4>
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                      <table className="w-full text-right text-xs text-slate-700">
+                      <table className="w-full text-right text-xs text-slate-700 table-auto">
                         <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                           <tr>
-                            <th className="px-3 py-2.5">الخدمة / المنتج</th>
-                            <th className="px-3 py-2.5">الكمية</th>
-                            <th className="px-3 py-2.5">السعر</th>
-                            <th className="px-3 py-2.5">الإجمالي</th>
+                            <th className="px-3 py-2.5 whitespace-nowrap">الخدمة / المنتج</th>
+                            <th className="px-3 py-2.5 whitespace-nowrap">الكمية</th>
+                            <th className="px-3 py-2.5 whitespace-nowrap">السعر</th>
+                            <th className="px-3 py-2.5 whitespace-nowrap">الإجمالي</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                           {drawerData.items.map((item, idx) => (
                             <tr key={idx}>
-                              <td className="px-3 py-2.5 font-medium text-slate-900">{item.name}</td>
-                              <td className="px-3 py-2.5 font-mono">{item.count}</td>
-                              <td className="px-3 py-2.5 font-mono">{item.price}</td>
-                              <td className="px-3 py-2.5 font-mono font-bold text-emerald-700">{item.total}</td>
+                              <td className="px-3 py-2.5 font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
+                              <td className="px-3 py-2.5 font-mono whitespace-nowrap">{item.count}</td>
+                              <td className="px-3 py-2.5 font-mono whitespace-nowrap">{item.price}</td>
+                              <td className="px-3 py-2.5 font-mono font-bold text-emerald-700 whitespace-nowrap">{item.total}</td>
                             </tr>
                           ))}
                         </tbody>

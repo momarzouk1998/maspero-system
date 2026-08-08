@@ -455,31 +455,31 @@ export default function POSPage() {
                   المحافظ الإلكترونية
                 </h3>
                 <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                  <table className="w-full text-right text-sm">
+                  <table className="w-full text-right text-sm table-auto">
                     <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
                       <tr>
-                        <th className="px-4 py-2.5">المحفظة</th>
-                        <th className="px-4 py-2.5">الرصيد الحالي</th>
-                        <th className="px-4 py-2.5 text-center">إيداع</th>
-                        <th className="px-4 py-2.5 text-center">سحب</th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">المحفظة</th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
+                        <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
+                        <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 bg-white">
                       {wallets.map(w => (
                         <tr key={w.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-medium text-slate-900">{w.wallet_name}
+                          <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}
                             {w.wallet_number && <span className="text-xs text-slate-400 mr-1 font-mono">({w.wallet_number})</span>}
                           </td>
-                          <td className="px-4 py-3 font-mono font-bold text-slate-800">
+                          <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
                             {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
                               className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
                               <ArrowDownLeft className="w-3 h-3" /> إيداع
                             </button>
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'سحب')}
                               className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
                               <ArrowUpRight className="w-3 h-3" /> سحب
@@ -501,29 +501,29 @@ export default function POSPage() {
                   الماكينات (فوري / بسطة / أمان)
                 </h3>
                 <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                  <table className="w-full text-right text-sm">
+                  <table className="w-full text-right text-sm table-auto">
                     <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
                       <tr>
-                        <th className="px-4 py-2.5">الماكينة</th>
-                        <th className="px-4 py-2.5">الرصيد الحالي</th>
-                        <th className="px-4 py-2.5 text-center">إيداع</th>
-                        <th className="px-4 py-2.5 text-center">سحب</th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">الماكينة</th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
+                        <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
+                        <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 bg-white">
                       {machines.map(w => (
                         <tr key={w.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-medium text-slate-900">{w.wallet_name}</td>
-                          <td className="px-4 py-3 font-mono font-bold text-slate-800">
+                          <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
                             {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
                               className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
                               <ArrowDownLeft className="w-3 h-3" /> إيداع
                             </button>
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'سحب')}
                               className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
                               <ArrowUpRight className="w-3 h-3" /> سحب

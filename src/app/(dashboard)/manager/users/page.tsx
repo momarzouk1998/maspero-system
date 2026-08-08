@@ -324,16 +324,16 @@ export default function ManagerUsersPage() {
       {/* Users Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">الموظف</th>
-                <th className="px-4 py-3">الوظيفة / الدور</th>
-                <th className="px-4 py-3">رقم الهاتف</th>
-                <th className="px-4 py-3">الراتب الشهرى</th>
-                <th className="px-4 py-3">عهدة الكاش</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3 text-center">إجراءات الأذونات والحساب</th>
+                <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">الوظيفة / الدور</th>
+                <th className="px-4 py-3 whitespace-nowrap">رقم الهاتف</th>
+                <th className="px-4 py-3 whitespace-nowrap">الراتب الشهرى</th>
+                <th className="px-4 py-3 whitespace-nowrap">عهدة الكاش</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات الأذونات والحساب</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -348,8 +348,8 @@ export default function ManagerUsersPage() {
               ) : (
                 filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900">{u.name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{u.name}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                         u.role === 'manager'
                           ? 'bg-purple-100 text-purple-700 border-purple-200'
@@ -358,21 +358,21 @@ export default function ManagerUsersPage() {
                         {u.job_title || (u.role === 'manager' ? 'مدير نظام' : 'كاشير')}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dir-ltr text-right">{u.phone || '-'}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-emerald-700">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dir-ltr text-right whitespace-nowrap">{u.phone || '-'}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
                       {Number(u.salary || 0).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900">
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                       {Number(u.wallet_balance || 0).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                         u.is_active ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'
                       }`}>
                         {u.is_active ? 'نشط' : 'معطل'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => openPermissionsModal(u)}

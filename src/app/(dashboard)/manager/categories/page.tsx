@@ -179,13 +179,13 @@ export default function ManagerCategoriesPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3"># الترتيب</th>
-                <th className="px-4 py-3">النوع</th>
-                <th className="px-4 py-3">اسم البند / البيان</th>
-                <th className="px-4 py-3 text-center">إجراءات المدير</th>
+                <th className="px-4 py-3 whitespace-nowrap"># الترتيب</th>
+                <th className="px-4 py-3 whitespace-nowrap">النوع</th>
+                <th className="px-4 py-3 whitespace-nowrap">اسم البند / البيان</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -205,14 +205,14 @@ export default function ManagerCategoriesPage() {
               ) : (
                 filteredCategories.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-slate-600 text-xs font-bold">#{item.sort || 0}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-mono text-slate-600 text-xs font-bold whitespace-nowrap">#{item.sort || 0}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
                         {item.type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-slate-900">{item.item_name}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.item_name}</td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => openEditModal(item)}
