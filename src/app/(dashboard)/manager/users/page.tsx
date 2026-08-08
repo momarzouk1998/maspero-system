@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSign, Wallet, Clock, Search, CheckCircle2, AlertCircle, Shield, Check, X, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSign, Wallet, Clock, Search, CheckCircle2, AlertCircle, Shield, Check, X, ArrowRight, Trash2 } from 'lucide-react';
 
 const FEATURES_LIST = [
   { key: 'services', label: 'تسجيل الخدمات والطباعة' },

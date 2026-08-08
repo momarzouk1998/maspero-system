@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeftRight, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
-  User, X, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, Info, Wallet
+  User, X, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, Info, Wallet, Trash2
 } from 'lucide-react';
 import { getActiveUsers } from '@/lib/user-utils';
 

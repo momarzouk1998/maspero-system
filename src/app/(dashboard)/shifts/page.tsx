@@ -6,12 +6,13 @@ import {
   Clock, Play, Square, CheckCircle2, AlertTriangle, Wallet, ArrowRight, 
   History, ArrowLeftRight, Check, X, ShieldAlert, Cpu, Lock, CheckCircle, 
   UserCheck, RefreshCw, AlertCircle, Info, MessageSquare, ThumbsUp, ThumbsDown, 
-  PlusCircle, Send, Ban, User
+  PlusCircle, Send, Ban, User, Trash2
 } from 'lucide-react';
 
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function ShiftsPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [shifts, setShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -108,6 +109,11 @@ export default function ShiftsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+
     fetchShiftsAndCustody();
   }, []);
 
