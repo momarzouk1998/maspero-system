@@ -45,9 +45,8 @@ jobs:
           echo "=== [2/6] Tagging local image ==="
           docker tag $GHCR_IMAGE $LOCAL_TAG
 
-          echo "=== [3/6] Stopping old container ==="
-          docker stop maspero 2>/dev/null || true
-          docker rm maspero 2>/dev/null || true
+          echo "=== [3/6] Stopping & removing old container ==="
+          docker rm -f maspero 2>/dev/null || true
 
           echo "=== [4/6] Starting new container ==="
           docker run -d \
