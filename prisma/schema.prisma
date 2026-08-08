@@ -77,12 +77,14 @@ model services {
   @@schema("maspero")
 }
 
-// 3. Tiered Printing Prices (أسعار الطباعة بالشرائح)
+// 3. Tiered Printing Prices (أسعار الطباعة بالشرائح الديناميكية)
 model print_prices {
   id         String  @id @default(uuid()) @db.Uuid
   print_type String  @db.VarChar(100) // "طباعة أسود" | "طباعة ألوان"
   face_type  String  @db.VarChar(50)  // "وجه واحد" | "وجهين"
   key_name   String  @db.VarChar(250)
+  min_qty    Int     @default(1)
+  max_qty    Int?
   price      Decimal @db.Decimal(10, 2)
 
   @@map("print_prices")
