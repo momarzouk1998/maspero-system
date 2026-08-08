@@ -10,13 +10,14 @@ import {
 import { getActiveUsers } from '@/lib/user-utils';
 
 export default function FinancialAndHROperationsPage() {
-  const [activeTab, setActiveTab] = useState<'financial' | 'hr'>('financial');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [employees, setEmployees] = useState<any[]>([]);
 
   // --- Financial Form State ---
-  const [finCategory, setFinCategory] = useState<'سلفة' | 'قبض' | 'مصروفات' | 'دعم مالي' | 'مشتريات' | 'إيرادات'>('سلفة');
-  const [paymentMethod, setPaymentMethod] = useState('نقدي');
+  const [finCategory, setFinCategory] = useState<'سلفة' | 'قبض' | 'مصروفات' | 'دعم مالي' | 'مشتريات' | 'مسحوبات'>('سلفة');
+  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [selectedItem, setSelectedItem] = useState('');
+  const [customItem, setCustomItem] = useState('');
   const [finDate, setFinDate] = useState(new Date().toISOString().split('T')[0]);
   const [finEmployeeId, setFinEmployeeId] = useState('');
   const [finAmount, setFinAmount] = useState('0');
@@ -30,10 +31,7 @@ export default function FinancialAndHROperationsPage() {
   const [hrHours, setHrHours] = useState('1.00');
   const [hrNotes, setHrNotes] = useState('');
 
-  // --- Common & Log Table State ---
-  const [expensesList, setExpensesList] = useState<any[]>([]);
-  const [hrList, setHrList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // --- Common State ---
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -54,32 +52,23 @@ export default function FinancialAndHROperationsPage() {
         }
       })
       .catch(console.error);
-
-    fetchData();
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [resFin, resHr] = await Promise.all([
-        fetch('/api/expenses?limit=50'),
-        fetch('/api/hr?limit=50')
-      ]);
-
-      if (resFin.ok) {
-        const d = await resFin.json();
-        setExpensesList(d.expenses || []);
-      }
-      if (resHr.ok) {
-        const d = await resHr.json();
-        setHrList(d.hrItems || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch category items when finCategory changes
+  useEffect(() => {
+    fetch(`/api/categories?type=${encodeURIComponent(finCategory)}`)
+      .then(r => r.json())
+      .then(d => {
+        const items = d.categories || [];
+        setAvailableItems(items);
+        if (items.length > 0) {
+          setSelectedItem(items[0].item_name);
+        } else {
+          setSelectedItem('أخرى');
+        }
+      })
+      .catch(console.error);
+  }, [finCategory]);
 
   // Fetch employee salary stats when employee changes in financial form
   useEffect(() => {
@@ -112,6 +101,8 @@ export default function FinancialAndHROperationsPage() {
       return;
     }
 
+    const itemFinalName = selectedItem === 'أخرى' ? (customItem || 'أخرى') : selectedItem;
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/expenses', {
@@ -119,9 +110,9 @@ export default function FinancialAndHROperationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mainType: finCategory,
-          paymentMethod,
+          items: itemFinalName,
           date: finDate,
-          targetEmployeeId: finEmployeeId,
+          targetEmployeeId: ['سلفة', 'قبض'].includes(finCategory) ? finEmployeeId : null,
           amount: amt,
           notes: finNotes
         })
@@ -133,7 +124,7 @@ export default function FinancialAndHROperationsPage() {
       showToast(`تم تسجيل معاملة (${finCategory}) بمبلغ ${amt} بنجاح 🎉`);
       setFinAmount('0');
       setFinNotes('');
-      fetchData();
+      setCustomItem('');
     } catch (err: any) {
       showToast(err.message, 'error');
     } finally {
@@ -170,7 +161,6 @@ export default function FinancialAndHROperationsPage() {
       showToast(`تم تسجيل طلب (${hrType}) لـ ${hrs} ساعة بنجاح 🎉`);
       setHrHours('1.00');
       setHrNotes('');
-      fetchData();
     } catch (err: any) {
       showToast(err.message, 'error');
     } finally {
@@ -178,7 +168,6 @@ export default function FinancialAndHROperationsPage() {
     }
   };
 
-  // Adjust numeric steppers
   const adjustFinAmount = (delta: number) => {
     const curr = parseFloat(finAmount || '0');
     const next = Math.max(0, curr + delta);
@@ -192,7 +181,7 @@ export default function FinancialAndHROperationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header Banner */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -207,14 +196,21 @@ export default function FinancialAndHROperationsPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Receipt className="w-6 h-6 text-emerald-600" />
-              <span>التعاملات المالية والحوافز والإجازات</span>
+              <span>التعاملات المالية والمصروفات والعمليات</span>
             </h1>
             <p className="text-slate-600 text-xs mt-0.5">
-              إدارة المصروفات والسلف والقبض والحوافز والإجازات بالساعات
+              تسجيل قيود السلف، الرواتب، المصروفات، الدعم المالي، والمسحوبات، وحساب الإجازات بالساعات
             </p>
           </div>
         </div>
 
+        <Link
+          href="/expenses-history"
+          className="py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer self-start md:self-auto"
+        >
+          <Clock className="w-4 h-4" />
+          <span>سجل التعاملات الماليّة الكامل</span>
+        </Link>
       </div>
 
       {/* Toast Feedback */}
@@ -238,6 +234,9 @@ export default function FinancialAndHROperationsPage() {
               <DollarSign className="w-5 h-5 text-emerald-600" />
               <span>التعاملات المالية والمصروفات</span>
             </h2>
+            <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+              تسجيل قيود الخزينة والنقدية
+            </span>
           </div>
 
           {/* Categories Selector Pills */}
@@ -250,7 +249,7 @@ export default function FinancialAndHROperationsPage() {
                 { key: 'مصروفات', label: 'مصروفات 📉', color: 'bg-red-100 text-red-800 border-red-300' },
                 { key: 'دعم مالي', label: 'دعم مالي 💸', color: 'bg-blue-100 text-blue-800 border-blue-300' },
                 { key: 'مشتريات', label: 'مشتريات 🛒', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-                { key: 'إيرادات', label: 'إيرادات 📈', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+                { key: 'مسحوبات', label: 'مسحوبات 📈', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
               ].map((c) => (
                 <button
                   key={c.key}
@@ -269,21 +268,7 @@ export default function FinancialAndHROperationsPage() {
           </div>
 
           <form onSubmit={handleFinSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Payment Method / Fund */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">البند / طريقة الصرف *</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="نقدي">نقدي (عهدة الكاشير الحالية)</option>
-                  <option value="محفظة">محفظة إلكترونية</option>
-                  <option value="خزينة">خزينة رئيسية</option>
-                </select>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Date */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
@@ -296,9 +281,41 @@ export default function FinancialAndHROperationsPage() {
                 />
               </div>
 
-              {/* Target Employee */}
+              {/* Item / Statement Dropdown */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">البند / البيان *</label>
+                <select
+                  value={selectedItem}
+                  onChange={(e) => setSelectedItem(e.target.value)}
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                >
+                  {availableItems.map((item) => (
+                    <option key={item.id} value={item.item_name}>{item.item_name}</option>
+                  ))}
+                  <option value="أخرى">أخرى (إدخال يدوي...)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Custom Item Name if "أخرى" selected */}
+            {selectedItem === 'أخرى' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم البند المخصص *</label>
+                <input
+                  type="text"
+                  required
+                  value={customItem}
+                  onChange={(e) => setCustomItem(e.target.value)}
+                  placeholder="اكتب اسم البند هنا..."
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
+
+            {/* Target Employee - ONLY SHOWN FOR ADVANCE & SALARY */}
+            {['سلفة', 'قبض'].includes(finCategory) && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني بالسلفة/القبض *</label>
                 <select
                   required
                   value={finEmployeeId}
@@ -310,7 +327,7 @@ export default function FinancialAndHROperationsPage() {
                   ))}
                 </select>
               </div>
-            </div>
+            )}
 
             {/* Amount Stepper */}
             <div>
@@ -319,7 +336,7 @@ export default function FinancialAndHROperationsPage() {
                 <button
                   type="button"
                   onClick={() => adjustFinAmount(-50)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0"
+                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -335,7 +352,7 @@ export default function FinancialAndHROperationsPage() {
                 <button
                   type="button"
                   onClick={() => adjustFinAmount(50)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0"
+                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -344,7 +361,7 @@ export default function FinancialAndHROperationsPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات / سبب الصرف</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات إضافية (اختياري)</label>
               <input
                 type="text"
                 value={finNotes}
@@ -431,21 +448,21 @@ export default function FinancialAndHROperationsPage() {
               </div>
             </div>
 
-            {/* Request Type Pills */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">نوع الطلب *</label>
+            {/* Request Type */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الطلب *</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {[
                   { key: 'مكافأة', label: 'مكافأة 🎁', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-                  { key: 'خصم', label: 'خصم ❌', color: 'bg-red-100 text-red-800 border-red-300' },
-                  { key: 'طلب إذن', label: 'طلب إذن 🕒', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-                  { key: 'طلب إجازة', label: 'طلب إجازة 🏖️', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+                  { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
+                  { key: 'طلب إذن', label: 'إذن مغادرة 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                  { key: 'طلب إجازة', label: 'إجازة 🏖️', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
                 ].map((t) => (
                   <button
                     key={t.key}
                     type="button"
                     onClick={() => setHrType(t.key as any)}
-                    className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       hrType === t.key
                         ? `${t.color} shadow-sm ring-2 ring-indigo-400`
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -464,7 +481,7 @@ export default function FinancialAndHROperationsPage() {
                 <button
                   type="button"
                   onClick={() => adjustHrHours(-0.5)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0"
+                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -480,7 +497,7 @@ export default function FinancialAndHROperationsPage() {
                 <button
                   type="button"
                   onClick={() => adjustHrHours(0.5)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0"
+                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -489,12 +506,12 @@ export default function FinancialAndHROperationsPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات الطلب</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">السبب / الملاحظات (اختياري)</label>
               <input
                 type="text"
                 value={hrNotes}
                 onChange={(e) => setHrNotes(e.target.value)}
-                placeholder="أدخل أي ملاحظات إضافية..."
+                placeholder="أدخل أسباب الخصم أو المكافأة..."
                 className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-indigo-500"
               />
             </div>

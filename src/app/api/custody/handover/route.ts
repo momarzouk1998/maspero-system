@@ -374,3 +374,50 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'حدث خطأ في عملية العهدة' }, { status: 500 });
   }
 }
+
+// Manager Review / Confirm Handover
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { handoverId, reviewStatus, notes } = await req.json();
+    if (!handoverId) return NextResponse.json({ error: 'معرف التسليم مطلوب' }, { status: 400 });
+
+    const updated = await db.wallet_custody_handovers.update({
+      where: { id: handoverId },
+      data: {
+        review_status: reviewStatus || 'تم المراجعة بواسطة المدير',
+        ...(notes !== undefined ? { notes } : {})
+      }
+    });
+
+    return NextResponse.json({ success: true, handover: updated });
+  } catch (error: any) {
+    console.error('Update Handover Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء تعديل/مراجعة التسليم' }, { status: 500 });
+  }
+}
+
+// Manager Delete Handover Entry
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const handoverId = searchParams.get('id');
+
+    if (!handoverId) return NextResponse.json({ error: 'معرف التسليم مطلوب' }, { status: 400 });
+
+    await db.wallet_custody_handovers.delete({ where: { id: handoverId } });
+    return NextResponse.json({ success: true, message: 'تم حذف سجل التسليم بنجاح' });
+  } catch (error: any) {
+    console.error('Delete Handover Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء حذف سجل التسليم' }, { status: 500 });
+  }
+}

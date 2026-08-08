@@ -2,18 +2,32 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
+const TYPE_SORT_ORDER: Record<string, number> = {
+  'محفظة': 1,
+  'ماكينة': 2,
+  'درج كاشير': 3,
+};
+
 // GET all external wallets & employee wallets
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   // External Fawry / Machine wallets & Cash Drawers
-  const externalWallets = await db.external_wallets.findMany({
+  const rawExternalWallets = await db.external_wallets.findMany({
     where: { is_active: true },
-    orderBy: { sort: 'asc' }
+    orderBy: [{ sort: 'asc' }, { wallet_name: 'asc' }]
   });
 
-  // Clean Employee Wallets list (excluding any invalid HTML entries)
+  // Sort strictly by: 1. المحافظ -> 2. المكن -> 3. الأدراج
+  const externalWallets = rawExternalWallets.sort((a, b) => {
+    const orderA = TYPE_SORT_ORDER[a.wallet_type] || 4;
+    const orderB = TYPE_SORT_ORDER[b.wallet_type] || 4;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.sort - b.sort;
+  });
+
+  // Clean Employee Wallets list
   const employeeWallets = await db.users.findMany({
     where: {
       is_active: true,
@@ -49,12 +63,12 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // 1. Manager Create New Wallet / Machine / Drawer
-    if (body.action === 'create') {
+    if (body.action === 'create' || body.walletName) {
       if (user.role !== 'manager') {
         return NextResponse.json({ error: 'إضافة المحافظ والماكينات متاح للمدير فقط' }, { status: 403 });
       }
 
-      const { walletName, walletType, walletNumber, initialBalance } = body;
+      const { walletName, walletType, walletNumber, initialBalance, custodianName } = body;
       if (!walletName || !walletType) {
         return NextResponse.json({ error: 'اسم المحفظة ونوعها مطلوبان' }, { status: 400 });
       }
@@ -62,10 +76,11 @@ export async function POST(req: Request) {
       const created = await db.external_wallets.create({
         data: {
           wallet_name: walletName,
-          wallet_type: walletType, // "محفظة" | "ماكينة" | "درج كاش"
+          wallet_type: walletType, // "محفظة" | "ماكينة" | "درج كاشير"
           wallet_number: walletNumber || null,
           current_balance: Number(initialBalance || 0),
           actual_balance: Number(initialBalance || 0),
+          custodian_name: custodianName || 'ماسـبيرو (المركز)',
           is_active: true,
         }
       });
@@ -77,7 +92,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Machine Deposit / Withdrawal transaction
+    // 2. Machine / Wallet Deposit / Withdrawal transaction
     const { walletId, transactionType, amount, commission, description, invoice_code } = body;
 
     const wallet = await db.external_wallets.findUnique({
@@ -90,6 +105,17 @@ export async function POST(req: Request) {
     const numCommission = Number(commission || 0);
     const today = new Date();
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
+
+    const balanceChange = transactionType === 'إيداع' ? -numAmount : numAmount;
+    const currentBal = Number(wallet.current_balance || 0);
+    const newBal = currentBal + balanceChange;
+
+    // PREVENT NEGATIVE BALANCE CONSTRAINT FOR WALLETS, MACHINES & DRAWERS
+    if (newBal < 0) {
+      return NextResponse.json({
+        error: `عذراً، رصيد (${wallet.wallet_name}) لا يكفي للعملية (الرصيد المتاح: ${currentBal.toLocaleString('ar-EG')}) ولا يمكن أن يصبح بالسالب!`
+      }, { status: 400 });
+    }
 
     const transaction = await db.$transaction(async (tx) => {
       const log = await tx.wallet_transactions.create({
@@ -110,7 +136,6 @@ export async function POST(req: Request) {
         }
       });
 
-      const balanceChange = transactionType === 'إيداع' ? -numAmount : numAmount;
       await tx.external_wallets.update({
         where: { id: walletId },
         data: {
@@ -159,7 +184,7 @@ export async function PUT(req: Request) {
       updateData.current_balance = Number(initialBalance);
       updateData.actual_balance = Number(initialBalance);
     }
-    if (custodianName !== undefined) updateData.custodian_name = custodianName;
+    if (custodianName !== undefined) updateData.custodian_name = custodianName || 'ماسـبيرو (المركز)';
 
     const updated = await db.external_wallets.update({
       where: { id: walletId },

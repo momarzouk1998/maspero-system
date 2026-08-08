@@ -8,12 +8,12 @@ import {
 
 export default function ManagerHubPage() {
   const MANAGER_TOOLS = [
-    { id: 'reports', title: 'تقارير الأرباح والمبيعات', href: '/manager/reports', icon: BarChart3, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
+    { id: 'reports', title: 'تقارير الماليات', href: '/manager/reports', icon: BarChart3, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
     { id: 'wallets', title: 'إدارة المحافظ والماكينات', href: '/manager/wallets', icon: Wallet, color: 'text-blue-700 bg-blue-100 hover:border-blue-400' },
     { id: 'pricing', title: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Printer, color: 'text-purple-700 bg-purple-100 hover:border-purple-400' },
-    { id: 'services', title: 'إدارة كود الخدمات والعمولات', href: '/manager/services', icon: Printer, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
-    { id: 'notes', title: 'ملاحظات المدير والعدادات', href: '/manager/notes', icon: StickyNote, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
-    { id: 'users', title: 'الموظفين والحسابات والأذونات', href: '/manager/users', icon: Users, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
+    { id: 'services', title: 'إدارة الخدمات', href: '/manager/services', icon: Printer, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
+    { id: 'notes', title: 'ملاحظات المدير', href: '/manager/notes', icon: StickyNote, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
+    { id: 'users', title: 'إدارة المستخدمين', href: '/manager/users', icon: Users, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
     { id: 'categories', title: 'تصنيفات المصروفات', href: '/manager/categories', icon: Tags, color: 'text-rose-700 bg-rose-100 hover:border-rose-400' },
   ];
 
@@ -36,7 +36,7 @@ export default function ManagerHubPage() {
               <span>لوحة التحكم الخاصة بالمدير</span>
             </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight mt-1">
-              إدارة النظام والتقارير
+              لوحة المدير
             </h1>
           </div>
         </div>

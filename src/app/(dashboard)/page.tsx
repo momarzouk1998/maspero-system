@@ -18,13 +18,13 @@ export default function HomePage() {
   }, []);
 
   const HISTORY_CARDS = [
-    { title: 'سجل التسليم والتحويلات', href: '/handover-history', icon: ArrowLeftRight, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
-    { title: 'سجل المصروفات والقيود', href: '/expenses-history', icon: Receipt, color: 'text-rose-700 bg-rose-100 hover:border-rose-400' },
-    { title: 'سجل الشفتات وساعات العمل', href: '/shifts-history', icon: History, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
-    { title: 'سجل الفواتير الصادرة', href: '/invoices', icon: FileSpreadsheet, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
-    { title: 'سجل عمليات الشحن', href: '/charge-history', icon: Zap, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
-    { title: 'سجل الخدمات والطباعة', href: '/services', icon: Printer, color: 'text-blue-700 bg-blue-100 hover:border-blue-400' },
-    { title: 'سجل حجز التذاكر', href: '/tickets', icon: Train, color: 'text-purple-700 bg-purple-100 hover:border-purple-400' },
+    { title: 'سجل التسليم', href: '/handover-history', icon: ArrowLeftRight, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
+    { title: 'سجل المصروفات', href: '/expenses-history', icon: Receipt, color: 'text-rose-700 bg-rose-100 hover:border-rose-400' },
+    { title: 'سجل الشفتات', href: '/shifts', icon: History, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
+    { title: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
+    { title: 'سجل الشحن', href: '/charge-history', icon: Zap, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
+    { title: 'سجل الخدمات', href: '/services', icon: Printer, color: 'text-blue-700 bg-blue-100 hover:border-blue-400' },
+    { title: 'سجل التذاكر', href: '/tickets', icon: Train, color: 'text-purple-700 bg-purple-100 hover:border-purple-400' },
   ];
 
   return (
@@ -46,25 +46,25 @@ export default function HomePage() {
       <div className="space-y-3">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <History className="w-5 h-5 text-indigo-600" />
-          <span>سجلات العمليات والحركات المباشرة</span>
+          <span>سجلات العمليات</span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {HISTORY_CARDS.map((card) => {
+          {HISTORY_CARDS.map((card, idx) => {
             const IconComp = card.icon;
             return (
-              <Link key={card.href} href={card.href} className="group">
+              <Link key={idx} href={card.href} className="group">
                 <div className={`glass-panel p-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md transition-all flex items-center justify-between gap-3 ${card.color}`}>
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${card.color}`}>
                       <IconComp className="w-5 h-5" />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                       {card.title}
                     </h3>
                   </div>
 
-                  <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-1 transition-all" />
+                  <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-translate-x-1 transition-all" />
                 </div>
               </Link>
             );

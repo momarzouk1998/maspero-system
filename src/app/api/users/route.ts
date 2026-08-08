@@ -108,3 +108,32 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تحديث بيانات الموظف' }, { status: 500 });
   }
 }
+
+// Manager Delete / Deactivate User
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('id');
+
+    if (!userId) return NextResponse.json({ error: 'معرف الموظف مطلوب' }, { status: 400 });
+
+    if (userId === user.id) {
+      return NextResponse.json({ error: 'لا يمكنك حذف حسابك الحالي أثناء تسجيل الدخول منه' }, { status: 400 });
+    }
+
+    await db.users.update({
+      where: { id: userId },
+      data: { is_active: false }
+    });
+
+    return NextResponse.json({ success: true, message: 'تم حذف الموظف بنجاح' });
+  } catch (error: any) {
+    console.error('Delete User Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء حذف الموظف' }, { status: 500 });
+  }
+}

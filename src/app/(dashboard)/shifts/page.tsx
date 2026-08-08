@@ -869,40 +869,56 @@ export default function ShiftsPage() {
                         {t.note || '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {isPending && (
-                          <div className="flex items-center justify-center gap-2">
-                            {/* Sender can cancel pending transfer */}
-                            {isSender && (
-                              <button
-                                onClick={() => handleCancelTransfer(t.id)}
-                                className="py-1 px-3 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 font-bold rounded-xl text-xs flex items-center gap-1"
-                              >
-                                <Ban className="w-3.5 h-3.5" />
-                                <span>إلغاء</span>
-                              </button>
-                            )}
+                        <div className="flex items-center justify-center gap-2">
+                          {isPending && isSender && (
+                            <button
+                              onClick={() => handleCancelTransfer(t.id)}
+                              className="py-1 px-3 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 font-bold rounded-xl text-xs flex items-center gap-1"
+                              title="إلغاء التحويل المعلق"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                              <span>إلغاء</span>
+                            </button>
+                          )}
 
-                            {/* Receiver can accept or reject pending transfer */}
-                            {isReceiver && (
-                              <>
-                                <button
-                                  onClick={() => handleRespondTransfer(t.id, 'ACCEPTED')}
-                                  className="py-1 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>قبول</span>
-                                </button>
-                                <button
-                                  onClick={() => handleRespondTransfer(t.id, 'REJECTED')}
-                                  className="py-1 px-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                  <span>رفض</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
+                          {isPending && isReceiver && (
+                            <>
+                              <button
+                                onClick={() => handleRespondTransfer(t.id, 'ACCEPTED')}
+                                className="py-1 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>قبول</span>
+                              </button>
+                              <button
+                                onClick={() => handleRespondTransfer(t.id, 'REJECTED')}
+                                className="py-1 px-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>رفض</span>
+                              </button>
+                            </>
+                          )}
+
+                          {currentUser?.role === 'manager' && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذا التحويل؟')) return;
+                                try {
+                                  const res = await fetch(`/api/transfers?id=${t.id}`, { method: 'DELETE' });
+                                  if (res.ok) {
+                                    showToast('تم حذف التحويل بنجاح');
+                                    fetchShiftsAndCustody();
+                                  }
+                                } catch (e) { console.error(e); }
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف التحويل"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

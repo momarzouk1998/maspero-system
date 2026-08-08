@@ -132,3 +132,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'حدث خطأ في عملية التحويل' }, { status: 400 });
   }
 }
+
+// DELETE: Manager can delete any transfer record by ID
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const transferId = searchParams.get('id');
+
+    if (!transferId) return NextResponse.json({ error: 'معرف التحويل مطلوب' }, { status: 400 });
+
+    await db.employee_transfers.delete({ where: { id: transferId } });
+    return NextResponse.json({ success: true, message: 'تم حذف التحويل بنجاح' });
+  } catch (error: any) {
+    console.error('Delete Transfer error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء حذف التحويل' }, { status: 500 });
+  }
+}

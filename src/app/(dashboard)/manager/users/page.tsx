@@ -403,6 +403,25 @@ export default function ManagerUsersPage() {
                         >
                           {u.is_active ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                         </button>
+
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`هل أنت تأكد من رغبتك في حذف الموظف (${u.name})؟`)) return;
+                            try {
+                              const res = await fetch(`/api/users?id=${u.id}`, { method: 'DELETE' });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || 'فشل حذف الموظف');
+                              setMessage({ type: 'success', text: `تم حذف الموظف (${u.name}) بنجاح` });
+                              fetchUsers();
+                            } catch (err: any) {
+                              setMessage({ type: 'error', text: err.message });
+                            }
+                          }}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                          title="حذف الموظف"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -143,19 +143,20 @@ export default function HandoverHistoryPage() {
                 <th className="px-4 py-3">الحالة والتقييم</th>
                 <th className="px-4 py-3">توضيح الاختلاف / ملاحظات</th>
                 <th className="px-4 py-3">التاريخ والوقت</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={10} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
                     <span>جاري تحميل سجل التسليم والتسلم...</span>
                   </td>
                 </tr>
               ) : handovers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={10} className="text-center py-12 text-slate-500">
                     لا توجد حركات تسليم وتسلم مسجلة تطابق التصفية
                   </td>
                 </tr>
@@ -182,7 +183,7 @@ export default function HandoverHistoryPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                          item.review_status === 'تم المطابقة' || item.review_status?.includes('المطابقة')
+                          item.review_status === 'تم المطابقة' || item.review_status?.includes('المطابقة') || item.review_status?.includes('المراجعة')
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                             : item.review_status?.includes('عجز')
                             ? 'bg-amber-100 text-amber-800 border-amber-300'
@@ -195,6 +196,46 @@ export default function HandoverHistoryPage() {
                       <td className="px-4 py-3 text-xs text-slate-600 font-mono">
                         {item.created_at ? new Date(item.created_at).toLocaleString('ar-EG') : '-'}
                       </td>
+
+                      {currentUser?.role === 'manager' && (
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch('/api/custody/handover', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ handoverId: item.id, reviewStatus: 'تم المراجعة بواسطة المدير' })
+                                  });
+                                  if (res.ok) {
+                                    fetchHandovers(pagination.page);
+                                  }
+                                } catch (e) { console.error(e); }
+                              }}
+                              className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-300 transition-colors"
+                              title="تأكيد ومراجعة الحركة"
+                            >
+                              مراجعة ✔️
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف حركة التسليم هذه؟')) return;
+                                try {
+                                  const res = await fetch(`/api/custody/handover?id=${item.id}`, { method: 'DELETE' });
+                                  if (res.ok) {
+                                    fetchHandovers(pagination.page);
+                                  }
+                                } catch (e) { console.error(e); }
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف الحركة"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

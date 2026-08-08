@@ -477,3 +477,16 @@ model manager_notes {
   @@schema("maspero")
 }
 
+// 18. Expense & Financial Item Categories (تصنيفات المصروفات والماليات)
+model expense_categories {
+  id          String    @id @default(uuid()) @db.Uuid
+  type        String    @db.VarChar(100)
+  item_name   String    @db.VarChar(200)
+  sort        Int       @default(0)
+  is_active   Boolean   @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz()
+
+  @@map("expense_categories")
+  @@schema("maspero")
+}
+

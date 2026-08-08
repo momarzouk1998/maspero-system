@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { mainType, paymentMethod, amount, notes, targetEmployeeId, date } = await req.json();
+    const { mainType, items, paymentMethod, amount, notes, targetEmployeeId, date } = await req.json();
 
     const numAmount = Number(amount);
     if (!mainType || numAmount <= 0) {
@@ -71,11 +71,11 @@ export async function POST(req: Request) {
 
     const txDate = date ? new Date(date) : new Date();
 
-    // Determine target employee
+    // Target employee is ONLY relevant for advances & salary
     let employeeId = user.id;
     let employeeName = user.name;
 
-    if (targetEmployeeId && user.role === 'manager') {
+    if (['سلفة', 'قبض'].includes(mainType) && targetEmployeeId) {
       const emp = await db.users.findUnique({ where: { id: targetEmployeeId } });
       if (emp) {
         employeeId = emp.id;
@@ -89,7 +89,8 @@ export async function POST(req: Request) {
           date: txDate,
           month: `${txDate.getFullYear()} ${txDate.getMonth() + 1}`,
           main_type: mainType,
-          expense_type: paymentMethod || 'نقدي',
+          expense_type: mainType, // e.g. "مصروفات", "دعم مالي", "مسحوبات"
+          items: items || null,
           notes: notes || null,
           amount: numAmount,
           employee_id: employeeId,
@@ -98,8 +99,12 @@ export async function POST(req: Request) {
         }
       });
 
-      // If it's a cash payout from employee's custody
-      if (paymentMethod === 'نقدي' && ['مصروفات', 'سلفة', 'قبض', 'مشتريات'].includes(mainType)) {
+      // Adjust cash custody balance of the active employee creating the entry
+      // "دعم مالي" = Manager gave cash to employee -> INCREMENT employee custody (+)
+      // "مسحوبات", "مصروفات", "مشتريات", "سلفة", "قبض" = Cash paid out -> DECREMENT employee custody (-)
+      if (mainType === 'دعم مالي') {
+        await WalletService.adjustEmployeeWallet(user.id, numAmount, tx);
+      } else {
         await WalletService.adjustEmployeeWallet(user.id, -numAmount, tx);
       }
 
@@ -137,14 +142,14 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { id, mainType, expenseType, amount, notes } = await req.json();
+    const { id, mainType, items, amount, notes } = await req.json();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
     const updated = await db.expenses.update({
       where: { id },
       data: {
         main_type: mainType || undefined,
-        expense_type: expenseType || undefined,
+        items: items !== undefined ? items : undefined,
         amount: amount !== undefined ? Number(amount) : undefined,
         notes: notes !== undefined ? notes : undefined,
       }
