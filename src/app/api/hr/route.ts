@@ -10,8 +10,20 @@ export async function GET(req: Request) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
   const skip = (page - 1) * limit;
+  const statusFilter = searchParams.get('status'); // 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'
 
-  const whereCondition = user.role === 'manager' ? {} : { employee_id: user.id };
+  const whereCondition: any = user.role === 'manager'
+    ? {}
+    : {
+        OR: [
+          { employee_id: user.id },
+          { created_by_id: user.id }
+        ]
+      };
+
+  if (statusFilter && statusFilter !== 'ALL') {
+    whereCondition.approval = statusFilter === 'PENDING' ? 'معلق' : statusFilter === 'APPROVED' ? 'موافقة' : 'مرفوض';
+  }
 
   const [hrItems, total] = await Promise.all([
     db.employee_hr.findMany({
@@ -51,6 +63,10 @@ export async function POST(req: Request) {
       }
     }
 
+    // Manager requests are APPROVED automatically ("موافقة"), Employee requests are PENDING ("معلق")
+    const isManager = user.role === 'manager';
+    const approvalStatus = isManager ? 'موافقة' : 'معلق';
+
     const hrEntry = await db.employee_hr.create({
       data: {
         date: reqDate,
@@ -60,31 +76,75 @@ export async function POST(req: Request) {
         hours: numHours,
         employee_id: employeeId,
         employee_name: employeeName,
+        created_by_id: user.id,
+        created_by_name: user.name,
         notes: notes || null,
-        approval: 'موافقة',
+        approval: approvalStatus,
         timestamp: reqDate,
       }
     });
 
-    return NextResponse.json({ success: true, hrEntry });
+    return NextResponse.json({
+      success: true,
+      hrEntry,
+      message: isManager ? 'تم إضافة الطلب واعتماده بنجاح' : 'تم إرسال الطلب، وهو الآن معلق في انتظار موافقة المدير'
+    });
   } catch (error: any) {
     console.error('HR Error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء تقديم طلب الحوافز/الإجازات' }, { status: 500 });
   }
 }
 
-// DELETE: Manager can delete HR entry by ID
-export async function DELETE(req: Request) {
+// PUT: Manager can Approve, Reject, or Update HR Entry
+export async function PUT(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'manager') {
     return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
   }
+
+  try {
+    const { id, approval, hours, notes, hrItems } = await req.json();
+    if (!id) return NextResponse.json({ error: 'معرف الطلب مطلوب' }, { status: 400 });
+
+    const updateData: any = {};
+    if (approval) updateData.approval = approval; // 'موافقة' | 'مرفوض' | 'معلق'
+    if (hours !== undefined) updateData.hours = Number(hours);
+    if (notes !== undefined) updateData.notes = notes;
+    if (hrItems) updateData.hr_items = hrItems;
+
+    const updated = await db.employee_hr.update({
+      where: { id },
+      data: updateData
+    });
+
+    return NextResponse.json({ success: true, hrEntry: updated });
+  } catch (error: any) {
+    console.error('Update HR Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء تحديث حالة الطلب' }, { status: 500 });
+  }
+}
+
+// DELETE: Manager can delete any HR entry, or Employee can delete his own PENDING request
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
 
   if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
+  const existing = await db.employee_hr.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 });
+
+  const isManager = user.role === 'manager';
+  const isCreator = existing.created_by_id === user.id;
+  const isPending = existing.approval === 'معلق';
+
+  if (!isManager && !(isCreator && isPending)) {
+    return NextResponse.json({ error: 'غير مصرح لك بحذف هذا الطلب' }, { status: 403 });
+  }
+
   await db.employee_hr.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, message: 'تم حذف الطلب بنجاح' });
 }

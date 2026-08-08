@@ -74,6 +74,8 @@ export async function POST(req: Request) {
     // Target employee is ONLY relevant for advances & salary
     let employeeId = user.id;
     let employeeName = user.name;
+    let isPendingApproval = false;
+    let pendingNoteExtension = '';
 
     if (['سلفة', 'قبض'].includes(mainType) && targetEmployeeId) {
       const emp = await db.users.findUnique({ where: { id: targetEmployeeId } });
@@ -81,27 +83,28 @@ export async function POST(req: Request) {
         employeeId = emp.id;
         employeeName = emp.name;
 
-        // Validate remaining salary limit for advance requests
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        // Check if non-manager advance exceeds target employee's remaining salary
+        if (mainType === 'سلفة' && user.role !== 'manager') {
+          const baseSalary = Number(emp.salary || 0);
+          const startOfMonth = new Date(txDate.getFullYear(), txDate.getMonth(), 1);
+          const endOfMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0, 23, 59, 59);
 
-        const monthExpenses = await db.expenses.findMany({
-          where: {
-            employee_id: emp.id,
-            main_type: { in: ['سلفة', 'قبض'] },
-            date: { gte: startOfMonth, lte: endOfMonth }
+          const drawnSum = await db.expenses.aggregate({
+            where: {
+              employee_id: targetEmployeeId,
+              main_type: { in: ['سلفة', 'قبض'] },
+              date: { gte: startOfMonth, lte: endOfMonth }
+            },
+            _sum: { amount: true }
+          });
+
+          const totalDrawn = Number(drawnSum._sum.amount || 0);
+          const remainingSalary = baseSalary - totalDrawn;
+
+          if (numAmount > remainingSalary) {
+            isPendingApproval = true;
+            pendingNoteExtension = ` ⚠️ [معلق: سلفة تتجاوز المتبقي من الراتب (${remainingSalary.toFixed(2)} ج.م)]`;
           }
-        });
-
-        const totalDrawnThisMonth = monthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-        const baseSalary = Number(emp.salary || 0);
-        const remainingSalary = Math.max(0, baseSalary - totalDrawnThisMonth);
-
-        if (user.role !== 'manager' && numAmount > remainingSalary) {
-          return NextResponse.json({
-            error: `عذراً، المبلغ المطلوب (${numAmount} ج.م) يتجاوز الرصيد المتبقي المتاح في راتب الموظف (${employeeName}) لهذا الشهر.`
-          }, { status: 400 });
         }
       }
     }
@@ -114,7 +117,7 @@ export async function POST(req: Request) {
           main_type: mainType,
           expense_type: mainType, // e.g. "مصروفات", "دعم مالي", "مسحوبات"
           items: items || null,
-          notes: notes || null,
+          notes: (notes || '') + pendingNoteExtension,
           amount: numAmount,
           employee_id: employeeId,
           employee_name: employeeName,

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   History, FileSpreadsheet, Zap, Printer, Train, ArrowLeft, ShieldCheck, 
-  ArrowLeftRight, Receipt
+  ArrowLeftRight, Receipt, Gift
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -21,6 +21,7 @@ export default function HomePage() {
     { title: 'سجل التسليم', href: '/handover-history', icon: ArrowLeftRight, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
     { title: 'سجل المصروفات', href: '/expenses-history', icon: Receipt, color: 'text-rose-700 bg-rose-100 hover:border-rose-400' },
     { title: 'سجل الشفتات', href: '/shifts', icon: History, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
+    { title: 'سجل الحوافز والخصومات', href: '/hr-history', icon: Gift, color: 'text-violet-700 bg-violet-100 hover:border-violet-400' },
     { title: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
     { title: 'سجل الشحن', href: '/charge-history', icon: Zap, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
     { title: 'سجل الخدمات', href: '/services', icon: Printer, color: 'text-blue-700 bg-blue-100 hover:border-blue-400' },

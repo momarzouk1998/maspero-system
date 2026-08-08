@@ -292,9 +292,11 @@ export default function HandoverHistoryPage() {
                   onChange={(e) => setReviewStatus(e.target.value)}
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="">جميع الحالات</option>
-                  <option value="تم المطابقة">تم المطابقة</option>
-                  <option value="الرجوع للمراجعة">الرجوع للمراجعة</option>
+                  <option value="">حالة المراجعة: الكل</option>
+                  <option value="الرجاء المراجعة">الرجاء المراجعة ⚠️</option>
+                  <option value="تم المطابقة">تم المطابقة 🟩</option>
+                  <option value="عجز طبيعي">عجز طبيعي (رسوم) ℹ️</option>
+                  <option value="زيادة طبيعية">زيادة طبيعية (عمولات) ℹ️</option>
                 </select>
               </div>
 
