@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maspero-pwa-v1';
+const CACHE_NAME = 'maspero-pwa-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -32,8 +32,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || event.request.url.includes('/api/')) return;
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      const rootCached = await caches.match('/');
+      if (rootCached) return rootCached;
+      return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
     })
   );
 });

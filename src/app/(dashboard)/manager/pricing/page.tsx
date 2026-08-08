@@ -121,7 +121,7 @@ export default function ManagerPricingPage() {
                   }
                   className="w-20 bg-transparent text-white font-mono font-bold text-base focus:outline-none text-left"
                 />
-                <span className="text-slate-400 text-xs font-medium shrink-0">ج.م / ورقة</span>
+                <span className="text-slate-400 text-xs font-medium shrink-0">/ ورقة</span>
               </div>
 
               <button

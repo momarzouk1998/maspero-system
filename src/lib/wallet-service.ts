@@ -193,7 +193,7 @@ export class WalletService {
       const drawer = await tx.external_wallets.findUnique({ where: { id: drawerId } });
       if (!drawer || drawer.wallet_type !== 'درج كاش') throw new Error('الدرج غير موجود');
       if (Number(drawer.current_balance) < amount) {
-        throw new Error(`رصيد الدرج الحالي (${Number(drawer.current_balance)} ج.م) لا يكفي لسحب ${amount} ج.م`);
+        throw new Error(`رصيد الدرج الحالي (${Number(drawer.current_balance)}) لا يكفي لسحب ${amount}`);
       }
 
       // 1. Deduct from Drawer balance

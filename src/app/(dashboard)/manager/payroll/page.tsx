@@ -159,7 +159,7 @@ export default function EmployeePayrollReportPage() {
                       <td className={`px-3 py-3 font-mono font-bold text-center text-sm ${
                         emp.netAccountDue >= 0 ? 'bg-emerald-50 text-emerald-900 border-l border-r border-emerald-200' : 'bg-red-50 text-red-900 border-l border-r border-red-200'
                       }`}>
-                        {emp.netAccountDue >= 0 ? `+${emp.netAccountDue.toFixed(2)}` : emp.netAccountDue.toFixed(2)} ج.م
+                        {emp.netAccountDue >= 0 ? `+${emp.netAccountDue.toFixed(2)}` : emp.netAccountDue.toFixed(2)}
                       </td>
                     </tr>
                   ))

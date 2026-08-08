@@ -116,18 +116,18 @@ export default function ManagerReportsPage() {
           ) : (
             <div className="space-y-6">
               {/* Top Banner: Net Profit */}
-              <div className="glass-panel p-6 rounded-3xl border border-emerald-300 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+              <div className="p-6 rounded-3xl border border-emerald-400 bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
                 <div>
-                  <span className="text-xs font-bold bg-white/20 px-3 py-1 rounded-full border border-white/30">
+                  <span className="text-xs font-bold bg-white/20 text-white px-3 py-1 rounded-full border border-white/30">
                     النتيجة المالية النهائية (Net Profit)
                   </span>
-                  <h2 className="text-2xl font-bold mt-2">صافي الربح الإجمالي للمؤسسة</h2>
-                  <p className="text-emerald-100 text-xs mt-0.5">
+                  <h2 className="text-2xl font-black text-white mt-2">صافي الربح الإجمالي للمؤسسة</h2>
+                  <p className="text-emerald-200 text-xs mt-1">
                     (الإيرادات - المشتريات) + العمولات - المصروفات التشغيلية - الرواتب
                   </p>
                 </div>
                 <div className="text-left">
-                  <span className="text-4xl font-black font-mono text-white">
+                  <span className="text-4xl font-black font-mono text-emerald-300">
                     {Number(metrics.netProfit || 0).toLocaleString('ar-EG')} ج.م
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export default function ManagerReportsPage() {
                     <TrendingUp className="w-5 h-5 text-emerald-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-emerald-900">
-                    {Number(metrics.totalRevenue || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.totalRevenue || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-emerald-700">خدمات الطباعة والإنترنت</p>
                 </div>
@@ -154,7 +154,7 @@ export default function ManagerReportsPage() {
                     <Coins className="w-5 h-5 text-blue-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-blue-900">
-                    {Number(metrics.totalCommissions || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.totalCommissions || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-blue-700">محافظ + ماكينات + تذاكر</p>
                 </div>
@@ -166,7 +166,7 @@ export default function ManagerReportsPage() {
                     <Receipt className="w-5 h-5 text-rose-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-rose-900">
-                    {Number(metrics.otherExpenses || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.otherExpenses || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-rose-700">مصروفات الإدارة والمحل</p>
                 </div>
@@ -178,7 +178,7 @@ export default function ManagerReportsPage() {
                     <DollarSign className="w-5 h-5 text-amber-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-amber-900">
-                    {Number(metrics.salaries || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.salaries || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-amber-700">مستحقات وسلف الموظفين</p>
                 </div>
@@ -190,7 +190,7 @@ export default function ManagerReportsPage() {
                     <ShoppingBag className="w-5 h-5 text-purple-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-purple-900">
-                    {Number(metrics.purchasesCost || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.purchasesCost || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-purple-700">نسبة المشتريات: {metrics.purchasesCostPercent || 0}%</p>
                 </div>
@@ -202,7 +202,7 @@ export default function ManagerReportsPage() {
                     <ArrowUpRight className="w-5 h-5 text-indigo-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-indigo-900">
-                    {Number(metrics.withdrawnRevenue || 0).toLocaleString('ar-EG')} ج.م
+                    {Number(metrics.withdrawnRevenue || 0).toLocaleString('ar-EG')}
                   </h3>
                   <p className="text-[11px] text-indigo-700">مسحوبات الأرباح الشخصية</p>
                 </div>
@@ -228,7 +228,7 @@ export default function ManagerReportsPage() {
                   <h3 className="text-2xl font-black font-mono text-violet-900">
                     {Number(metrics.ticketCount || 0).toLocaleString('ar-EG')} تذكرة
                   </h3>
-                  <p className="text-[11px] text-violet-700">عمولة: {Number(metrics.ticketCommission || 0).toFixed(2)} ج.م</p>
+                  <p className="text-[11px] text-violet-700">عمولة: {Number(metrics.ticketCommission || 0).toFixed(2)}</p>
                 </div>
 
                 {/* 9. Wallet Commissions Breakdown */}
@@ -238,7 +238,7 @@ export default function ManagerReportsPage() {
                     <Zap className="w-5 h-5 text-cyan-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-cyan-900">
-                    {Number(metrics.walletCommission || 0).toFixed(2)} ج.م
+                    {Number(metrics.walletCommission || 0).toFixed(2)}
                   </h3>
                   <p className="text-[11px] text-cyan-700">فودافون كاش والأجهزة</p>
                 </div>
@@ -250,7 +250,7 @@ export default function ManagerReportsPage() {
                     <Cpu className="w-5 h-5 text-sky-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-sky-900">
-                    {Number(metrics.machineWithdrawlCommission || 0).toFixed(2)} ج.م
+                    {Number(metrics.machineWithdrawlCommission || 0).toFixed(2)}
                   </h3>
                   <p className="text-[11px] text-sky-700">من مسحوبات فوري وأمان</p>
                 </div>
@@ -262,9 +262,9 @@ export default function ManagerReportsPage() {
                     <Coins className="w-5 h-5 text-emerald-600" />
                   </div>
                   <h3 className="text-2xl font-black font-mono text-emerald-900">
-                    {Number(metrics.machineDepositsCommission || 0).toFixed(2)} ج.م
+                    {Number(metrics.machineDepositsCommission || 0).toFixed(2)}
                   </h3>
-                  <p className="text-[11px] text-emerald-700">إيداعات: {Number(metrics.machineDeposits || 0).toLocaleString('ar-EG')} ج.م</p>
+                  <p className="text-[11px] text-emerald-700">إيداعات: {Number(metrics.machineDeposits || 0).toLocaleString('ar-EG')}</p>
                 </div>
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function ManagerReportsPage() {
             <div className="flex items-center justify-between border-b pb-4 border-slate-200">
               <h3 className="text-base font-bold text-slate-900">الماليات لشهر ({selectedMonth || '-'})</h3>
               <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-                إجمالي الشهر: {Number(activeMonthReport.totalSum || 0).toLocaleString('ar-EG')} ج.م
+                إجمالي الشهر: {Number(activeMonthReport.totalSum || 0).toLocaleString('ar-EG')}
               </span>
             </div>
 
@@ -359,7 +359,7 @@ export default function ManagerReportsPage() {
             <div className="flex items-center justify-between border-b pb-4 border-slate-200">
               <h3 className="text-base font-bold text-slate-900">التعاملات لتصنيف ({selectedCategory})</h3>
               <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
-                إجمالي التصنيف: {Number(activeCategoryReport.totalSum || 0).toLocaleString('ar-EG')} ج.م
+                إجمالي التصنيف: {Number(activeCategoryReport.totalSum || 0).toLocaleString('ar-EG')}
               </span>
             </div>
 

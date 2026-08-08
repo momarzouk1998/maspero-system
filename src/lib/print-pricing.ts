@@ -58,7 +58,7 @@ export function calculatePrintPrice(
     return {
       unitPrice,
       totalAmount: Number((count * unitPrice).toFixed(2)),
-      tierLabel: `طباعة ألوان — ${faceType} (${unitPrice} ج.م / ورقة)`
+      tierLabel: `طباعة ألوان — ${faceType} (${unitPrice} / ورقة)`
     };
   }
 
@@ -75,8 +75,8 @@ export function calculatePrintPrice(
       unitPrice,
       totalAmount: Number((count * unitPrice).toFixed(2)),
       tierLabel: isBulk
-        ? `طباعة أسود وجهين — خصم كميات (>15 ورقة) — ${unitPrice} ج.م / ورقة`
-        : `طباعة أسود وجهين — سعر عادي (≤15 ورقة) — ${unitPrice} ج.م / ورقة`
+        ? `طباعة أسود وجهين — خصم كميات (>15 ورقة) — ${unitPrice} / ورقة`
+        : `طباعة أسود وجهين — سعر عادي (≤15 ورقة) — ${unitPrice} / ورقة`
     };
   } else {
     const isBulk = count > 30;
@@ -90,8 +90,8 @@ export function calculatePrintPrice(
       unitPrice,
       totalAmount: Number((count * unitPrice).toFixed(2)),
       tierLabel: isBulk
-        ? `طباعة أسود وجه واحد — خصم كميات (>30 ورقة) — ${unitPrice} ج.م / ورقة`
-        : `طباعة أسود وجه واحد — سعر عادي (≤30 ورقة) — ${unitPrice} ج.م / ورقة`
+        ? `طباعة أسود وجه واحد — خصم كميات (>30 ورقة) — ${unitPrice} / ورقة`
+        : `طباعة أسود وجه واحد — سعر عادي (≤30 ورقة) — ${unitPrice} / ورقة`
     };
   }
 }

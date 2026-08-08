@@ -103,7 +103,7 @@ export async function POST(req: Request) {
 
           if (numAmount > remainingSalary) {
             isPendingApproval = true;
-            pendingNoteExtension = ` ⚠️ [معلق: سلفة تتجاوز المتبقي من الراتب (${remainingSalary.toFixed(2)} ج.م)]`;
+            pendingNoteExtension = ` ⚠️ [معلق: سلفة تتجاوز المتبقي من الراتب (${remainingSalary.toFixed(2)})]`;
           }
         }
       }

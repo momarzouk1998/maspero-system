@@ -35,7 +35,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `✅ تم تحديث سعر الشريحة (${updated.key_name}) إلى ${price} ج.م`,
+      message: `✅ تم تحديث سعر الشريحة (${updated.key_name}) إلى ${price}`,
       price: updated
     });
   } catch (error: any) {
