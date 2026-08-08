@@ -20,7 +20,7 @@ export default function HomePage() {
   const HISTORY_CARDS = [
     { title: 'سجل التسليم', href: '/handover-history', icon: ArrowLeftRight, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
     { title: 'سجل المصروفات', href: '/expenses-history', icon: Receipt, color: 'text-rose-700 bg-rose-100 hover:border-rose-400' },
-    { title: 'سجل الشفتات', href: '/shifts', icon: History, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
+    { title: 'سجل الشفتات', href: '/shifts-history', icon: History, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
     { title: 'سجل الحوافز والخصومات', href: '/hr-history', icon: Gift, color: 'text-violet-700 bg-violet-100 hover:border-violet-400' },
     { title: 'سجل الفواتير', href: '/invoices', icon: FileSpreadsheet, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
     { title: 'سجل الشحن', href: '/charge-history', icon: Zap, color: 'text-amber-700 bg-amber-100 hover:border-amber-400' },
