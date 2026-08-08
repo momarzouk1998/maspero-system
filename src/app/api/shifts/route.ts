@@ -188,6 +188,22 @@ export async function DELETE(req: Request) {
 
   if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
+  const shiftToDelete = await db.shifts.findUnique({ where: { id } });
+  if (shiftToDelete && shiftToDelete.end_time === null) {
+    // Check if employee has any remaining active shift
+    const remainingActiveShifts = await db.shifts.count({
+      where: { employee_id: shiftToDelete.employee_id, end_time: null, NOT: { id } }
+    });
+
+    if (remainingActiveShifts === 0) {
+      // Release any custody items held by this employee
+      await db.external_wallets.updateMany({
+        where: { custodian_id: shiftToDelete.employee_id },
+        data: { custodian_id: null, custodian_name: null }
+      });
+    }
+  }
+
   await db.shifts.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

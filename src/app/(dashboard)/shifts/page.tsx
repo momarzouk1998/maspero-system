@@ -144,7 +144,7 @@ export default function ShiftsPage() {
     }
   };
 
-  const activeShift = shifts.find((s) => !s.end_time);
+  const activeShift = shifts.find((s) => !s.end_time && s.employee_id === currentUser?.id);
 
   const handleEndShift = async (shiftId: string) => {
     setSubmitting(true);
