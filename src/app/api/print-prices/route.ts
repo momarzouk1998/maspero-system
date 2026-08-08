@@ -8,7 +8,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const prices = await db.print_prices.findMany({
+    const prices = await (db.print_prices as any).findMany({
       orderBy: [
         { print_type: 'asc' },
         { face_type: 'asc' },
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       max ? `${printType} ${faceType} (من ${min} إلى ${max} ورقة)` : `${printType} ${faceType} (${min} ورقة وأكثر)`
     );
 
-    const newTier = await db.print_prices.create({
+    const newTier = await (db.print_prices as any).create({
       data: {
         print_type: printType,
         face_type: faceType,
@@ -91,7 +91,7 @@ export async function PUT(req: Request) {
     }
     if (keyName !== undefined) updateData.key_name = keyName;
 
-    const updated = await db.print_prices.update({
+    const updated = await (db.print_prices as any).update({
       where: { id },
       data: updateData
     });
