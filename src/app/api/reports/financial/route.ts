@@ -24,7 +24,10 @@ export async function GET() {
     db.train_ticket_bookings.count(),
     db.train_ticket_bookings.aggregate({ _sum: { amount: true } }),
     db.train_ticket_bookings.aggregate({ _sum: { ticket_commission: true } }),
-    db.expenses.aggregate({ _sum: { amount: true } }),
+    db.expenses.aggregate({
+      where: { main_type: { in: ['مصروفات', 'مشتريات'] } },
+      _sum: { amount: true }
+    }),
     db.wallet_transactions.count(),
     db.external_wallets.findMany({ select: { wallet_name: true, current_balance: true } })
   ]);

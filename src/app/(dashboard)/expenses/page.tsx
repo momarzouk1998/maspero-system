@@ -182,8 +182,8 @@ export default function FinancialAndHROperationsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Simple Header Banner */}
+      <div className="glass-panel p-5 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -194,23 +194,12 @@ export default function FinancialAndHROperationsPage() {
           </Link>
 
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <Receipt className="w-6 h-6 text-emerald-600" />
-              <span>التعاملات المالية والمصروفات والعمليات</span>
+              <span>التعاملات المالية</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              تسجيل قيود السلف، الرواتب، المصروفات، الدعم المالي، والمسحوبات، وحساب الإجازات بالساعات
-            </p>
           </div>
         </div>
-
-        <Link
-          href="/expenses-history"
-          className="py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer self-start md:self-auto"
-        >
-          <Clock className="w-4 h-4" />
-          <span>سجل التعاملات الماليّة الكامل</span>
-        </Link>
       </div>
 
       {/* Toast Feedback */}
@@ -225,306 +214,312 @@ export default function FinancialAndHROperationsPage() {
         </div>
       )}
 
-      {/* 2-Column Split Layout for Financials & HR */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* MODULE A: التعاملات المالية والمصروفات */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b pb-4 border-slate-200">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
-              <span>التعاملات المالية والمصروفات</span>
-            </h2>
-            <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              تسجيل قيود الخزينة والنقدية
-            </span>
-          </div>
-
-          {/* Categories Selector Pills */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700">التصنيف *</label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'سلفة', label: 'سلفة 💰', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-                { key: 'قبض', label: 'قبض 💵', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-                { key: 'مصروفات', label: 'مصروفات 📉', color: 'bg-red-100 text-red-800 border-red-300' },
-                { key: 'دعم مالي', label: 'دعم مالي 💸', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-                { key: 'مشتريات', label: 'مشتريات 🛒', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-                { key: 'مسحوبات', label: 'مسحوبات 📈', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-              ].map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setFinCategory(c.key as any)}
-                  className={`py-2.5 px-4 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                    finCategory === c.key
-                      ? `${c.color} shadow-sm ring-2 ring-emerald-400`
-                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <form onSubmit={handleFinSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Date */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
-                <input
-                  type="date"
-                  required
-                  value={finDate}
-                  onChange={(e) => setFinDate(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Item / Statement Dropdown */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">البند / البيان *</label>
-                <select
-                  value={selectedItem}
-                  onChange={(e) => setSelectedItem(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                >
-                  {availableItems.map((item) => (
-                    <option key={item.id} value={item.item_name}>{item.item_name}</option>
-                  ))}
-                  <option value="أخرى">أخرى (إدخال يدوي...)</option>
-                </select>
-              </div>
+      {/* 2-Column Split Layout for Financials & HR (Equal Height) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* MODULE A: تسجيل الماليات */}
+        <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col justify-between space-y-6 h-full">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+                <span>تسجيل الماليات</span>
+              </h2>
+              <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                تسجيل الماليات
+              </span>
             </div>
 
-            {/* Custom Item Name if "أخرى" selected */}
-            {selectedItem === 'أخرى' && (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم البند المخصص *</label>
-                <input
-                  type="text"
-                  required
-                  value={customItem}
-                  onChange={(e) => setCustomItem(e.target.value)}
-                  placeholder="اكتب اسم البند هنا..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-            )}
-
-            {/* Target Employee - ONLY SHOWN FOR ADVANCE & SALARY */}
-            {['سلفة', 'قبض'].includes(finCategory) && (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني بالسلفة/القبض *</label>
-                <select
-                  required
-                  value={finEmployeeId}
-                  onChange={(e) => setFinEmployeeId(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                >
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Amount Stepper */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">المبلغ المطلوب *</label>
-              <div className="flex items-center gap-2 max-w-md">
-                <button
-                  type="button"
-                  onClick={() => adjustFinAmount(-50)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  required
-                  value={finAmount}
-                  onChange={(e) => setFinAmount(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base font-bold font-mono text-center focus:outline-none focus:border-emerald-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustFinAmount(50)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات إضافية (اختياري)</label>
-              <input
-                type="text"
-                value={finNotes}
-                onChange={(e) => setFinNotes(e.target.value)}
-                placeholder="أدخل أي تفاصيل إضافية..."
-                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            {/* Monthly Salary Drawn Stats Display (Readonly) */}
-            {['سلفة', 'قبض'].includes(finCategory) && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
-                <div>
-                  <span className="text-xs text-amber-800 font-semibold block mb-0.5">الراتب الأساسي:</span>
-                  <span className="text-sm font-bold font-mono text-slate-900">
-                    {finStats.baseSalary.toLocaleString('ar-EG')}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-amber-800 font-semibold block mb-0.5">المسحوب خلال الشهر:</span>
-                  <span className="text-sm font-bold font-mono text-amber-900">
-                    {finStats.totalDrawnThisMonth.toLocaleString('ar-EG')}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-amber-800 font-semibold block mb-0.5">المتبقي من الراتب:</span>
-                  <span className="text-sm font-bold font-mono text-emerald-800">
-                    {finStats.remainingSalary.toLocaleString('ar-EG')}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>حفظ وإضافة المعاملة المالية</span>
-            </button>
-          </form>
-        </div>
-
-        {/* MODULE B: الحوافز والإجازات بالساعات (HR Operations) */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between border-b pb-4 border-slate-200">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Gift className="w-5 h-5 text-indigo-600" />
-              <span>الحوافز والخصومات والإجازات بالساعات</span>
-            </h2>
-            <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              حساب كامل بالساعات
-            </span>
-          </div>
-
-          <form onSubmit={handleHrSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Date */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
-                <input
-                  type="date"
-                  required
-                  value={hrDate}
-                  onChange={(e) => setHrDate(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Target Employee */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف *</label>
-                <select
-                  required
-                  value={hrEmployeeId}
-                  onChange={(e) => setHrEmployeeId(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
-                >
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Request Type */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الطلب *</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Categories Selector Pills */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">التصنيف *</label>
+              <div className="flex flex-wrap gap-2">
                 {[
-                  { key: 'مكافأة', label: 'مكافأة 🎁', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-                  { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
-                  { key: 'طلب إذن', label: 'إذن مغادرة 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-                  { key: 'طلب إجازة', label: 'إجازة 🏖️', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-                ].map((t) => (
+                  { key: 'سلفة', label: 'سلفة 💰', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                  { key: 'قبض', label: 'قبض 💵', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+                  { key: 'مصروفات', label: 'مصروفات 📉', color: 'bg-red-100 text-red-800 border-red-300' },
+                  { key: 'دعم مالي', label: 'دعم مالي 💸', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+                  { key: 'مشتريات', label: 'مشتريات 🛒', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+                  { key: 'مسحوبات', label: 'مسحوبات 📈', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+                ].map((c) => (
                   <button
-                    key={t.key}
+                    key={c.key}
                     type="button"
-                    onClick={() => setHrType(t.key as any)}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      hrType === t.key
-                        ? `${t.color} shadow-sm ring-2 ring-indigo-400`
+                    onClick={() => setFinCategory(c.key as any)}
+                    className={`py-2.5 px-4 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      finCategory === c.key
+                        ? `${c.color} shadow-sm ring-2 ring-emerald-400`
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    {t.label}
+                    {c.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Hours Stepper */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">عدد الساعات *</label>
-              <div className="flex items-center gap-2 max-w-md">
-                <button
-                  type="button"
-                  onClick={() => adjustHrHours(-0.5)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  required
-                  value={hrHours}
-                  onChange={(e) => setHrHours(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base font-bold font-mono text-center focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustHrHours(0.5)}
-                  className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+            <form id="finForm" onSubmit={handleFinSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Date */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
+                  <input
+                    type="date"
+                    required
+                    value={finDate}
+                    onChange={(e) => setFinDate(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Item / Statement Dropdown */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">البند / البيان *</label>
+                  <select
+                    value={selectedItem}
+                    onChange={(e) => setSelectedItem(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                  >
+                    {availableItems.map((item) => (
+                      <option key={item.id} value={item.item_name}>{item.item_name}</option>
+                    ))}
+                    <option value="أخرى">أخرى (إدخال يدوي...)</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Custom Item Name if "أخرى" selected */}
+              {selectedItem === 'أخرى' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم البند المخصص *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customItem}
+                    onChange={(e) => setCustomItem(e.target.value)}
+                    placeholder="اكتب اسم البند هنا..."
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              )}
+
+              {/* Target Employee - ONLY SHOWN FOR ADVANCE & SALARY */}
+              {['سلفة', 'قبض'].includes(finCategory) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني بالسلفة/القبض *</label>
+                  <select
+                    required
+                    value={finEmployeeId}
+                    onChange={(e) => setFinEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                  >
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Amount Stepper */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">المبلغ المطلوب *</label>
+                <div className="flex items-center gap-2 max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => adjustFinAmount(-50)}
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    required
+                    value={finAmount}
+                    onChange={(e) => setFinAmount(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base font-bold font-mono text-center focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustFinAmount(50)}
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات إضافية (اختياري)</label>
+                <input
+                  type="text"
+                  value={finNotes}
+                  onChange={(e) => setFinNotes(e.target.value)}
+                  placeholder="أدخل أي تفاصيل إضافية..."
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Monthly Salary Drawn Stats Display (Strict Privacy: Manager OR Target Employee Himself) */}
+              {['سلفة', 'قبض'].includes(finCategory) && (currentUser?.role === 'manager' || finEmployeeId === currentUser?.id) && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                  <div>
+                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">الراتب الأساسي:</span>
+                    <span className="text-sm font-bold font-mono text-slate-900">
+                      {finStats.baseSalary.toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">المسحوب خلال الشهر:</span>
+                    <span className="text-sm font-bold font-mono text-amber-900">
+                      {finStats.totalDrawnThisMonth.toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">المتبقي من الراتب:</span>
+                    <span className="text-sm font-bold font-mono text-emerald-800">
+                      {finStats.remainingSalary.toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+
+          <button
+            type="submit"
+            form="finForm"
+            disabled={submitting}
+            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4"
+          >
+            <Plus className="w-4 h-4" />
+            <span>حفظ وإضافة المعاملة المالية</span>
+          </button>
+        </div>
+
+        {/* MODULE B: الحوافز والخصومات */}
+        <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col justify-between space-y-6 h-full">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Gift className="w-5 h-5 text-indigo-600" />
+                <span>الحوافز والخصومات</span>
+              </h2>
+              <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                الحوافز والخصومات
+              </span>
             </div>
 
-            {/* Notes */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">السبب / الملاحظات (اختياري)</label>
-              <input
-                type="text"
-                value={hrNotes}
-                onChange={(e) => setHrNotes(e.target.value)}
-                placeholder="أدخل أسباب الخصم أو المكافأة..."
-                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-indigo-500"
-              />
-            </div>
+            <form id="hrForm" onSubmit={handleHrSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Date */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
+                  <input
+                    type="date"
+                    required
+                    value={hrDate}
+                    onChange={(e) => setHrDate(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>تسجيل طلب الحوافز/الإجازة</span>
-            </button>
-          </form>
+                {/* Target Employee */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف *</label>
+                  <select
+                    required
+                    value={hrEmployeeId}
+                    onChange={(e) => setHrEmployeeId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                  >
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Request Type */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الطلب *</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { key: 'مكافأة', label: 'مكافأة 🎁', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+                    { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
+                    { key: 'طلب إذن', label: 'إذن مغادرة 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                    { key: 'طلب إجازة', label: 'إجازة 🏖️', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setHrType(t.key as any)}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        hrType === t.key
+                          ? `${t.color} shadow-sm ring-2 ring-indigo-400`
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hours Stepper */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">عدد الساعات *</label>
+                <div className="flex items-center gap-2 max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => adjustHrHours(-0.5)}
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    required
+                    value={hrHours}
+                    onChange={(e) => setHrHours(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base font-bold font-mono text-center focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustHrHours(0.5)}
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">السبب / الملاحظات (اختياري)</label>
+                <input
+                  type="text"
+                  value={hrNotes}
+                  onChange={(e) => setHrNotes(e.target.value)}
+                  placeholder="أدخل أسباب الخصم أو المكافأة..."
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </form>
+          </div>
+
+          <button
+            type="submit"
+            form="hrForm"
+            disabled={submitting}
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4"
+          >
+            <Plus className="w-4 h-4" />
+            <span>تسجيل طلب الحوافز/الإجازة</span>
+          </button>
         </div>
       </div>
     </div>
