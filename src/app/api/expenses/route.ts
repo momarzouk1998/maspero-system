@@ -80,6 +80,29 @@ export async function POST(req: Request) {
       if (emp) {
         employeeId = emp.id;
         employeeName = emp.name;
+
+        // Validate remaining salary limit for advance requests
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        const monthExpenses = await db.expenses.findMany({
+          where: {
+            employee_id: emp.id,
+            main_type: { in: ['سلفة', 'قبض'] },
+            date: { gte: startOfMonth, lte: endOfMonth }
+          }
+        });
+
+        const totalDrawnThisMonth = monthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        const baseSalary = Number(emp.salary || 0);
+        const remainingSalary = Math.max(0, baseSalary - totalDrawnThisMonth);
+
+        if (user.role !== 'manager' && numAmount > remainingSalary) {
+          return NextResponse.json({
+            error: `عذراً، المبلغ المطلوب (${numAmount} ج.م) يتجاوز الرصيد المتبقي المتاح في راتب الموظف (${employeeName}) لهذا الشهر.`
+          }, { status: 400 });
+        }
       }
     }
 
