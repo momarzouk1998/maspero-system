@@ -126,10 +126,16 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'لا يمكنك حذف حسابك الحالي أثناء تسجيل الدخول منه' }, { status: 400 });
     }
 
-    await db.users.update({
-      where: { id: userId },
-      data: { is_active: false }
-    });
+    try {
+      await db.users.delete({
+        where: { id: userId }
+      });
+    } catch (e) {
+      await db.users.update({
+        where: { id: userId },
+        data: { is_active: false }
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'تم حذف الموظف بنجاح' });
   } catch (error: any) {
