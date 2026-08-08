@@ -9,6 +9,7 @@ import {
 export default function ManagerHubPage() {
   const MANAGER_TOOLS = [
     { id: 'reports', title: 'تقارير الماليات', href: '/manager/reports', icon: BarChart3, color: 'text-emerald-700 bg-emerald-100 hover:border-emerald-400' },
+    { id: 'payroll', title: 'مستحقات الموظفين', href: '/manager/payroll', icon: Users, color: 'text-indigo-700 bg-indigo-100 hover:border-indigo-400' },
     { id: 'wallets', title: 'إدارة المحافظ والماكينات', href: '/manager/wallets', icon: Wallet, color: 'text-blue-700 bg-blue-100 hover:border-blue-400' },
     { id: 'pricing', title: 'إدارة أسعار الطباعة', href: '/manager/pricing', icon: Printer, color: 'text-purple-700 bg-purple-100 hover:border-purple-400' },
     { id: 'services', title: 'إدارة الخدمات', href: '/manager/services', icon: Printer, color: 'text-teal-700 bg-teal-100 hover:border-teal-400' },
