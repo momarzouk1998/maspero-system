@@ -133,7 +133,7 @@ export default function POSPage() {
   // ─── Service Popup ───────────────────────────────────────
   const [svcPopup,    setSvcPopup]    = useState<any | null>(null);
   const [svcFace,     setSvcFace]     = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
-  const [svcPaper,    setSvcPaper]    = useState(1);
+  const [svcPaper,    setSvcPaper]    = useState(0);
   const [svcAmt,      setSvcAmt]      = useState(0);
   const [svcNotes,    setSvcNotes]    = useState('');  // for "أخرى" service
   const [svcLoading,  setSvcLoading]  = useState(false);
@@ -149,7 +149,7 @@ export default function POSPage() {
   const openSvcPopup = (svc: any) => {
     setSvcPopup(svc);
     setSvcFace('وجه واحد');
-    setSvcPaper(1);
+    setSvcPaper(0);
     setSvcAmt(0);
     setSvcNotes('');
   };
@@ -746,16 +746,16 @@ export default function POSPage() {
               </div>
             )}
 
-            {/* Paper count (for all services - optional) */}
+            {/* Paper count (the SECOND field in all service sale modals) */}
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-2">
                 عدد الورق {isPrint(svcPopup.service_name) ? '*' : '(اختياري)'}
               </label>
               <div className="flex items-center gap-3">
-                <button onClick={() => setSvcPaper(p => Math.max(1, p - 1))}
+                <button onClick={() => setSvcPaper(p => Math.max(0, p - 1))}
                   className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-lg flex items-center justify-center border border-slate-200">−</button>
-                <input type="number" min="1" value={svcPaper}
-                  onChange={e => setSvcPaper(parseInt(e.target.value) || 1)}
+                <input type="number" min="0" value={svcPaper}
+                  onChange={e => setSvcPaper(parseInt(e.target.value) || 0)}
                   className="flex-1 p-2.5 text-center bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
                 <button onClick={() => setSvcPaper(p => p + 1)}

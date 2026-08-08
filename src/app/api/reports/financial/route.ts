@@ -31,7 +31,8 @@ export async function GET(req: Request) {
     otherExpensesAggregate,
     withdrawnRevenueAggregate,
     walletsList,
-    allEmployees
+    allEmployees,
+    allExpensesList
   ] = await Promise.all([
     // Service Revenue & Paper Count
     db.service_entries.aggregate({
@@ -100,6 +101,11 @@ export async function GET(req: Request) {
     // All Employees List (Active & Inactive)
     db.users.findMany({
       select: { id: true, name: true, phone: true, salary: true, role: true, job_title: true, is_active: true }
+    }),
+    // All Financial Transactions for Monthly & Category Reports
+    db.expenses.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: 500
     })
   ]);
 
@@ -208,6 +214,39 @@ export async function GET(req: Request) {
     })
   );
 
+  // Monthly Grouped Calculation
+  const monthlyMap: Record<string, { month: string; totalSum: number; count: number; items: any[] }> = {};
+  // Category Grouped Calculation
+  const categoryMap: Record<string, { category: string; totalSum: number; count: number; items: any[] }> = {
+    'إيرادات': { category: 'إيرادات', totalSum: 0, count: 0, items: [] },
+    'سلفة': { category: 'سلفة', totalSum: 0, count: 0, items: [] },
+    'قبض': { category: 'قبض', totalSum: 0, count: 0, items: [] },
+    'مصروفات': { category: 'مصروفات', totalSum: 0, count: 0, items: [] },
+    'دعم مالي': { category: 'دعم مالي', totalSum: 0, count: 0, items: [] },
+    'مشتريات': { category: 'مشتريات', totalSum: 0, count: 0, items: [] },
+    'مسحوبات': { category: 'مسحوبات', totalSum: 0, count: 0, items: [] },
+  };
+
+  allExpensesList.forEach((exp: any) => {
+    const amt = Number(exp.amount || 0);
+    const m = exp.month || (exp.date ? `${new Date(exp.date).getFullYear()} ${new Date(exp.date).getMonth() + 1}` : 'غير محدد');
+    const cat = exp.main_type || 'مصروفات';
+
+    if (!monthlyMap[m]) {
+      monthlyMap[m] = { month: m, totalSum: 0, count: 0, items: [] };
+    }
+    monthlyMap[m].totalSum += amt;
+    monthlyMap[m].count += 1;
+    monthlyMap[m].items.push(exp);
+
+    if (!categoryMap[cat]) {
+      categoryMap[cat] = { category: cat, totalSum: 0, count: 0, items: [] };
+    }
+    categoryMap[cat].totalSum += amt;
+    categoryMap[cat].count += 1;
+    categoryMap[cat].items.push(exp);
+  });
+
   return NextResponse.json({
     metrics: {
       serviceValue,
@@ -232,6 +271,9 @@ export async function GET(req: Request) {
       withdrawnRevenue
     },
     wallets: walletsList,
-    employeePayrolls
+    employeePayrolls,
+    monthlyReports: Object.values(monthlyMap),
+    categoryReports: Object.values(categoryMap),
+    allExpenses: allExpensesList
   });
 }

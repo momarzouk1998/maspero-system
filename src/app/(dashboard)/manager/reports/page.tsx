@@ -5,15 +5,19 @@ import Link from 'next/link';
 import { 
   BarChart3, TrendingUp, DollarSign, Printer, Train, Cpu, Receipt, 
   Filter, Search, Calendar, RefreshCw, CheckCircle2, AlertTriangle, Info, ArrowRight,
-  UserCheck, Users, FileText, PieChart, Coins, CreditCard
+  UserCheck, Users, FileText, PieChart, Coins, CreditCard, Folder, Clock, Layers
 } from 'lucide-react';
 
 export default function ManagerReportsPage() {
-  const [activeTab, setActiveTab] = useState<'financial' | 'payroll'>('financial');
+  const [activeTab, setActiveTab] = useState<'financial' | 'monthly' | 'category' | 'payroll'>('financial');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Selected Month & Category for Sub-reports
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('إيرادات');
 
   const fetchReports = async () => {
     setLoading(true);
@@ -26,6 +30,10 @@ export default function ManagerReportsPage() {
       if (res.ok) {
         const result = await res.json();
         setData(result);
+
+        if (result.monthlyReports && result.monthlyReports.length > 0 && !selectedMonth) {
+          setSelectedMonth(result.monthlyReports[0].month);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -40,6 +48,12 @@ export default function ManagerReportsPage() {
 
   const metrics = data?.metrics || {};
   const employeePayrolls = data?.employeePayrolls || [];
+  const monthlyReports = data?.monthlyReports || [];
+  const categoryReports = data?.categoryReports || [];
+  const allExpenses = data?.allExpenses || [];
+
+  const activeMonthReport = monthlyReports.find((m: any) => m.month === selectedMonth) || { items: [], totalSum: 0 };
+  const activeCategoryReport = categoryReports.find((c: any) => c.category === selectedCategory) || { items: [], totalSum: 0 };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -57,38 +71,62 @@ export default function ManagerReportsPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-7 h-7 text-blue-600" />
-              <span>تقارير الماليات ومستحقات الموظفين</span>
+              <span>تقارير الماليات والتصنيفات والأجر</span>
             </h1>
             <p className="text-slate-600 text-xs mt-1">
-              متابعة الأرباح الإجمالية، العمولات، حسابات الشحن، ومستحقات جميع الموظفين
+              متابعة الأرباح الإجمالية، التقارير الشهرية، تقارير التصنيف، ومستحقات جميع الموظفين
             </p>
           </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        {/* 4 Main Tab Buttons */}
+        <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
           <button
             onClick={() => setActiveTab('financial')}
-            className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'financial' 
                 ? 'bg-blue-600 text-white shadow-md' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <TrendingUp className="w-4 h-4" />
-            <span>التقارير المالية والأرباح</span>
+            <span>ملخص الأرباح</span>
           </button>
-          
+
           <button
-            onClick={() => setActiveTab('payroll')}
-            className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'payroll' 
+            onClick={() => setActiveTab('monthly')}
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'monthly' 
                 ? 'bg-indigo-600 text-white shadow-md' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
+            <Calendar className="w-4 h-4" />
+            <span>الماليات (الشهر)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('category')}
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'category' 
+                ? 'bg-purple-600 text-white shadow-md' 
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>الماليات (التصنيف)</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'payroll' 
+                ? 'bg-emerald-600 text-white shadow-md' 
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
             <Users className="w-4 h-4" />
-            <span>حسابات ومستحقات الموظفين</span>
+            <span>مستحقات الموظفين</span>
           </button>
         </div>
       </div>
@@ -121,7 +159,7 @@ export default function ManagerReportsPage() {
         </button>
       </div>
 
-      {/* TAB 1: FINANCIAL & PROFIT REPORT */}
+      {/* TAB 1: FINANCIAL SUMMARY & PROFIT */}
       {activeTab === 'financial' && (
         <>
           {loading ? (
@@ -195,67 +233,168 @@ export default function ManagerReportsPage() {
                   </span>
                 </div>
               </div>
-
-              {/* Detailed Financial Breakdown Tables */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1. Commissions & Charges Breakdown */}
-                <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-200">
-                    <Coins className="w-4 h-4 text-blue-600" />
-                    <span>تفاصيل العمولات المكتسبة</span>
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">عمولات المحافظ الإلكترونية:</span>
-                      <span className="font-mono font-bold text-slate-900">{Number(metrics.walletCommission || 0).toFixed(2)} ج.م</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">عمولات تذاكر القطارات:</span>
-                      <span className="font-mono font-bold text-slate-900">{Number(metrics.ticketCommission || 0).toFixed(2)} ج.م</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">عمولات سحب الماكينات (فوري):</span>
-                      <span className="font-mono font-bold text-slate-900">{Number(metrics.machineWithdrawlCommission || 0).toFixed(2)} ج.م</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">عمولات إيداع الماكينات (0.7%):</span>
-                      <span className="font-mono font-bold text-slate-900">{Number(metrics.machineDepositsCommission || 0).toFixed(2)} ج.م</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Operational Stats & Quantities */}
-                <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-200">
-                    <Printer className="w-4 h-4 text-emerald-600" />
-                    <span>إحصائيات المشتريات والكميات</span>
-                  </h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">تكلفة المشتريات (Purchases Cost):</span>
-                      <span className="font-mono font-bold text-slate-900">{Number(metrics.purchasesCost || 0).toFixed(2)} ج.م</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">نسبة تكلفة المشتريات من الإيراد:</span>
-                      <span className="font-mono font-bold text-indigo-700">{Number(metrics.purchasesCostPercent || 0)} %</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">إجمالي الورق المستهلك (Paper Count):</span>
-                      <span className="font-mono font-bold text-emerald-700">{Number(metrics.paperCount || 0).toLocaleString('ar-EG')} ورقة</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                      <span className="text-slate-600 font-semibold">إجمالي عدد التذاكر المحجوزة:</span>
-                      <span className="font-mono font-bold text-purple-700">{Number(metrics.ticketCount || 0).toLocaleString('ar-EG')} تذكرة</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </>
       )}
 
-      {/* TAB 2: ALL EMPLOYEES PAYROLL ACCOUNT REPORT */}
+      {/* TAB 2: FINANCIALS BY MONTH (الماليات - الشهر) */}
+      {activeTab === 'monthly' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Months Sidebar Selector */}
+          <div className="glass-panel p-4 rounded-3xl border border-slate-200 space-y-2">
+            <h3 className="text-xs font-bold text-slate-700 mb-3 border-b pb-2 border-slate-200">أشهر التعاملات</h3>
+            {monthlyReports.map((m: any) => (
+              <button
+                key={m.month}
+                onClick={() => setSelectedMonth(m.month)}
+                className={`w-full p-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-between border cursor-pointer ${
+                  selectedMonth === m.month
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <span>📅 {m.month}</span>
+                <span className={`px-2 py-0.5 rounded-lg font-mono text-[11px] ${
+                  selectedMonth === m.month ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800'
+                }`}>
+                  {Number(m.totalSum || 0).toLocaleString('ar-EG')}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Month Transactions Table */}
+          <div className="md:col-span-3 glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                <span>الماليات لشهر ({selectedMonth || '-'})</span>
+              </h3>
+              <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+                إجمالي الشهر: {Number(activeMonthReport.totalSum || 0).toLocaleString('ar-EG')} ج.م
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs text-slate-700">
+                <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="px-3 py-3">تاريخ الحركة</th>
+                    <th className="px-3 py-3">التصنيف</th>
+                    <th className="px-3 py-3">البند / البيان</th>
+                    <th className="px-3 py-3">المبلغ</th>
+                    <th className="px-3 py-3">الموظف المعني</th>
+                    <th className="px-3 py-3">الملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {activeMonthReport.items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-500">لا توجد معاملات مسجلة لهذا الشهر</td>
+                    </tr>
+                  ) : (
+                    activeMonthReport.items.map((item: any) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-3 font-mono text-slate-600">
+                          {item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}
+                        </td>
+                        <td className="px-3 py-3 font-bold text-slate-900">
+                          <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200">
+                            {item.main_type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 font-bold text-blue-700">{item.items || '-'}</td>
+                        <td className="px-3 py-3 font-mono font-bold text-slate-900">{Number(item.amount).toFixed(2)}</td>
+                        <td className="px-3 py-3 text-slate-700">{item.employee_name || '-'}</td>
+                        <td className="px-3 py-3 text-slate-500 max-w-[150px] truncate">{item.notes || '-'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: FINANCIALS BY CATEGORY (الماليات - التصنيف) */}
+      {activeTab === 'category' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Categories Sidebar Selector */}
+          <div className="glass-panel p-4 rounded-3xl border border-slate-200 space-y-2">
+            <h3 className="text-xs font-bold text-slate-700 mb-3 border-b pb-2 border-slate-200">تصنيفات التعاملات</h3>
+            {categoryReports.map((c: any) => (
+              <button
+                key={c.category}
+                onClick={() => setSelectedCategory(c.category)}
+                className={`w-full p-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-between border cursor-pointer ${
+                  selectedCategory === c.category
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <span>🏷️ {c.category}</span>
+                <span className={`px-2 py-0.5 rounded-lg font-mono text-[11px] ${
+                  selectedCategory === c.category ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800'
+                }`}>
+                  {Number(c.totalSum || 0).toLocaleString('ar-EG')}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Category Transactions Table */}
+          <div className="md:col-span-3 glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Layers className="w-5 h-5 text-purple-600" />
+                <span>التعاملات لتصنيف ({selectedCategory})</span>
+              </h3>
+              <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                إجمالي التصنيف: {Number(activeCategoryReport.totalSum || 0).toLocaleString('ar-EG')} ج.م
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs text-slate-700">
+                <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="px-3 py-3">التاريخ</th>
+                    <th className="px-3 py-3">الشهر</th>
+                    <th className="px-3 py-3">البند / البيان</th>
+                    <th className="px-3 py-3">المبلغ</th>
+                    <th className="px-3 py-3">الموظف المعني</th>
+                    <th className="px-3 py-3">الملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {activeCategoryReport.items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-500">لا توجد معاملات مسجلة لهذا التصنيف</td>
+                    </tr>
+                  ) : (
+                    activeCategoryReport.items.map((item: any) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-3 font-mono text-slate-600">
+                          {item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}
+                        </td>
+                        <td className="px-3 py-3 font-mono font-bold text-slate-700">{item.month || '-'}</td>
+                        <td className="px-3 py-3 font-bold text-purple-700">{item.items || '-'}</td>
+                        <td className="px-3 py-3 font-mono font-bold text-slate-900">{Number(item.amount).toFixed(2)}</td>
+                        <td className="px-3 py-3 text-slate-700">{item.employee_name || '-'}</td>
+                        <td className="px-3 py-3 text-slate-500 max-w-[150px] truncate">{item.notes || '-'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: ALL EMPLOYEES PAYROLL ACCOUNT REPORT */}
       {activeTab === 'payroll' && (
         <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
           <div className="flex items-center justify-between border-b pb-4 border-slate-200">
