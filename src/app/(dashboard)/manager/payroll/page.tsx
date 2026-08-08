@@ -115,21 +115,21 @@ export default function EmployeePayrollReportPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-700">
+            <table className="w-full text-right text-xs text-slate-700 min-w-[900px]">
               <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
                 <tr>
-                  <th className="px-3 py-3">الموظف</th>
-                  <th className="px-3 py-3">الراتب الأساسي</th>
-                  <th className="px-3 py-3">سعر الساعة</th>
-                  <th className="px-3 py-3">ساعات الشفتات</th>
-                  <th className="px-3 py-3">مكافآت (+س)</th>
-                  <th className="px-3 py-3">خصومات (-س)</th>
-                  <th className="px-3 py-3">صافي الساعات</th>
-                  <th className="px-3 py-3">قيمة الساعات</th>
-                  <th className="px-3 py-3">عمولة المبيعات</th>
-                  <th className="px-3 py-3 text-amber-800">إجمالي السلف</th>
-                  <th className="px-3 py-3 text-emerald-800">الراتب المدفوع</th>
-                  <th className="px-3 py-3 text-center bg-indigo-50 text-indigo-900 font-bold">الصافي والمستحق النهائي</th>
+                  <th className="px-3 py-3 whitespace-nowrap">الموظف</th>
+                  <th className="px-3 py-3 whitespace-nowrap">الراتب الأساسي</th>
+                  <th className="px-3 py-3 whitespace-nowrap">سعر الساعة</th>
+                  <th className="px-3 py-3 whitespace-nowrap">ساعات الشفتات</th>
+                  <th className="px-3 py-3 whitespace-nowrap">مكافآت (+س)</th>
+                  <th className="px-3 py-3 whitespace-nowrap">خصومات (-س)</th>
+                  <th className="px-3 py-3 whitespace-nowrap">صافي الساعات</th>
+                  <th className="px-3 py-3 whitespace-nowrap">قيمة الساعات</th>
+                  <th className="px-3 py-3 whitespace-nowrap">عمولة المبيعات</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-amber-800">إجمالي السلف</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-emerald-800">الراتب المدفوع</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-center bg-indigo-50 text-indigo-900 font-bold">الصافي والمستحق النهائي</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -140,23 +140,23 @@ export default function EmployeePayrollReportPage() {
                 ) : (
                   filteredPayrolls.map((emp: any) => (
                     <tr key={emp.employeeId} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-3 py-3 font-bold text-slate-900">
+                      <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span>{emp.name}</span>
                           {!emp.isActive && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700">غير نشط</span>}
                         </div>
                       </td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900">{emp.monthlySalary.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-slate-600">{emp.hourlyRate.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-slate-800">{emp.achievedHours} س</td>
-                      <td className="px-3 py-3 font-mono text-emerald-700 font-bold">+{emp.bonusHours} س</td>
-                      <td className="px-3 py-3 font-mono text-red-700 font-bold">-{emp.deductedHours} س</td>
-                      <td className="px-3 py-3 font-mono font-bold text-indigo-700">{emp.finalHours} س</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900">{emp.hoursValue.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-emerald-700">+{emp.employeeCommission.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-amber-800">-{emp.totalAdvances.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-emerald-800">-{emp.totalSalaryPaid.toFixed(2)}</td>
-                      <td className={`px-3 py-3 font-mono font-bold text-center text-sm ${
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{emp.monthlySalary.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{emp.hourlyRate.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono text-slate-800 whitespace-nowrap">{emp.achievedHours} س</td>
+                      <td className="px-3 py-3 font-mono text-emerald-700 font-bold whitespace-nowrap">+{emp.bonusHours} س</td>
+                      <td className="px-3 py-3 font-mono text-red-700 font-bold whitespace-nowrap">-{emp.deductedHours} س</td>
+                      <td className="px-3 py-3 font-mono font-bold text-indigo-700 whitespace-nowrap">{emp.finalHours} س</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{emp.hoursValue.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono text-emerald-700 whitespace-nowrap">+{emp.employeeCommission.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono text-amber-800 whitespace-nowrap">-{emp.totalAdvances.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono text-emerald-800 whitespace-nowrap">-{emp.totalSalaryPaid.toFixed(2)}</td>
+                      <td className={`px-3 py-3 font-mono font-bold text-center text-sm whitespace-nowrap ${
                         emp.netAccountDue >= 0 ? 'bg-emerald-50 text-emerald-900 border-l border-r border-emerald-200' : 'bg-red-50 text-red-900 border-l border-r border-red-200'
                       }`}>
                         {emp.netAccountDue >= 0 ? `+${emp.netAccountDue.toFixed(2)}` : emp.netAccountDue.toFixed(2)}
