@@ -94,13 +94,15 @@ export async function GET(req: Request) {
       where: { main_type: 'مسحوبات', date: { gte: startDate, lte: endDate } },
       _sum: { amount: true }
     }),
-    // External Wallets List
+    // External Wallets List (All active — محافظ + ماكينات + أدراج)
     db.external_wallets.findMany({
-      select: { id: true, wallet_name: true, wallet_type: true, current_balance: true }
+      where: { is_active: true },
+      select: { id: true, wallet_name: true, wallet_type: true, current_balance: true, actual_balance: true, custodian_name: true, sort: true },
+      orderBy: [{ sort: 'asc' }, { wallet_name: 'asc' }]
     }),
-    // All Employees List (Active & Inactive)
+    // All Employees List (Active & Inactive) + wallet_balance for custody
     db.users.findMany({
-      select: { id: true, name: true, phone: true, salary: true, role: true, job_title: true, is_active: true }
+      select: { id: true, name: true, phone: true, salary: true, role: true, job_title: true, is_active: true, wallet_balance: true }
     }),
     // All Financial Transactions for Monthly & Category Reports
     db.expenses.findMany({
@@ -247,6 +249,32 @@ export async function GET(req: Request) {
     categoryMap[cat].items.push(exp);
   });
 
+  // Split wallets by type
+  const walletsByType = {
+    محافظ: walletsList.filter((w: any) => w.wallet_type === 'محفظة'),
+    ماكينات: walletsList.filter((w: any) => w.wallet_type === 'ماكينة'),
+    أدراج: walletsList.filter((w: any) => w.wallet_type === 'درج كاشير'),
+  };
+
+  // Summary totals per type
+  const walletsTotals = {
+    محافظ: walletsByType.محافظ.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+    ماكينات: walletsByType.ماكينات.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+    أدراج: walletsByType.أدراج.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+  };
+
+  // Employee custody (wallet_balance) — active employees only
+  const employeeCustody = allEmployees
+    .filter((e: any) => e.is_active)
+    .map((e: any) => ({
+      id: e.id,
+      name: e.name,
+      jobTitle: e.job_title || (e.role === 'manager' ? 'مدير نظام' : 'كاشير'),
+      walletBalance: Number(e.wallet_balance || 0),
+    }));
+
+  const totalEmployeeCustody = employeeCustody.reduce((s: number, e: any) => s + e.walletBalance, 0);
+
   return NextResponse.json({
     metrics: {
       serviceValue,
@@ -271,6 +299,10 @@ export async function GET(req: Request) {
       withdrawnRevenue
     },
     wallets: walletsList,
+    walletsByType,
+    walletsTotals,
+    employeeCustody,
+    totalEmployeeCustody,
     employeePayrolls,
     monthlyReports: Object.values(monthlyMap),
     categoryReports: Object.values(categoryMap),

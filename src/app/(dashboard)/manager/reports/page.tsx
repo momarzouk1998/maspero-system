@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { 
   BarChart3, TrendingUp, DollarSign, Printer, Train, Cpu, Receipt, 
   Calendar, RefreshCw, ArrowRight, Coins, ShoppingBag, Layers, 
-  FileText, ArrowDownLeft, ArrowUpRight, Zap
+  FileText, ArrowDownLeft, ArrowUpRight, Zap, Wallet, Building2,
+  Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle
 } from 'lucide-react';
 
 export default function ManagerReportsPage() {
   const [data, setData] = useState<any>(null);
+  const [walletsExpanded, setWalletsExpanded] = useState(true);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -49,6 +51,10 @@ export default function ManagerReportsPage() {
   const metrics = data?.metrics || {};
   const monthlyReports = data?.monthlyReports || [];
   const categoryReports = data?.categoryReports || [];
+  const walletsByType = data?.walletsByType || { محافظ: [], ماكينات: [], أدراج: [] };
+  const walletsTotals = data?.walletsTotals || { محافظ: 0, ماكينات: 0, أدراج: 0 };
+  const employeeCustody = data?.employeeCustody || [];
+  const totalEmployeeCustody = data?.totalEmployeeCustody || 0;
 
   const activeMonthReport = monthlyReports.find((m: any) => m.month === selectedMonth) || { items: [], totalSum: 0 };
   const activeCategoryReport = categoryReports.find((c: any) => c.category === selectedCategory) || { items: [], totalSum: 0 };
@@ -115,25 +121,45 @@ export default function ManagerReportsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Top Banner: Net Profit */}
-              <div className="p-6 rounded-3xl border border-emerald-400 bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-                <div>
-                  <span className="text-xs font-bold bg-white/20 text-white px-3 py-1 rounded-full border border-white/30">
+              {/* Top Banner: Net Profit — ألوان اللوجو */}
+              <div className="relative p-6 rounded-3xl overflow-hidden text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl"
+                style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d0a1a 40%, #E8197A 100%)' }}>
+                {/* decorative arcs from logo colors */}
+                <div className="absolute top-0 left-0 w-40 h-40 rounded-full opacity-10" style={{ background: '#00AEEF', transform: 'translate(-30%, -30%)' }} />
+                <div className="absolute bottom-0 right-0 w-56 h-56 rounded-full opacity-10" style={{ background: '#E8197A', transform: 'translate(30%, 30%)' }} />
+                <div className="absolute top-0 right-1/3 w-24 h-24 rounded-full opacity-10" style={{ background: '#FFC20E', transform: 'translateY(-50%)' }} />
+                <div className="relative z-10">
+                  <span className="text-xs font-bold bg-white/15 px-3 py-1 rounded-full border border-white/25">
                     النتيجة المالية النهائية (Net Profit)
                   </span>
-                  <h2 className="text-2xl font-black text-white mt-2">صافي الربح الإجمالي للمؤسسة</h2>
-                  <p className="text-emerald-200 text-xs mt-1">
+                  <h2 className="text-2xl font-black mt-2">صافي الربح الإجمالي للمؤسسة</h2>
+                  <p className="text-white/70 text-xs mt-1">
                     (الإيرادات - المشتريات) + العمولات - المصروفات التشغيلية - الرواتب
                   </p>
                 </div>
-                <div className="text-left">
-                  <span className="text-4xl font-black font-mono text-emerald-300">
-                    {Number(metrics.netProfit || 0).toLocaleString('ar-EG')} ج.م
+                <div className="relative z-10 text-left">
+                  <span className={`text-4xl font-black font-mono ${Number(metrics.netProfit || 0) < 0 ? 'text-red-300' : 'text-white'}`}>
+                    {Number(metrics.netProfit || 0).toLocaleString('ar-EG')}
                   </span>
+                  <p className="text-white/60 text-xs mt-1 text-center">ج.م</p>
                 </div>
               </div>
 
-              {/* Comprehensive Metric Grid (11 Cards) */}
+              {/* ── Section A: متغيرة بالتصفية ── */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] font-bold text-slate-600">نتائج الفترة المحددة</span>
+                  {(startDate || endDate) && (
+                    <span className="text-[10px] font-mono text-[#E8197A] font-bold">
+                      {startDate || '…'} → {endDate || '…'}
+                    </span>
+                  )}
+                </div>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Revenue */}
                 <div className="glass-panel p-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-1">
@@ -231,7 +257,7 @@ export default function ManagerReportsPage() {
                   <p className="text-[11px] text-violet-700">عمولة: {Number(metrics.ticketCommission || 0).toFixed(2)}</p>
                 </div>
 
-                {/* 9. Wallet Commissions Breakdown */}
+                {/* 9. Wallet Commissions */}
                 <div className="glass-panel p-5 rounded-2xl border border-cyan-200 bg-cyan-50/50 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-cyan-800">عمولات المحافظ الإلكترونية</span>
@@ -267,6 +293,218 @@ export default function ManagerReportsPage() {
                   <p className="text-[11px] text-emerald-700">إيداعات: {Number(metrics.machineDeposits || 0).toLocaleString('ar-EG')}</p>
                 </div>
               </div>
+
+              {/* ── Section B: ثابتة — أرصدة لحظية ── */}
+              <div className="flex items-center gap-3 pt-2">
+                <div className="h-px flex-1 bg-slate-200" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
+                  <Banknote className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="text-[11px] font-bold text-slate-200">الأرصدة الفعلية الحالية</span>
+                  <span className="text-[10px] text-slate-400 font-medium">لا تتأثر بالتصفية</span>
+                </div>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              {/* Summary Row — 4 totals */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="glass-panel p-4 rounded-2xl border border-blue-300 bg-gradient-to-br from-blue-600 to-blue-700 text-white space-y-1 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold opacity-90">إجمالي المحافظ</span>
+                    <Wallet className="w-5 h-5 opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-black font-mono">{Number(walletsTotals.محافظ).toLocaleString('ar-EG')}</h3>
+                  <p className="text-[11px] opacity-75">{walletsByType.محافظ.length} محفظة نشطة</p>
+                </div>
+                <div className="glass-panel p-4 rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-600 to-purple-700 text-white space-y-1 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold opacity-90">إجمالي الماكينات</span>
+                    <Building2 className="w-5 h-5 opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-black font-mono">{Number(walletsTotals.ماكينات).toLocaleString('ar-EG')}</h3>
+                  <p className="text-[11px] opacity-75">{walletsByType.ماكينات.length} ماكينة نشطة</p>
+                </div>
+                <div className="glass-panel p-4 rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600 text-white space-y-1 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold opacity-90">إجمالي الأدراج</span>
+                    <Archive className="w-5 h-5 opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-black font-mono">{Number(walletsTotals.أدراج).toLocaleString('ar-EG')}</h3>
+                  <p className="text-[11px] opacity-75">{walletsByType.أدراج.length} درج كاشير</p>
+                </div>
+                <div className="glass-panel p-4 rounded-2xl border border-teal-300 bg-gradient-to-br from-teal-600 to-emerald-700 text-white space-y-1 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold opacity-90">إجمالي عهدة الموظفين</span>
+                    <Users className="w-5 h-5 opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-black font-mono">{Number(totalEmployeeCustody).toLocaleString('ar-EG')}</h3>
+                  <p className="text-[11px] opacity-75">{employeeCustody.length} موظف</p>
+                </div>
+              </div>
+
+              {/* 1. المحافظ الإلكترونية */}
+              {walletsByType.محافظ.length > 0 && (
+                <div className="glass-panel rounded-2xl border border-blue-200 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow">
+                        <Wallet className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-blue-900">المحافظ الإلكترونية</h3>
+                        <p className="text-[11px] text-blue-600">فودافون كاش وغيرها</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-black font-mono text-blue-800 bg-blue-100 px-3 py-1 rounded-xl border border-blue-200">
+                      {Number(walletsTotals.محافظ).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {walletsByType.محافظ.map((w: any) => (
+                      <div key={w.id} className="flex items-center justify-between p-3.5 rounded-xl border border-blue-100 bg-white hover:bg-blue-50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <Wallet className="w-3.5 h-3.5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{w.wallet_name}</p>
+                            {w.custodian_name && (
+                              <p className="text-[10px] text-slate-400">{w.custodian_name}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-black font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-blue-700'}`}>
+                          {Number(w.current_balance).toLocaleString('ar-EG')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. الماكينات */}
+              {walletsByType.ماكينات.length > 0 && (
+                <div className="glass-panel rounded-2xl border border-violet-200 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-violet-50 border-b border-violet-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center shadow">
+                        <Building2 className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-violet-900">ماكينات فوري وأمان</h3>
+                        <p className="text-[11px] text-violet-600">رصيد كل ماكينة</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-black font-mono text-violet-800 bg-violet-100 px-3 py-1 rounded-xl border border-violet-200">
+                      {Number(walletsTotals.ماكينات).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {walletsByType.ماكينات.map((w: any) => (
+                      <div key={w.id} className="flex items-center justify-between p-3.5 rounded-xl border border-violet-100 bg-white hover:bg-violet-50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                            <Cpu className="w-3.5 h-3.5 text-violet-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{w.wallet_name}</p>
+                            {w.custodian_name && (
+                              <p className="text-[10px] text-slate-400">{w.custodian_name}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-black font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-violet-700'}`}>
+                          {Number(w.current_balance).toLocaleString('ar-EG')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. الأدراج */}
+              {walletsByType.أدراج.length > 0 && (
+                <div className="glass-panel rounded-2xl border border-amber-200 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center shadow">
+                        <Archive className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-amber-900">أدراج الكاشير</h3>
+                        <p className="text-[11px] text-amber-600">رصيد كل درج</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-black font-mono text-amber-800 bg-amber-100 px-3 py-1 rounded-xl border border-amber-200">
+                      {Number(walletsTotals.أدراج).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {walletsByType.أدراج.map((w: any) => (
+                      <div key={w.id} className="flex items-center justify-between p-3.5 rounded-xl border border-amber-100 bg-white hover:bg-amber-50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <Banknote className="w-3.5 h-3.5 text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{w.wallet_name}</p>
+                            {w.custodian_name && (
+                              <p className="text-[10px] text-slate-400">{w.custodian_name}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-black font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-amber-700'}`}>
+                          {Number(w.current_balance).toLocaleString('ar-EG')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. عهدة الكاش للموظفين */}
+              {employeeCustody.length > 0 && (
+                <div className="glass-panel rounded-2xl border border-teal-200 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-teal-50 border-b border-teal-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center shadow">
+                        <Users className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-teal-900">عهدة الكاش للموظفين</h3>
+                        <p className="text-[11px] text-teal-600">رصيد النقدية في عهدة كل موظف</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-black font-mono text-teal-800 bg-teal-100 px-3 py-1 rounded-xl border border-teal-200">
+                      {Number(totalEmployeeCustody).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {employeeCustody.map((emp: any) => (
+                      <div key={emp.id} className="flex items-center justify-between p-3.5 rounded-xl border border-teal-100 bg-white hover:bg-teal-50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center">
+                            <span className="text-[11px] font-black text-teal-700">
+                              {emp.name.trim().charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{emp.name}</p>
+                            <p className="text-[10px] text-slate-400">{emp.jobTitle}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {emp.walletBalance < 0 && (
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                          )}
+                          <span className={`text-sm font-black font-mono ${emp.walletBalance < 0 ? 'text-rose-600' : emp.walletBalance === 0 ? 'text-slate-400' : 'text-teal-700'}`}>
+                            {Number(emp.walletBalance).toLocaleString('ar-EG')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
