@@ -139,9 +139,6 @@ export default function ServicesPage() {
               <Printer className="w-6 h-6 text-blue-600" />
               <span>سجل الخدمات والطباعة</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              سجل شامل لجميع عمليات الطباعة والخدمات الإلكترونية
-            </p>
           </div>
         </div>
 

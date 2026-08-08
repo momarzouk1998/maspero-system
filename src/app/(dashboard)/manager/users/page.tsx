@@ -249,11 +249,8 @@ export default function ManagerUsersPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-7 h-7 text-blue-600" />
-              <span>إدارة الموظفين والحسابات والأذونات</span>
+              <span>إدارة الموظفين</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-1">
-              إضافة وتعديل الموظفين وضبط أذونات وتراخيص الوصول لكل صفحة بدقة
-            </p>
           </div>
         </div>
 

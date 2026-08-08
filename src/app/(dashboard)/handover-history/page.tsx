@@ -92,11 +92,8 @@ export default function HandoverHistoryPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <ArrowLeftRight className="w-6 h-6 text-emerald-600" />
-              <span>سجل التسليم والتسلم والتحويلات</span>
+              <span>سجل التسليم</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              متابعة جميع حركات تسليم واستلام وتأكيد الأرصدة والعهد النقدية
-            </p>
           </div>
         </div>
 
@@ -131,19 +128,19 @@ export default function HandoverHistoryPage() {
       {/* Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">العهدة / العنصر</th>
-                <th className="px-4 py-3">المرسل (المسلّم)</th>
-                <th className="px-4 py-3">المستلم</th>
-                <th className="px-4 py-3">المبلغ المتوقع</th>
-                <th className="px-4 py-3">المبلغ الفعلي</th>
-                <th className="px-4 py-3">الفارق</th>
-                <th className="px-4 py-3">الحالة والتقييم</th>
-                <th className="px-4 py-3">توضيح الاختلاف / ملاحظات</th>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap">العهدة / العنصر</th>
+                <th className="px-4 py-3 whitespace-nowrap">المرسل (المسلّم)</th>
+                <th className="px-4 py-3 whitespace-nowrap">المستلم</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ المتوقع</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ الفعلي</th>
+                <th className="px-4 py-3 whitespace-nowrap">الفارق</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة والتقييم</th>
+                <th className="px-4 py-3 whitespace-nowrap">توضيح الاختلاف / ملاحظات</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -168,20 +165,20 @@ export default function HandoverHistoryPage() {
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
                         <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>{item.wallet_name || '-'}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-700">{item.sender_name || '-'}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-blue-700">{item.receiver_name || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-slate-700">{exp.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900">{act.toFixed(2)}</td>
-                      <td className={`px-4 py-3 font-mono font-bold text-xs ${
+                      <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">{item.sender_name || '-'}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-blue-700 whitespace-nowrap">{item.receiver_name || '-'}</td>
+                      <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{exp.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{act.toFixed(2)}</td>
+                      <td className={`px-4 py-3 font-mono font-bold text-xs whitespace-nowrap ${
                         diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-emerald-600'
                       }`}>
                         {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
                           item.review_status === 'تم المطابقة' || item.review_status?.includes('المطابقة') || item.review_status?.includes('المراجعة')
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -192,13 +189,13 @@ export default function HandoverHistoryPage() {
                           <span>{item.review_status || 'تم المطابقة'}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600">{item.discrepancy_reason || '-'}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600 font-mono">
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.discrepancy_reason || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
                         {item.created_at ? new Date(item.created_at).toLocaleString('ar-EG') : '-'}
                       </td>
 
                       {currentUser?.role === 'manager' && (
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={async () => {

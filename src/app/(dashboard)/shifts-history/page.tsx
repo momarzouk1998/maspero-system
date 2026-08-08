@@ -141,9 +141,6 @@ export default function ShiftsHistoryPage() {
               <Clock className="w-6 h-6 text-cyan-600" />
               <span>سجل الشفتات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              سجل شامل لمتابعة جميع شفتات العمل وساعات الدوام
-            </p>
           </div>
         </div>
 

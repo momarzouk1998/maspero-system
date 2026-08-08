@@ -134,11 +134,8 @@ export default function ManagerServicesPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Printer className="w-6 h-6 text-blue-600" />
-              <span>إدارة كود الخدمات والعمولات</span>
+              <span>إدارة الخدمات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              إضافة وتعديل وحذف الخدمات ونسب العمولات والأسعار المعتمدة
-            </p>
           </div>
         </div>
 

@@ -159,11 +159,8 @@ export default function ManagerPricingPage() {
           <div>
             <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
               <Settings className="w-7 h-7 text-blue-400" />
-              <span>إدارة أسعار الطباعة (شرائح الأسعار)</span>
+              <span>أسعار الطباعة</span>
             </h1>
-            <p className="text-slate-400 text-sm">
-              تعديل أسعار الطباعة للشرائح المختلفة — يؤثر فوراً على نظام احتساب الفواتير
-            </p>
           </div>
         </div>
 

@@ -137,11 +137,8 @@ export default function ExpensesHistoryPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Receipt className="w-6 h-6 text-rose-600" />
-              <span>سجل المصروفات والقيود المالية</span>
+              <span>سجل المصروفات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              متابعة جميع المصروفات، السلف، المشتريات، الإيرادات، والدعم المالي
-            </p>
           </div>
         </div>
 
@@ -176,16 +173,16 @@ export default function ExpensesHistoryPage() {
       {/* Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">التصنيف الرئيسي</th>
-                <th className="px-4 py-3">طريقة الصرف</th>
-                <th className="px-4 py-3">المبلغ</th>
-                <th className="px-4 py-3">الموظف المعني</th>
-                <th className="px-4 py-3">ملاحظات</th>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap">التصنيف الرئيسي</th>
+                <th className="px-4 py-3 whitespace-nowrap">طريقة الصرف</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
+                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 whitespace-nowrap text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -205,7 +202,7 @@ export default function ExpensesHistoryPage() {
               ) : (
                 expenses.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900">
+                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                         item.main_type === 'سلفة' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
                         item.main_type === 'قبض' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
@@ -215,17 +212,17 @@ export default function ExpensesHistoryPage() {
                         {item.main_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{item.expense_type || 'نقدي'}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base">
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
                       {Number(item.amount).toLocaleString('ar-EG')}
                     </td>
-                    <td className="px-4 py-3 text-xs font-bold text-slate-800">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{item.notes || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 font-mono">
+                    <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
                       {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
                     </td>
                     {currentUser?.role === 'manager' && (
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => openEditModal(item)}

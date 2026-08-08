@@ -115,11 +115,8 @@ export default function HRHistoryPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Gift className="w-7 h-7 text-indigo-600" />
-              <span>سجل الحوافز والخصومات والإجازات</span>
+              <span>سجل الحوافز والخصومات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-1">
-              متابعة جميع طلبات الحوافز، الخصومات، أذونات المغادرة، والإجازات بالساعات
-            </p>
           </div>
         </div>
 
@@ -198,17 +195,17 @@ export default function HRHistoryPage() {
       {/* HR Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700">
+          <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">الموظف المعني</th>
-                <th className="px-4 py-3">نوع الطلب</th>
-                <th className="px-4 py-3">عدد الساعات</th>
-                <th className="px-4 py-3">الحالة والموافقة</th>
-                <th className="px-4 py-3">مُنشئ الطلب</th>
-                <th className="px-4 py-3">الملاحظات</th>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                <th className="px-4 py-3 text-center">الإجراءات</th>
+                <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
+                <th className="px-4 py-3 whitespace-nowrap">نوع الطلب</th>
+                <th className="px-4 py-3 whitespace-nowrap">عدد الساعات</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة والموافقة</th>
+                <th className="px-4 py-3 whitespace-nowrap">مُنشئ الطلب</th>
+                <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -234,11 +231,11 @@ export default function HRHistoryPage() {
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
                         <User className="w-4 h-4 text-indigo-600 shrink-0" />
                         <span>{item.employee_name || item.e_hr_name || '-'}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                           item.hr_items === 'مكافأة' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                           item.hr_items === 'خصم' ? 'bg-red-100 text-red-800 border-red-300' :
@@ -247,10 +244,10 @@ export default function HRHistoryPage() {
                           {item.hr_items}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm">
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                         {Number(item.hours).toFixed(2)} س
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
                           item.approval === 'موافقة' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                           item.approval === 'مرفوض' ? 'bg-red-100 text-red-800 border-red-300' :
@@ -259,15 +256,15 @@ export default function HRHistoryPage() {
                           <span>{item.approval === 'موافقة' ? 'معتمد ✔️' : item.approval === 'مرفوض' ? 'مرفوض ✖️' : 'قيد الانتظار ⏳'}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600">{item.created_by_name || '-'}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[180px] truncate" title={item.notes || ''}>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.created_by_name || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[180px] truncate whitespace-nowrap" title={item.notes || ''}>
                         {item.notes || '-'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 font-mono">
+                      <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
                         {item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}
                       </td>
 
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           {/* Manager Approval Controls */}
                           {isManager && isPending && (

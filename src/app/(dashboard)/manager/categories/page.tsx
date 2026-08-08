@@ -125,11 +125,8 @@ export default function ManagerCategoriesPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Tags className="w-6 h-6 text-rose-600" />
-              <span>إدارة تصنيفات وبنود المصروفات</span>
+              <span>تصنيفات المصروفات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              إضافة وتعديل وحذف بنود المصروفات، المشتريات، الدعم، والمسحوبات للموظفين
-            </p>
           </div>
         </div>
 

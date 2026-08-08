@@ -130,11 +130,8 @@ export default function ManagerNotesPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <StickyNote className="w-6 h-6 text-amber-600" />
-              <span>سجل ملاحظات المدير والعدادات</span>
+              <span>ملاحظات المدير</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              ملاحظات وقراءات العدادات وأسعار الورق والمشتريات والشبكة
-            </p>
           </div>
         </div>
 

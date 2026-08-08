@@ -153,9 +153,6 @@ export default function InvoicesHistoryPage() {
               <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
               <span>سجل الفواتير</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              عرض وتتبع الفواتير الصادرة وإعادة طباعتها عند الحاجة
-            </p>
           </div>
         </div>
 

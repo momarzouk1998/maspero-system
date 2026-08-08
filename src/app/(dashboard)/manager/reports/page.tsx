@@ -77,9 +77,6 @@ export default function ManagerReportsPage() {
               <BarChart3 className="w-7 h-7 text-emerald-600" />
               <span>تقرير الماليات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-1">
-              لوحة البيانات المالية الشاملة والأرباح والعمولات
-            </p>
           </div>
         </div>
       </div>

@@ -144,9 +144,6 @@ export default function ChargeHistoryPage() {
               <Zap className="w-6 h-6 text-amber-600" />
               <span>سجل عمليات الشحن</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              متابعة حركات الإيداع والسحب لـ ماكينات فوري وبساطة ومحافظ كاش وفودافون كاش
-            </p>
           </div>
         </div>
 
@@ -181,19 +178,19 @@ export default function ChargeHistoryPage() {
       {/* Transactions Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">المحفظة / الماكينة</th>
-                <th className="px-4 py-3">نوع العملية</th>
-                <th className="px-4 py-3">المبلغ</th>
-                <th className="px-4 py-3">العمولة</th>
-                <th className="px-4 py-3">الإجمالي المحصل</th>
-                <th className="px-4 py-3">الموظف</th>
-                <th className="px-4 py-3">كود الفاتورة</th>
-                <th className="px-4 py-3">التاريخ والوقت</th>
-                <th className="px-4 py-3">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap">المحفظة / الماكينة</th>
+                <th className="px-4 py-3 whitespace-nowrap">نوع العملية</th>
+                <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap">العمولة</th>
+                <th className="px-4 py-3 whitespace-nowrap">الإجمالي المحصل</th>
+                <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">كود الفاتورة</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                {currentUser?.role === 'manager' && <th className="px-4 py-3 whitespace-nowrap text-center">إجراءات المدير</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -218,11 +215,11 @@ export default function ChargeHistoryPage() {
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
+                      <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2 whitespace-nowrap">
                         <Wallet className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>{item.wallet_name || '-'}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
                           item.transaction_type === 'إيداع'
                             ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
@@ -236,22 +233,22 @@ export default function ChargeHistoryPage() {
                           <span>{item.transaction_type}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900">{amt.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono text-amber-700">{comm.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700">{totalCollected.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-xs text-slate-700">
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{amt.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono text-amber-700 whitespace-nowrap">{comm.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700 whitespace-nowrap">{totalCollected.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3 text-slate-500" />
                           {item.employee_name || '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-blue-600">{item.invoice_code || '-'}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600">
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600 whitespace-nowrap">{item.invoice_code || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                         {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600">{item.description || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.description || '-'}</td>
                       {currentUser?.role === 'manager' && (
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => openEditModal(item)}

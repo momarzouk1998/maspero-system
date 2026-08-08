@@ -14,6 +14,11 @@ export default function EmployeePayrollReportPage() {
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
 
+  // Helper function to remove trailing zeros from decimal numbers
+  const formatNumber = (num: number) => {
+    return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
+  };
+
   const fetchPayroll = async () => {
     setLoading(true);
     try {
@@ -59,11 +64,8 @@ export default function EmployeePayrollReportPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-7 h-7 text-indigo-600" />
-              <span>كشف حساب ومستحقات الموظفين</span>
+              <span>كشف مستحقات الموظفين</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-1">
-              حساب الساعات المحققة، المكافآت، الخصومات، العمولات، والسلف لكل موظف
-            </p>
           </div>
         </div>
       </div>
@@ -119,17 +121,17 @@ export default function EmployeePayrollReportPage() {
               <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
                 <tr>
                   <th className="px-3 py-3 whitespace-nowrap">الموظف</th>
-                  <th className="px-3 py-3 whitespace-nowrap">الراتب الأساسي</th>
-                  <th className="px-3 py-3 whitespace-nowrap">سعر الساعة</th>
-                  <th className="px-3 py-3 whitespace-nowrap">ساعات الشفتات</th>
-                  <th className="px-3 py-3 whitespace-nowrap">مكافآت (+س)</th>
-                  <th className="px-3 py-3 whitespace-nowrap">خصومات (-س)</th>
-                  <th className="px-3 py-3 whitespace-nowrap">صافي الساعات</th>
-                  <th className="px-3 py-3 whitespace-nowrap">قيمة الساعات</th>
-                  <th className="px-3 py-3 whitespace-nowrap">عمولة المبيعات</th>
-                  <th className="px-3 py-3 whitespace-nowrap text-amber-800">إجمالي السلف</th>
-                  <th className="px-3 py-3 whitespace-nowrap text-emerald-800">الراتب المدفوع</th>
-                  <th className="px-3 py-3 whitespace-nowrap text-center bg-indigo-50 text-indigo-900 font-bold">الصافي والمستحق النهائي</th>
+                  <th className="px-3 py-3 whitespace-nowrap">الراتب</th>
+                  <th className="px-3 py-3 whitespace-nowrap">سعر س</th>
+                  <th className="px-3 py-3 whitespace-nowrap">س العمل</th>
+                  <th className="px-3 py-3 whitespace-nowrap">مكافئة س</th>
+                  <th className="px-3 py-3 whitespace-nowrap">خصم س</th>
+                  <th className="px-3 py-3 whitespace-nowrap">صافي س</th>
+                  <th className="px-3 py-3 whitespace-nowrap">قيمة س</th>
+                  <th className="px-3 py-3 whitespace-nowrap">عمولة</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-amber-800">سلف</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-emerald-800">قبض</th>
+                  <th className="px-3 py-3 whitespace-nowrap text-center bg-indigo-50 text-indigo-900 font-bold">المستحق</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -146,20 +148,20 @@ export default function EmployeePayrollReportPage() {
                           {!emp.isActive && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700">غير نشط</span>}
                         </div>
                       </td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{emp.monthlySalary.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{emp.hourlyRate.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(emp.monthlySalary)}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{formatNumber(emp.hourlyRate)}</td>
                       <td className="px-3 py-3 font-mono text-slate-800 whitespace-nowrap">{emp.achievedHours} س</td>
                       <td className="px-3 py-3 font-mono text-emerald-700 font-bold whitespace-nowrap">+{emp.bonusHours} س</td>
                       <td className="px-3 py-3 font-mono text-red-700 font-bold whitespace-nowrap">-{emp.deductedHours} س</td>
                       <td className="px-3 py-3 font-mono font-bold text-indigo-700 whitespace-nowrap">{emp.finalHours} س</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{emp.hoursValue.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-emerald-700 whitespace-nowrap">+{emp.employeeCommission.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-amber-800 whitespace-nowrap">-{emp.totalAdvances.toFixed(2)}</td>
-                      <td className="px-3 py-3 font-mono text-emerald-800 whitespace-nowrap">-{emp.totalSalaryPaid.toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(emp.hoursValue)}</td>
+                      <td className="px-3 py-3 font-mono text-emerald-700 whitespace-nowrap">+{formatNumber(emp.employeeCommission)}</td>
+                      <td className="px-3 py-3 font-mono text-amber-800 whitespace-nowrap">-{formatNumber(emp.totalAdvances)}</td>
+                      <td className="px-3 py-3 font-mono text-emerald-800 whitespace-nowrap">-{formatNumber(emp.totalSalaryPaid)}</td>
                       <td className={`px-3 py-3 font-mono font-bold text-center text-sm whitespace-nowrap ${
                         emp.netAccountDue >= 0 ? 'bg-emerald-50 text-emerald-900 border-l border-r border-emerald-200' : 'bg-red-50 text-red-900 border-l border-r border-red-200'
                       }`}>
-                        {emp.netAccountDue >= 0 ? `+${emp.netAccountDue.toFixed(2)}` : emp.netAccountDue.toFixed(2)}
+                        {emp.netAccountDue >= 0 ? `+${formatNumber(emp.netAccountDue)}` : formatNumber(emp.netAccountDue)}
                       </td>
                     </tr>
                   ))

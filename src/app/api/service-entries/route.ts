@@ -57,16 +57,27 @@ export async function POST(req: Request) {
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
     const today = new Date();
 
+    let validServiceId: string | null = null;
+    if (serviceId) {
+      const existingService = await db.services.findUnique({ where: { id: serviceId } });
+      if (existingService) {
+        validServiceId = serviceId;
+      }
+    }
+
+    const parsedPaper = paperCount !== undefined && paperCount !== null ? parseInt(String(paperCount)) : 0;
+    const finalPaper = isNaN(parsedPaper) ? 0 : Math.max(0, parsedPaper);
+
     const result = await db.$transaction(async (tx: any) => {
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-          service_id: serviceId || null,
+          service_id: validServiceId,
           service_name: serviceName,
-          paper_count: parseInt(paperCount) || 1,
-          page_count: parseInt(pageCount) || 1,
+          paper_count: finalPaper,
+          page_count: parseInt(String(pageCount)) || 1,
           face_type: faceType || 'وجه واحد',
           amount: numAmount,
           notes: notes || null,

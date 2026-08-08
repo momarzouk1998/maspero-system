@@ -150,11 +150,8 @@ export default function ManagerWalletsPage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Wallet className="w-6 h-6 text-blue-600" />
-              <span>إدارة المحافظ والماكينات والأدراج</span>
+              <span>إدارة المحافظ والأدراج</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              إضافة وتعديل وحذف محافظ الكاش، ماكينات فوري وبساطة، وأدراج الكاشير
-            </p>
           </div>
         </div>
 

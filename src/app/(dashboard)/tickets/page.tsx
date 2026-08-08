@@ -133,9 +133,6 @@ export default function TicketsPage() {
               <Train className="w-6 h-6 text-purple-600" />
               <span>سجل تذاكر القطارات</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              سجل شامل لجميع حجوزات تذاكر القطارات والعمولات
-            </p>
           </div>
         </div>
 

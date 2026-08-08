@@ -86,11 +86,8 @@ export default function ProfilePage() {
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <User className="w-6 h-6 text-blue-600" />
-              <span>الصفحة الشخصية وإعدادات الحساب</span>
+              <span>الملف الشخصي</span>
             </h1>
-            <p className="text-slate-600 text-xs mt-0.5">
-              إدارة بيانات حسابك وتغيير كلمة المرور الأمان الخاصة بك
-            </p>
           </div>
         </div>
       </div>
