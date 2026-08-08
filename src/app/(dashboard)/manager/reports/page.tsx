@@ -294,7 +294,7 @@ export default function ManagerReportsPage() {
                     <td colSpan={12} className="text-center py-8 text-slate-500">لا يوجد موظفين لعرض التقارير</td>
                   </tr>
                 ) : (
-                  employeePayrolls.map((emp) => (
+                  employeePayrolls.map((emp: any) => (
                     <tr key={emp.employeeId} className="hover:bg-slate-50 transition-colors">
                       <td className="px-3 py-3 font-bold text-slate-900">
                         <div className="flex items-center gap-1.5">
