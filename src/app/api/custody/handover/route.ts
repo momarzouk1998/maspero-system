@@ -68,13 +68,25 @@ export async function GET() {
     // 4. Check items in current user's custody
     const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
-    // 5. Pending handover requests sent to user
+    // 5. Calculate online cashiers summary (active shift cashiers & cash balances)
+    const onlineCashiers = activeShifts.map((s: any) => {
+      const userDrawer = drawers.find((d: any) => d.custodian_id === s.employee_id);
+      const bal = userDrawer ? Number(userDrawer.actual_balance || userDrawer.current_balance || 0) : 0;
+      return {
+        id: s.employee_id,
+        name: s.employee_name ? s.employee_name.split(' ')[0] : 'موظف',
+        fullName: s.employee_name || 'موظف',
+        balance: Math.round(bal)
+      };
+    });
+
+    // 6. Pending handover requests sent to user
     const pendingHandovers = await db.wallet_custody_handovers.findMany({
       where: { receiver_id: user.id, status: 'PENDING' },
       orderBy: { created_at: 'desc' }
     });
 
-    // 6. Check if sales are locked
+    // 7. Check if sales are locked
     const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
     const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
     const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
@@ -103,6 +115,7 @@ export async function GET() {
       machines,
       drawers,
       itemsInUserCustody,
+      onlineCashiers,
       pendingHandovers
     });
 
@@ -112,7 +125,7 @@ export async function GET() {
   }
 }
 
-// POST: Receive, Fast Confirm (Like 👍), Deliver, or Deposit to Drawer
+// POST: Receive, Fast Confirm (Like 👍), Deliver, Deliver All to Maspero, or Deposit to Drawer
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
@@ -138,32 +151,29 @@ export async function POST(req: Request) {
       const today = new Date();
 
       await db.$transaction(async (tx: any) => {
-        // 1. Deduct amount from employee cash custody
-        await tx.users.update({
-          where: { id: user.id },
-          data: { wallet_balance: { decrement: depositAmount } }
-        });
-
-        // 2. Increase drawer balance
         await tx.external_wallets.update({
           where: { id: drawerId },
           data: {
             current_balance: { increment: depositAmount },
-            actual_balance: { increment: depositAmount }
+            actual_balance: { increment: depositAmount },
+            custodian_id: user.id,
+            custodian_name: user.name
           }
         });
 
-        // 3. Log transaction
         await tx.wallet_transactions.create({
           data: {
             date: today,
-            transaction_type: 'إيداع في درج كاشير',
+            transaction_month: `${today.getFullYear()} ${today.getMonth() + 1}`,
+            time_str: today.toLocaleTimeString('ar-EG'),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
+            transaction_type: 'إيداع',
+            wallet_type: 'درج كاشير',
             amount: depositAmount,
+            description: `إيداع نقدية محصلة من عهدة الموظف (${user.name}) في ${drawer.wallet_name}`,
             employee_id: user.id,
             employee_name: user.name,
-            description: `إيداع نقدية من عهدة الموظف إلى ${drawer.wallet_name}`,
             timestamp: today
           }
         });
@@ -171,23 +181,70 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `تم إيداع مبلغ ${depositAmount} بنجاح في ${drawer.wallet_name}`
+        message: `تم تحويل إيداع (${depositAmount.toFixed(2)}) ج نقدية في (${drawer.wallet_name}) بنجاح 💰`
+      });
+    }
+
+    // --- Deliver All Items directly to Maspero Center (Single Click Day Closing) ---
+    if (action === 'deliver_all') {
+      const userItems = await db.external_wallets.findMany({
+        where: { is_active: true, custodian_id: user.id }
+      });
+
+      if (userItems.length === 0) {
+        return NextResponse.json({ success: true, message: 'لا توجد عهد مسجلة في عهدتك حالياً' });
+      }
+
+      await db.$transaction(async (tx: any) => {
+        for (const item of userItems) {
+          const bal = Number(item.actual_balance || item.current_balance || 0);
+          await tx.wallet_custody_handovers.create({
+            data: {
+              wallet_id: item.id,
+              wallet_name: item.wallet_name,
+              sender_id: user.id,
+              sender_name: user.name,
+              receiver_id: null,
+              receiver_name: 'ماسـبيرو (المركز)',
+              balance_at_time: bal,
+              expected_balance: bal,
+              actual_balance: bal,
+              difference: 0,
+              status: 'ACCEPTED',
+              review_status: 'تم تسليم العهدة لماسبيرو',
+              responded_at: new Date()
+            }
+          });
+
+          await tx.external_wallets.update({
+            where: { id: item.id },
+            data: {
+              custodian_id: null,
+              custodian_name: 'ماسـبيرو (المركز)'
+            }
+          });
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'تم تسليم جميع المحافظ والماكينات بنجاح إلى (ماسـبيرو - المركز الرئيسي) 🏛️'
       });
     }
 
     if (!walletId) {
-      return NextResponse.json({ error: 'معرف العهدة/المحفظة مطلوب' }, { status: 400 });
+      return NextResponse.json({ error: 'معرف العهدة مطلوب' }, { status: 400 });
     }
 
     const item = await db.external_wallets.findUnique({ where: { id: walletId } });
-    if (!item) return NextResponse.json({ error: 'العنصر غير موجود' }, { status: 404 });
+    if (!item) {
+      return NextResponse.json({ error: 'العهدة غير موجودة' }, { status: 404 });
+    }
 
     const expectedBalance = Number(item.actual_balance || item.current_balance || 0);
 
-    // --- Action: Fast Like 👍 Confirm (Receive with exact balance in 1 click) ---
+    // --- Action: Fast Confirm (Like 👍) ---
     if (action === 'fast_receive') {
-      const numActual = expectedBalance;
-
       const updatedItem = await db.$transaction(async (tx: any) => {
         await tx.wallet_custody_handovers.create({
           data: {
@@ -199,7 +256,7 @@ export async function POST(req: Request) {
             receiver_name: user.name,
             balance_at_time: expectedBalance,
             expected_balance: expectedBalance,
-            actual_balance: numActual,
+            actual_balance: expectedBalance,
             difference: 0,
             status: 'ACCEPTED',
             review_status: 'تم المطابقة',
@@ -212,8 +269,8 @@ export async function POST(req: Request) {
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: numActual,
-            current_balance: numActual
+            actual_balance: expectedBalance,
+            current_balance: expectedBalance
           }
         });
       });
@@ -299,6 +356,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'برجاء اختيار الموظف المستلم أو (ماسـبيرو)' }, { status: 400 });
       }
 
+      const numActual = actualBalance !== undefined && actualBalance !== null && actualBalance !== '' ? Number(actualBalance) : expectedBalance;
+      const diff = numActual - expectedBalance;
+
       let rId = receiverId;
       let rName = 'ماسـبيرو (المركز)';
 
@@ -322,10 +382,10 @@ export async function POST(req: Request) {
               receiver_name: 'ماسـبيرو (المركز)',
               balance_at_time: expectedBalance,
               expected_balance: expectedBalance,
-              actual_balance: expectedBalance,
-              difference: 0,
+              actual_balance: numActual,
+              difference: diff,
               status: 'ACCEPTED',
-              review_status: 'تم المطابقة التسليم لماسبيرو'
+              review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم المطابقة التسليم لماسبيرو'
             }
           });
 
@@ -333,7 +393,9 @@ export async function POST(req: Request) {
             where: { id: walletId },
             data: {
               custodian_id: null,
-              custodian_name: 'ماسـبيرو (المركز)'
+              custodian_name: 'ماسـبيرو (المركز)',
+              actual_balance: numActual,
+              current_balance: numActual
             }
           });
         });
@@ -354,10 +416,10 @@ export async function POST(req: Request) {
           receiver_name: rName,
           balance_at_time: expectedBalance,
           expected_balance: expectedBalance,
-          actual_balance: expectedBalance,
-          difference: 0,
+          actual_balance: numActual,
+          difference: diff,
           status: 'PENDING',
-          review_status: 'تم المطابقة'
+          review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم المطابقة'
         }
       });
 

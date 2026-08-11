@@ -241,7 +241,8 @@ export default function ShiftsPage() {
         body: JSON.stringify({
           action: 'deliver',
           walletId: deliverModalItem.id,
-          receiverId: deliverReceiverId
+          receiverId: deliverReceiverId,
+          actualBalance: actualBalanceInput ? parseFloat(actualBalanceInput) : undefined
         })
       });
 
@@ -251,6 +252,7 @@ export default function ShiftsPage() {
       showToast(data.message || 'تم إرسال طلب التسليم بنجاح 👍');
       setDeliverModalItem(null);
       setDeliverReceiverId('');
+      setActualBalanceInput('');
       fetchShiftsAndCustody();
     } catch (err: any) {
       showToast(err.message, 'error');
@@ -380,21 +382,46 @@ export default function ShiftsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header (Light Mode) */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex items-center justify-between">
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2 mb-1">
             <Clock className="w-7 h-7 text-blue-600" />
-            <span>إدارة الشفتات</span>
+            <span>إدارة الشفتات والعهدة</span>
           </h1>
+
+          {/* Item 6 & 7: Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
+          {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+              <span className="text-xs text-slate-500 font-semibold shrink-0">الموظفون المتاحون:</span>
+              {custodyData.onlineCashiers.map((c: any) => (
+                <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{c.name}:</span>
+                  <span className="font-mono text-emerald-700">{c.balance}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <Link
-          href="/shifts-history"
-          className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-blue-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-2 transition-all shadow-sm"
-        >
-          <History className="w-4 h-4" />
-          <span>سجل الشفتات بالكامل</span>
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Item 9: Single-Click Bulk Handover to Maspero Center */}
+          <button
+            onClick={handleDeliverAllToMaspero}
+            disabled={submitting}
+            className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <span>🏛️ تسليم جميع العهد لـ ماسـبيرو (المركز)</span>
+          </button>
+
+          <Link
+            href="/shifts-history"
+            className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-blue-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-2 transition-all shadow-sm"
+          >
+            <History className="w-4 h-4" />
+            <span>سجل الشفتات بالكامل</span>
+          </Link>
+        </div>
       </div>
 
       {/* Inline Feedback Toast Banner */}
@@ -614,9 +641,9 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 text-xs font-mono text-slate-500 whitespace-nowrap">{item.wallet_number || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        item.custodian_name ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
-                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                        {item.custodian_name ? item.custodian_name.split(' ')[0] : 'غير مستلمة'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
@@ -685,9 +712,9 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        item.custodian_name ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
-                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                        {item.custodian_name ? item.custodian_name.split(' ')[0] : 'غير مستلمة'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
@@ -1102,6 +1129,18 @@ export default function ShiftsPage() {
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">الرصيد الفعلي المسلم (في حالة وجود عجز/زيادة)</label>
+                <input
+                  type="number"
+                  step="0.25"
+                  value={actualBalanceInput}
+                  onChange={(e) => setActualBalanceInput(e.target.value)}
+                  placeholder={Number(deliverModalItem.actual_balance || deliverModalItem.current_balance || 0).toString()}
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-sm font-bold focus:outline-none focus:border-amber-500"
+                />
               </div>
             </div>
 

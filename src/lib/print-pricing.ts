@@ -35,7 +35,7 @@ const DEFAULTS: Record<string, number> = {
  * 
  * Dynamic Range Logic:
  * Finds configured DB tier where: paperCount >= min_qty AND (max_qty == null OR paperCount <= max_qty)
- * Falls back to legacy default keys if no matching tier row is defined.
+ * Handles double-sided impressions calculation accurately (1 paper = 2 faces).
  */
 export function calculatePrintPrice(
   serviceName: string,
@@ -47,6 +47,7 @@ export function calculatePrintPrice(
   const isColor = serviceName.includes('ألوان');
   const targetPrintType = isColor ? 'طباعة ألوان' : 'طباعة أسود';
   const targetFaceType = faceType === 'وجهين' ? 'وجهين' : 'وجه واحد';
+  const impressions = targetFaceType === 'وجهين' ? count * 2 : count;
 
   // 1. Try matching a dynamic quantity tier from DB rows
   const matchingTiers = dbPrices.filter(
@@ -55,6 +56,16 @@ export function calculatePrintPrice(
 
   if (matchingTiers.length > 0) {
     const matchedTier = matchingTiers.find((tier) => {
+      const min = tier.min_qty !== undefined && tier.min_qty !== null ? Number(tier.min_qty) : 1;
+      const max = tier.max_qty !== undefined && tier.max_qty !== null ? Number(tier.max_qty) : null;
+
+      // If tier threshold is set based on impressions (e.g., 31+ faces vs sheets)
+      const evalQty = (targetFaceType === 'وجهين' && max && max >= 30 && min >= 15) ? impressions : count;
+
+      if (evalQty < min) return false;
+      if (max !== null && evalQty > max) return false;
+      return true;
+    }) || matchingTiers.find((tier) => {
       const min = tier.min_qty !== undefined && tier.min_qty !== null ? Number(tier.min_qty) : 1;
       const max = tier.max_qty !== undefined && tier.max_qty !== null ? Number(tier.max_qty) : null;
 
@@ -99,7 +110,7 @@ export function calculatePrintPrice(
   }
 
   if (targetFaceType === 'وجهين') {
-    const isBulk = count > 15;
+    const isBulk = impressions > 30 || count > 15;
     const keyName = isBulk ? 'طباعة أسود وجهين فوق 30' : 'طباعة أسود وجهين أقل من أو يساوي 30';
     const fallbackKey = isBulk ? 'طباعة أسود | وجهين | bulk' : 'طباعة أسود | وجهين | normal';
     const unitPrice = getPrice(keyName, fallbackKey);
@@ -108,8 +119,8 @@ export function calculatePrintPrice(
       unitPrice,
       totalAmount: Number((count * unitPrice).toFixed(2)),
       tierLabel: isBulk
-        ? `طباعة أسود وجهين (>15 ورقة) — ${unitPrice} ج / ورقة`
-        : `طباعة أسود وجهين (≤15 ورقة) — ${unitPrice} ج / ورقة`
+        ? `طباعة أسود وجهين (>30 وجه / >15 ورقة) — ${unitPrice} ج / ورقة`
+        : `طباعة أسود وجهين (≤30 وجه / ≤15 ورقة) — ${unitPrice} ج / ورقة`
     };
   } else {
     const isBulk = count > 30;

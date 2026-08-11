@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import {
   Printer, Train, Wallet, Plus, Trash2, RefreshCw, X, Receipt,
   Bus, CheckCircle2, Info, ArrowDownLeft, ArrowUpRight, ChevronRight,
-  FileText, PlusCircle, Cpu
+  FileText, PlusCircle, Cpu, Lock
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
@@ -106,16 +107,29 @@ export default function POSPage() {
     } finally { setRefreshing(false); }
   };
 
-  // ─── Services data ───────────────────────────────────────
+  // ─── Services & Custody data ──────────────────────────────
   const [services,  setServices]  = useState<any[]>([]);
   const [dbPrices,  setDbPrices]  = useState<any[]>([]);
+  const [custodyData, setCustodyData] = useState<{
+    isSalesLocked: boolean;
+    lockReason: string;
+    onlineCashiers: Array<{ id: string; name: string; balance: number }>;
+  } | null>(null);
+
+  const fetchCustodyAndPrices = () => {
+    Promise.all([
+      fetch('/api/services'),
+      fetch('/api/print-prices'),
+      fetch('/api/custody/handover')
+    ]).then(async ([sRes, pRes, cRes]) => {
+      if (sRes.ok) { const d = await sRes.json(); setServices(d.services || []); }
+      if (pRes.ok) { const d = await pRes.json(); setDbPrices(d.prices || []); }
+      if (cRes.ok) { const d = await cRes.json(); setCustodyData(d); }
+    });
+  };
 
   useEffect(() => {
-    Promise.all([fetch('/api/services'), fetch('/api/print-prices')])
-      .then(async ([sRes, pRes]) => {
-        if (sRes.ok) { const d = await sRes.json(); setServices(d.services || []); }
-        if (pRes.ok) { const d = await pRes.json(); setDbPrices(d.prices || []); }
-      });
+    fetchCustodyAndPrices();
   }, []);
 
   // ─── Wallets data ────────────────────────────────────────
@@ -260,13 +274,44 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col gap-3 overflow-y-auto min-w-0">
 
         {/* Page title */}
-        <div className="glass-panel px-5 py-3 rounded-2xl border border-slate-200 flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-blue-600" />
-          <h1 className="text-lg font-bold text-slate-900">صفحة البيع</h1>
+        <div className="glass-panel px-5 py-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-blue-600" />
+            <h1 className="text-lg font-bold text-slate-900">صفحة البيع</h1>
+          </div>
+
+          {/* Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
+          {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              {custodyData.onlineCashiers.map((c: any) => (
+                <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{c.name}:</span>
+                  <span className="font-mono text-emerald-700">{c.balance}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* Sales Lock Red Alert Warning Banner */}
+        {custodyData?.isSalesLocked && (
+          <div className="p-4 rounded-2xl border border-red-300 bg-red-50 text-red-800 flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2 text-xs leading-relaxed font-bold">
+              <Lock className="w-5 h-5 text-red-600 shrink-0 animate-bounce" />
+              <span>⚠️ المبيعات مقفولة حالياً: {custodyData.lockReason}</span>
+            </div>
+            <Link
+              href="/shifts"
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-all shrink-0"
+            >
+              صفحة الشفتات والعهدة 🚀
+            </Link>
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+        <div className={`flex gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
           <TabBtn id="services" label="الخدمات"       icon={Printer} color="bg-blue-600"   />
           <TabBtn id="tickets"  label="التذاكر"        icon={Train}   color="bg-purple-600" />
           <TabBtn id="wallets"  label="المحافظ والماكينات" icon={Wallet}  color="bg-emerald-600" />
@@ -274,7 +319,7 @@ export default function POSPage() {
 
         {/* ── TAB: SERVICES ─────────────────────────────── */}
         {activeTab === 'services' && (
-          <div className="glass-panel p-4 rounded-3xl border border-slate-200 flex-1">
+          <div className={`glass-panel p-4 rounded-3xl border border-slate-200 flex-1 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
             <p className="text-xs text-slate-500 mb-3 font-medium">اضغط على الخدمة لإضافتها للفاتورة</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {/* Sort: طباعة أسود first, طباعة ألوان second, others, then أخرى last */}
