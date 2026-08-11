@@ -10,11 +10,12 @@ export async function GET() {
 
   const isManager = user.role === 'manager';
 
-  const users = await db.users.findMany({
+  const users = await (db.users as any).findMany({
     where: isManager ? {} : { is_active: true },
     select: {
       id: true,
       name: true,
+      short_name: true,
       phone: true,
       role: true,
       job_title: true,
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { name, phone, password, role, jobTitle, salary, permissions } = await req.json();
+    const { name, shortName, phone, password, role, jobTitle, salary, permissions } = await req.json();
 
     if (!name || !password) {
       return NextResponse.json({ error: 'الاسم وكلمة المرور مطلوبان' }, { status: 400 });
@@ -52,9 +53,10 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const newUser = await db.users.create({
+    const newUser = await (db.users as any).create({
       data: {
         name: trimmedName,
+        short_name: shortName ? shortName.trim() : null,
         phone: phone || null,
         password_hash: passwordHash,
         role: role || 'employee',
@@ -80,7 +82,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { userId, name, phone, password, role, jobTitle, salary, permissions, isActive } = await req.json();
+    const { userId, name, shortName, phone, password, role, jobTitle, salary, permissions, isActive } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'معرف الموظف مطلوب' }, { status: 400 });
@@ -89,6 +91,7 @@ export async function PUT(req: Request) {
     const updateData: any = {};
 
     if (name) updateData.name = name.trim();
+    if (shortName !== undefined) updateData.short_name = shortName ? shortName.trim() : null;
     if (phone !== undefined) updateData.phone = phone || null;
     if (password) updateData.password_hash = await bcrypt.hash(password, 10);
     if (role) updateData.role = role;
@@ -97,7 +100,7 @@ export async function PUT(req: Request) {
     if (permissions !== undefined) updateData.permissions = permissions;
     if (isActive !== undefined) updateData.is_active = isActive;
 
-    const updatedUser = await db.users.update({
+    const updatedUser = await (db.users as any).update({
       where: { id: userId },
       data: updateData
     });
@@ -105,41 +108,6 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error: any) {
     console.error('Update User Error:', error);
-    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تحديث بيانات الموظف' }, { status: 500 });
-  }
-}
-
-// Manager Delete / Deactivate User
-export async function DELETE(req: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
-
-  try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('id');
-
-    if (!userId) return NextResponse.json({ error: 'معرف الموظف مطلوب' }, { status: 400 });
-
-    if (userId === user.id) {
-      return NextResponse.json({ error: 'لا يمكنك حذف حسابك الحالي أثناء تسجيل الدخول منه' }, { status: 400 });
-    }
-
-    try {
-      await db.users.delete({
-        where: { id: userId }
-      });
-    } catch (e) {
-      await db.users.update({
-        where: { id: userId },
-        data: { is_active: false }
-      });
-    }
-
-    return NextResponse.json({ success: true, message: 'تم حذف الموظف بنجاح' });
-  } catch (error: any) {
-    console.error('Delete User Error:', error);
-    return NextResponse.json({ error: 'حدث خطأ أثناء حذف الموظف' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل بيانات الموظف' }, { status: 500 });
   }
 }

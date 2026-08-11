@@ -20,6 +20,7 @@ model users {
   id                String    @id @default(uuid()) @db.Uuid
   legacy_id         String?   @unique @db.Text
   name              String    @db.Text
+  short_name        String?   @db.VarChar(100)
   phone             String?   @db.Text
   whatsapp          String?   @db.Text
   email             String?   @db.Text

@@ -69,12 +69,28 @@ export async function GET() {
     const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
     // 5. Calculate online cashiers summary (active shift cashiers & cash balances)
+    const userRecords = await (db.users as any).findMany({
+      select: { id: true, name: true, short_name: true }
+    });
+
     const onlineCashiers = activeShifts.map((s: any) => {
+      const uRec = userRecords.find((u: any) => u.id === s.employee_id);
       const userDrawer = drawers.find((d: any) => d.custodian_id === s.employee_id);
       const bal = userDrawer ? Number(userDrawer.actual_balance || userDrawer.current_balance || 0) : 0;
+
+      let displayName = uRec?.short_name || s.employee_name || 'موظف';
+      if (!uRec?.short_name) {
+        if (displayName.startsWith('أ/ ')) {
+          displayName = displayName.replace(/^أ\/\s*/, '').trim();
+        }
+        if (displayName.includes(' ')) {
+          displayName = displayName.split(' ')[0];
+        }
+      }
+
       return {
         id: s.employee_id,
-        name: s.employee_name ? s.employee_name.split(' ')[0] : 'موظف',
+        name: displayName,
         fullName: s.employee_name || 'موظف',
         balance: Math.round(bal)
       };
