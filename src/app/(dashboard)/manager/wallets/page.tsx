@@ -229,7 +229,7 @@ export default function ManagerWalletsPage() {
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-slate-600 whitespace-nowrap">{item.wallet_number || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
-                      {formatNumberLocale(Number(item.current_balance || 0), 'ar-EG')}
+                      {formatNumberLocale(Number(item.current_balance || 0), 'en-US')}
                     </td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.custodian_name || 'ماسـبيرو (المركز)'}</td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">

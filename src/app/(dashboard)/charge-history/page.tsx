@@ -244,7 +244,7 @@ export default function ChargeHistoryPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-blue-600 whitespace-nowrap">{item.invoice_code || '-'}</td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                        {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
+                        {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.description || '-'}</td>
                       {currentUser?.role === 'manager' && (

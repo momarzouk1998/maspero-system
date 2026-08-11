@@ -181,7 +181,7 @@ export async function POST(req: Request) {
           data: {
             date: today,
             transaction_month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-            time_str: today.toLocaleTimeString('ar-EG'),
+            time_str: today.toLocaleTimeString('en-US'),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
             transaction_type: 'إيداع',

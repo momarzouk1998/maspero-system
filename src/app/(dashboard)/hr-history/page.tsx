@@ -261,7 +261,7 @@ export default function HRHistoryPage() {
                         {item.notes || '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                        {item.date ? new Date(item.date).toLocaleDateString('ar-EG') : '-'}
+                        {item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}
                       </td>
 
                       <td className="px-4 py-3 text-center whitespace-nowrap">

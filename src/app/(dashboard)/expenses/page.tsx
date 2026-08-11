@@ -7,7 +7,7 @@ import {
   CheckCircle2, AlertCircle, RefreshCw, Trash2, ArrowRight, ShieldCheck,
   Building2, Wallet, ArrowDownLeft, ArrowUpRight, Plane, XSquare
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
 export default function FinancialAndHROperationsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -367,19 +367,19 @@ export default function FinancialAndHROperationsPage() {
                   <div>
                     <span className="text-xs text-amber-800 font-semibold block mb-0.5">الراتب الأساسي:</span>
                     <span className="text-sm font-bold font-mono text-slate-900">
-                      {finStats.baseSalary.toLocaleString('ar-EG')}
+                      {formatNumberLocale(finStats.baseSalary, 'en-US')}
                     </span>
                   </div>
                   <div>
                     <span className="text-xs text-amber-800 font-semibold block mb-0.5">المسحوب خلال الشهر:</span>
                     <span className="text-sm font-bold font-mono text-amber-900">
-                      {finStats.totalDrawnThisMonth.toLocaleString('ar-EG')}
+                      {formatNumberLocale(finStats.totalDrawnThisMonth, 'en-US')}
                     </span>
                   </div>
                   <div>
                     <span className="text-xs text-amber-800 font-semibold block mb-0.5">المتبقي من الراتب:</span>
                     <span className="text-sm font-bold font-mono text-emerald-800">
-                      {finStats.remainingSalary.toLocaleString('ar-EG')}
+                      {formatNumberLocale(finStats.remainingSalary, 'en-US')}
                     </span>
                   </div>
                 </div>

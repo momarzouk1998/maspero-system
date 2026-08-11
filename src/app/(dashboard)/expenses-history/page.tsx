@@ -214,12 +214,12 @@ export default function ExpensesHistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
-                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'en-US')}
                     </td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                      {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-EG') : '-'}
+                      {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                     </td>
                     {currentUser?.role === 'manager' && (
                       <td className="px-4 py-3 text-center whitespace-nowrap">

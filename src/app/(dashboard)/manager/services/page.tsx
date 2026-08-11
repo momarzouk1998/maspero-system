@@ -207,7 +207,7 @@ export default function ManagerServicesPage() {
                       {item.is_commissionable ? `${Number(item.commission_percent)}%` : '0%'}
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {formatNumberLocale(Number(item.price || 0), 'ar-EG')}
+                      {formatNumberLocale(Number(item.price || 0), 'en-US')}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">

@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     // PREVENT NEGATIVE BALANCE CONSTRAINT FOR WALLETS, MACHINES & DRAWERS
     if (newBal < 0) {
       return NextResponse.json({
-        error: `عذراً، رصيد (${wallet.wallet_name}) لا يكفي للعملية (الرصيد المتاح: ${currentBal.toLocaleString('ar-EG')}) ولا يمكن أن يصبح بالسالب!`
+        error: `عذراً، رصيد (${wallet.wallet_name}) لا يكفي للعملية (الرصيد المتاح: ${currentBal.toLocaleString('en-US')}) ولا يمكن أن يصبح بالسالب!`
       }, { status: 400 });
     }
 

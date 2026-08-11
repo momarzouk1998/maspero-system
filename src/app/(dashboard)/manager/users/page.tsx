@@ -384,10 +384,10 @@ export default function ManagerUsersPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600 dir-ltr text-right whitespace-nowrap">{u.phone || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
-                      {formatNumberLocale(Number(u.salary || 0), 'ar-EG')}
+                      {formatNumberLocale(Number(u.salary || 0), 'en-US')}
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
-                      {formatNumberLocale(Number(u.wallet_balance || 0), 'ar-EG')}
+                      {formatNumberLocale(Number(u.wallet_balance || 0), 'en-US')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${

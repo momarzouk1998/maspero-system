@@ -142,7 +142,7 @@ export default function ProfilePage() {
                 <span>عهدة الكاش الحالية:</span>
               </span>
               <span className="font-black font-mono text-sm text-emerald-700">
-                {formatNumberLocale(Number(user?.wallet_balance || 0), 'ar-EG')}
+                {formatNumberLocale(Number(user?.wallet_balance || 0), 'en-US')}
               </span>
             </div>
           </div>

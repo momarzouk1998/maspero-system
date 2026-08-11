@@ -211,7 +211,7 @@ export default function ManagerNotesPage() {
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
                 <span className="flex items-center gap-1 font-mono">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  {n.created_at ? new Date(n.created_at).toLocaleDateString('ar-EG') : '-'}
+                  {n.created_at ? new Date(n.created_at).toLocaleDateString('en-US') : '-'}
                 </span>
 
                 <div className="flex items-center gap-1.5">

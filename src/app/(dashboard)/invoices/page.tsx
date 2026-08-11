@@ -104,7 +104,7 @@ export default function InvoicesHistoryPage() {
       if (res.ok) {
         const data = await res.json();
         const formattedDate = data.timestamp 
-          ? new Date(data.timestamp).toLocaleString('ar-EG', {
+          ? new Date(data.timestamp).toLocaleString('en-US', {
               year: 'numeric', month: 'long', day: 'numeric',
               hour: '2-digit', minute: '2-digit'
             })
@@ -292,7 +292,7 @@ export default function InvoicesHistoryPage() {
                       {inv.code}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {inv.timestamp ? new Date(inv.timestamp).toLocaleString('ar-EG') : '-'}
+                      {inv.timestamp ? new Date(inv.timestamp).toLocaleString('en-US') : '-'}
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{inv.employeeName}</td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">{inv.itemCount} عناصر</td>

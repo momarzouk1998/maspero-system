@@ -268,7 +268,7 @@ export default function HandoverHistoryPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.discrepancy_reason || '-'}</td>
                       <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                        {item.created_at ? new Date(item.created_at).toLocaleString('ar-EG') : '-'}
+                        {item.created_at ? new Date(item.created_at).toLocaleString('en-US') : '-'}
                       </td>
 
                       {currentUser?.role === 'manager' && (

@@ -224,7 +224,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono whitespace-nowrap">
-                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'en-US')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1">
@@ -233,7 +233,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                      {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
+                      {new Date(item.timestamp || item.date).toLocaleDateString('en-US')}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate whitespace-nowrap">
                       {item.notes || '-'}

@@ -216,13 +216,13 @@ export default function ShiftsHistoryPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleDateString('ar-EG') : '-'}
+                      {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleTimeString('ar-EG') : '-'}
+                      {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.end_time ? new Date(item.end_time).toLocaleTimeString('ar-EG') : (
+                      {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
                         <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
                       )}
                     </td>

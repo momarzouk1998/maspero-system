@@ -208,13 +208,13 @@ export default function TicketsPage() {
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
                     <td className="px-4 py-3 font-mono text-slate-700">
-                      {formatNumberLocale(Number(item.ticket_price), 'ar-EG')}
+                      {formatNumberLocale(Number(item.ticket_price), 'en-US')}
                     </td>
                     <td className="px-4 py-3 font-bold text-purple-700 font-mono">
-                      {formatNumberLocale(Number(item.ticket_commission), 'ar-EG')}
+                      {formatNumberLocale(Number(item.ticket_commission), 'en-US')}
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
-                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'en-US')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs">
                       <span className="flex items-center gap-1">
@@ -223,7 +223,7 @@ export default function TicketsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 font-mono">
-                      {new Date(item.timestamp || item.date).toLocaleDateString('ar-EG')}
+                      {new Date(item.timestamp || item.date).toLocaleDateString('en-US')}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
                       {item.notes || '-'}

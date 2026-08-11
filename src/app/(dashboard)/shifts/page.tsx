@@ -502,7 +502,7 @@ export default function ShiftsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500">وقت البداية:</span>
                   <span className="text-sm font-bold font-mono text-emerald-800 dir-ltr">
-                    {new Date(activeShift.start_time).toLocaleTimeString('ar-EG')}
+                    {new Date(activeShift.start_time).toLocaleTimeString('en-US')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -901,7 +901,7 @@ export default function ShiftsPage() {
                   return (
                     <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-slate-600 font-mono whitespace-nowrap">
-                        {t.created_at ? new Date(t.created_at).toLocaleString('ar-EG') : '-'}
+                        {t.created_at ? new Date(t.created_at).toLocaleString('en-US') : '-'}
                       </td>
                       <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{t.sender_name}</td>
                       <td className="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">{t.receiver_name}</td>

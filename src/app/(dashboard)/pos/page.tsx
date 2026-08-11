@@ -72,7 +72,7 @@ export default function POSPage() {
         ));
         setEmployeeName(data.employeeName || 'غير محدد');
         if (data.timestamp) {
-          setTimestamp(new Date(data.timestamp).toLocaleString('ar-EG', {
+          setTimestamp(new Date(data.timestamp).toLocaleString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric',
             hour: '2-digit', minute: '2-digit'
           }));

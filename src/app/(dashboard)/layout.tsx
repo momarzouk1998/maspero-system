@@ -31,6 +31,7 @@ import {
   User
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
+import { formatNumberLocale } from '@/lib/user-utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -269,7 +270,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Wallet className="w-4 h-4 text-emerald-700" />
                 <div className="text-xs">
                   <span className="text-slate-600 block text-[10px]">عهدة الكاش</span>
-                  <span className="font-extrabold text-sm">{Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}</span>
+                  <span className="font-extrabold text-sm">{formatNumberLocale(Number(user?.wallet_balance || 0), 'en-US')}</span>
                 </div>
               </div>
             </Link>

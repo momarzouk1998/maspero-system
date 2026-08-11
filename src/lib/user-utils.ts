@@ -22,7 +22,7 @@ export function formatNumber(num: number | string, decimals: number = 2): string
 
 // Format number with locale and remove trailing zeros
 // Example: 10.00 -> 10, 10.50 -> 10.5, 1000 -> 1,000
-export function formatNumberLocale(num: number | string, locale: string = 'ar-EG', decimals: number = 2): string {
+export function formatNumberLocale(num: number | string, locale: string = 'en-US', decimals: number = 2): string {
   const numericValue = typeof num === 'string' ? parseFloat(num) : num;
   if (isNaN(numericValue)) return '0';
   
