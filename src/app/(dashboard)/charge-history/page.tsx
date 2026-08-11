@@ -6,7 +6,7 @@ import {
   Zap, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
   ArrowDownLeft, ArrowUpRight, Wallet, User, X, Trash2, Edit3, ArrowRight
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function ChargeHistoryPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -233,9 +233,9 @@ export default function ChargeHistoryPage() {
                           <span>{item.transaction_type}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{amt.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono text-amber-700 whitespace-nowrap">{comm.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700 whitespace-nowrap">{totalCollected.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(amt)}</td>
+                      <td className="px-4 py-3 font-mono text-amber-700 whitespace-nowrap">{formatNumber(comm)}</td>
+                      <td className="px-4 py-3 font-mono font-extrabold text-emerald-700 whitespace-nowrap">{formatNumber(totalCollected)}</td>
                       <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3 text-slate-500" />

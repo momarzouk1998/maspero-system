@@ -6,7 +6,7 @@ import {
   Wallet, Cpu, Archive, Edit3, Plus, Trash2, CheckCircle2, AlertCircle, 
   RefreshCw, X, ArrowRight, ShieldCheck, Phone
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
 export default function ManagerWalletsPage() {
   const [wallets, setWallets] = useState<any[]>([]);
@@ -229,7 +229,7 @@ export default function ManagerWalletsPage() {
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-slate-600 whitespace-nowrap">{item.wallet_number || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
-                      {Number(item.current_balance || 0).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.current_balance || 0), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.custodian_name || 'ماسـبيرو (المركز)'}</td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">

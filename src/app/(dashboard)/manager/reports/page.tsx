@@ -8,6 +8,7 @@ import {
   FileText, ArrowDownLeft, ArrowUpRight, Zap, Wallet, Building2,
   Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle
 } from 'lucide-react';
+import { formatNumber, formatNumberLocale } from '@/lib/user-utils';
 
 export default function ManagerReportsPage() {
   const [data, setData] = useState<any>(null);
@@ -131,7 +132,7 @@ export default function ManagerReportsPage() {
                 </div>
                 <div className="text-left">
                   <span className={`text-3xl font-bold font-mono ${Number(metrics.netProfit || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    {Number(metrics.netProfit || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.netProfit || 0), 'en-US')}
                   </span>
                 </div>
               </div>
@@ -159,7 +160,7 @@ export default function ManagerReportsPage() {
                     <TrendingUp className="w-5 h-5 text-emerald-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.totalRevenue || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.totalRevenue || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">المبيعات</p>
                 </div>
@@ -171,7 +172,7 @@ export default function ManagerReportsPage() {
                     <Coins className="w-5 h-5 text-indigo-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.totalCommissions || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.totalCommissions || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">محافظ + ماكينات + تذاكر</p>
                 </div>
@@ -183,7 +184,7 @@ export default function ManagerReportsPage() {
                     <Receipt className="w-5 h-5 text-rose-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.otherExpenses || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.otherExpenses || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الإدارة والمحل</p>
                 </div>
@@ -195,7 +196,7 @@ export default function ManagerReportsPage() {
                     <DollarSign className="w-5 h-5 text-amber-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.salaries || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.salaries || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الموظفين</p>
                 </div>
@@ -207,7 +208,7 @@ export default function ManagerReportsPage() {
                     <ShoppingBag className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.purchasesCost || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.purchasesCost || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">{metrics.purchasesCostPercent || 0}%</p>
                 </div>
@@ -219,7 +220,7 @@ export default function ManagerReportsPage() {
                     <ArrowUpRight className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.withdrawnRevenue || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.withdrawnRevenue || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الأرباح الشخصية</p>
                 </div>
@@ -231,7 +232,7 @@ export default function ManagerReportsPage() {
                     <Printer className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.paperCount || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.paperCount || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">ورقة</p>
                 </div>
@@ -243,7 +244,7 @@ export default function ManagerReportsPage() {
                     <Train className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.ticketCount || 0).toLocaleString('en-US')}
+                    {formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">تذكرة</p>
                 </div>
@@ -255,7 +256,7 @@ export default function ManagerReportsPage() {
                     <Zap className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.walletCommission || 0).toFixed(2)}
+                    {formatNumber(Number(metrics.walletCommission || 0))}
                   </h3>
                   <p className="text-[11px] text-slate-500">فودافون كاش</p>
                 </div>
@@ -267,7 +268,7 @@ export default function ManagerReportsPage() {
                     <Cpu className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.machineWithdrawlCommission || 0).toFixed(2)}
+                    {formatNumber(Number(metrics.machineWithdrawlCommission || 0))}
                   </h3>
                   <p className="text-[11px] text-slate-500">فوري وأمان</p>
                 </div>
@@ -279,9 +280,9 @@ export default function ManagerReportsPage() {
                     <Coins className="w-5 h-5 text-slate-600" />
                   </div>
                   <h3 className="text-2xl font-bold font-mono text-slate-900">
-                    {Number(metrics.machineDepositsCommission || 0).toFixed(2)}
+                    {formatNumber(Number(metrics.machineDepositsCommission || 0))}
                   </h3>
-                  <p className="text-[11px] text-slate-500">{Number(metrics.machineDeposits || 0).toLocaleString('en-US')}</p>
+                  <p className="text-[11px] text-slate-500">{formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')}</p>
                 </div>
               </div>
 
@@ -303,7 +304,7 @@ export default function ManagerReportsPage() {
                     <span className="text-[11px] font-bold text-slate-700">المحافظ</span>
                     <Wallet className="w-5 h-5 text-indigo-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">{Number(walletsTotals.محافظ).toLocaleString('en-US')}</h3>
+                  <h3 className="text-2xl font-bold font-mono text-slate-900">{formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')}</h3>
                   <p className="text-[11px] text-slate-500">{walletsByType.محافظ.length} محفظة</p>
                 </div>
                 <div className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
@@ -311,7 +312,7 @@ export default function ManagerReportsPage() {
                     <span className="text-[11px] font-bold text-slate-700">الماكينات</span>
                     <Building2 className="w-5 h-5 text-slate-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">{Number(walletsTotals.ماكينات).toLocaleString('en-US')}</h3>
+                  <h3 className="text-2xl font-bold font-mono text-slate-900">{formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')}</h3>
                   <p className="text-[11px] text-slate-500">{walletsByType.ماكينات.length} ماكينة</p>
                 </div>
                 <div className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
@@ -319,7 +320,7 @@ export default function ManagerReportsPage() {
                     <span className="text-[11px] font-bold text-slate-700">الأدراج</span>
                     <Archive className="w-5 h-5 text-amber-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">{Number(walletsTotals.أدراج).toLocaleString('en-US')}</h3>
+                  <h3 className="text-2xl font-bold font-mono text-slate-900">{formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')}</h3>
                   <p className="text-[11px] text-slate-500">{walletsByType.أدراج.length} درج</p>
                 </div>
                 <div className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white space-y-1">
@@ -327,7 +328,7 @@ export default function ManagerReportsPage() {
                     <span className="text-[11px] font-bold text-slate-700">عهدة الموظفين</span>
                     <Users className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">{Number(totalEmployeeCustody).toLocaleString('en-US')}</h3>
+                  <h3 className="text-2xl font-bold font-mono text-slate-900">{formatNumberLocale(Number(totalEmployeeCustody), 'en-US')}</h3>
                   <p className="text-[11px] text-slate-500">{employeeCustody.length} موظف</p>
                 </div>
               </div>
@@ -346,7 +347,7 @@ export default function ManagerReportsPage() {
                       </div>
                     </div>
                     <span className="text-sm font-bold font-mono text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                      {Number(walletsTotals.محافظ).toLocaleString('en-US')}
+                      {formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')}
                     </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -364,7 +365,7 @@ export default function ManagerReportsPage() {
                           </div>
                         </div>
                         <span className={`text-sm font-bold font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                          {Number(w.current_balance).toLocaleString('en-US')}
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </span>
                       </div>
                     ))}
@@ -386,7 +387,7 @@ export default function ManagerReportsPage() {
                       </div>
                     </div>
                     <span className="text-sm font-bold font-mono text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                      {Number(walletsTotals.ماكينات).toLocaleString('en-US')}
+                      {formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')}
                     </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -404,7 +405,7 @@ export default function ManagerReportsPage() {
                           </div>
                         </div>
                         <span className={`text-sm font-bold font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                          {Number(w.current_balance).toLocaleString('en-US')}
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </span>
                       </div>
                     ))}
@@ -426,7 +427,7 @@ export default function ManagerReportsPage() {
                       </div>
                     </div>
                     <span className="text-sm font-bold font-mono text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                      {Number(walletsTotals.أدراج).toLocaleString('en-US')}
+                      {formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')}
                     </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -444,7 +445,7 @@ export default function ManagerReportsPage() {
                           </div>
                         </div>
                         <span className={`text-sm font-bold font-mono ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                          {Number(w.current_balance).toLocaleString('en-US')}
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </span>
                       </div>
                     ))}
@@ -466,7 +467,7 @@ export default function ManagerReportsPage() {
                       </div>
                     </div>
                     <span className="text-sm font-bold font-mono text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                      {Number(totalEmployeeCustody).toLocaleString('en-US')}
+                      {formatNumberLocale(Number(totalEmployeeCustody), 'en-US')}
                     </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -488,7 +489,7 @@ export default function ManagerReportsPage() {
                             <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
                           )}
                           <span className={`text-sm font-bold font-mono ${emp.walletBalance < 0 ? 'text-rose-600' : emp.walletBalance === 0 ? 'text-slate-400' : 'text-slate-900'}`}>
-                            {Number(emp.walletBalance).toLocaleString('en-US')}
+                            {formatNumberLocale(Number(emp.walletBalance), 'en-US')}
                           </span>
                         </div>
                       </div>
@@ -518,7 +519,7 @@ export default function ManagerReportsPage() {
               >
                 <span>📅 {m.month}</span>
                 <span className="px-2 py-0.5 rounded-lg font-mono text-[11px] bg-slate-100 text-slate-800">
-                  {Number(m.totalSum || 0).toLocaleString('en-US')}
+                  {formatNumberLocale(Number(m.totalSum || 0), 'en-US')}
                 </span>
               </button>
             ))}
@@ -528,7 +529,7 @@ export default function ManagerReportsPage() {
             <div className="flex items-center justify-between border-b pb-4 border-slate-200">
               <h3 className="text-base font-bold text-slate-900">الماليات لشهر ({selectedMonth || '-'})</h3>
               <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                إجمالي الشهر: {Number(activeMonthReport.totalSum || 0).toLocaleString('en-US')}
+                إجمالي الشهر: {formatNumberLocale(Number(activeMonthReport.totalSum || 0), 'en-US')}
               </span>
             </div>
 
@@ -550,7 +551,7 @@ export default function ManagerReportsPage() {
                       <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}</td>
                       <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap">{item.main_type}</td>
                       <td className="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">{item.items || '-'}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{Number(item.amount).toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(Number(item.amount))}</td>
                       <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{item.employee_name || '-'}</td>
                       <td className="px-3 py-3 text-slate-500 whitespace-nowrap">{item.notes || '-'}</td>
                     </tr>
@@ -578,7 +579,7 @@ export default function ManagerReportsPage() {
               >
                 <span>🏷️ {c.category}</span>
                 <span className="px-2 py-0.5 rounded-lg font-mono text-[11px] bg-slate-100 text-slate-800">
-                  {Number(c.totalSum || 0).toLocaleString('en-US')}
+                  {formatNumberLocale(Number(c.totalSum || 0), 'en-US')}
                 </span>
               </button>
             ))}
@@ -588,7 +589,7 @@ export default function ManagerReportsPage() {
             <div className="flex items-center justify-between border-b pb-4 border-slate-200">
               <h3 className="text-base font-bold text-slate-900">التعاملات لتصنيف ({selectedCategory})</h3>
               <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                إجمالي التصنيف: {Number(activeCategoryReport.totalSum || 0).toLocaleString('en-US')}
+                إجمالي التصنيف: {formatNumberLocale(Number(activeCategoryReport.totalSum || 0), 'en-US')}
               </span>
             </div>
 
@@ -610,7 +611,7 @@ export default function ManagerReportsPage() {
                       <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}</td>
                       <td className="px-3 py-3 font-mono font-bold text-slate-700 whitespace-nowrap">{item.month || '-'}</td>
                       <td className="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">{item.items || '-'}</td>
-                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{Number(item.amount).toFixed(2)}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(Number(item.amount))}</td>
                       <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{item.employee_name || '-'}</td>
                       <td className="px-3 py-3 text-slate-500 whitespace-nowrap">{item.notes || '-'}</td>
                     </tr>

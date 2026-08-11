@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSign, Wallet, Clock, Search, CheckCircle2, AlertCircle, Shield, Check, X, ArrowRight, Trash2, HelpCircle } from 'lucide-react';
+import { formatNumberLocale } from '@/lib/user-utils';
 
 const FEATURES_LIST = [
   { key: 'services', label: 'تسجيل الخدمات والطباعة' },
@@ -383,10 +384,10 @@ export default function ManagerUsersPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600 dir-ltr text-right whitespace-nowrap">{u.phone || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
-                      {Number(u.salary || 0).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(u.salary || 0), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
-                      {Number(u.wallet_balance || 0).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(u.wallet_balance || 0), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${

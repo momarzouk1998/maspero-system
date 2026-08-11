@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Train, Search, Filter, Calendar, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, Edit3, ArrowRight } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
 export default function TicketsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -208,13 +208,13 @@ export default function TicketsPage() {
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
                     <td className="px-4 py-3 font-mono text-slate-700">
-                      {Number(item.ticket_price).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.ticket_price), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 font-bold text-purple-700 font-mono">
-                      {Number(item.ticket_commission).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.ticket_commission), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono">
-                      {Number(item.amount).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs">
                       <span className="flex items-center gap-1">

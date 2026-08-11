@@ -8,3 +8,28 @@ export function getActiveUsers(users: any[]): any[] {
 export function isUserActive(user: any): boolean {
   return user?.is_active !== false && user?.is_active !== 'false';
 }
+
+// Format number to remove trailing zeros after decimal point
+// Example: 10.00 -> 10, 10.50 -> 10.5, 10.123 -> 10.12 (if using toFixed(2))
+export function formatNumber(num: number | string, decimals: number = 2): string {
+  const numericValue = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(numericValue)) return '0';
+  
+  const fixed = numericValue.toFixed(decimals);
+  // Remove trailing zeros and decimal point if all zeros
+  return fixed.replace(/\.?0+$/, '');
+}
+
+// Format number with locale and remove trailing zeros
+// Example: 10.00 -> 10, 10.50 -> 10.5, 1000 -> 1,000
+export function formatNumberLocale(num: number | string, locale: string = 'ar-EG', decimals: number = 2): string {
+  const numericValue = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(numericValue)) return '0';
+  
+  const formatted = numericValue.toLocaleString(locale, { 
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals 
+  });
+  
+  return formatted;
+}

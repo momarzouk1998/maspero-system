@@ -6,6 +6,7 @@ import {
   Users, Search, Calendar, RefreshCw, CheckCircle2, AlertTriangle, 
   ArrowRight, DollarSign, Clock, UserCheck, ShieldCheck, Coins
 } from 'lucide-react';
+import { formatNumber } from '@/lib/user-utils';
 
 export default function EmployeePayrollReportPage() {
   const [data, setData] = useState<any>(null);
@@ -13,11 +14,6 @@ export default function EmployeePayrollReportPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
-
-  // Helper function to remove trailing zeros from decimal numbers
-  const formatNumber = (num: number) => {
-    return num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
-  };
 
   const fetchPayroll = async () => {
     setLoading(true);

@@ -6,7 +6,7 @@ import {
   ArrowLeftRight, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
   User, X, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, Info, Wallet, Trash2, ThumbsUp
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function HandoverHistoryPage() {
   const [handovers, setHandovers] = useState<any[]>([]);
@@ -217,10 +217,10 @@ export default function HandoverHistoryPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">{item.sender_name || '-'}</td>
                       <td className="px-4 py-3 text-xs font-bold text-blue-700 whitespace-nowrap">{item.receiver_name || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{exp.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{formatNumber(exp)}</td>
                       <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span>{act.toFixed(2)}</span>
+                          <span>{formatNumber(act)}</span>
                           {/* Item 5: Concise Like 👍 button right next to value for manager review */}
                           {currentUser?.role === 'manager' && item.review_status !== 'تم المراجعة بواسطة المدير' && (
                             <button
@@ -236,7 +236,7 @@ export default function HandoverHistoryPage() {
                       <td className={`px-4 py-3 font-mono font-bold text-xs whitespace-nowrap ${
                         diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-emerald-600'
                       }`}>
-                        {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
+                        {diff > 0 ? `+${formatNumber(diff)}` : formatNumber(diff)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {(() => {

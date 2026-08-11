@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import { formatNumber } from '@/lib/user-utils';
 
 export interface InvoiceItem {
   id: string;
@@ -388,7 +389,7 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
             <div className="total-section">
               <h3>الإجمالي الكلي</h3>
               <div className="total-amount" style={{ color: total < 0 ? '#c62828' : '#2e7d32' }}>
-                <span>{Number.isInteger(Math.abs(total)) ? Math.abs(total) : Math.abs(total).toFixed(2)}</span>
+                <span>{formatNumber(Math.abs(total))}</span>
               </div>
             </div>
           </div>

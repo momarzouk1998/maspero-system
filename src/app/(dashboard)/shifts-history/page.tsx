@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2, Edit3 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function ShiftsHistoryPage() {
   const [shifts, setShifts] = useState<any[]>([]);
@@ -227,7 +227,7 @@ export default function ShiftsHistoryPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
-                      {Number(item.total_hours || 0).toFixed(2)} ساعة
+                      {formatNumber(Number(item.total_hours || 0))} ساعة
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
                     {currentUser?.role === 'manager' && (

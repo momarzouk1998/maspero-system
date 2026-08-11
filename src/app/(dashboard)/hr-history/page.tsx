@@ -6,7 +6,7 @@ import {
   Gift, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
   User, X, ArrowRight, CheckCircle2, AlertTriangle, Trash2, Check, Clock, UserCheck
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function HRHistoryPage() {
   const [hrItems, setHrItems] = useState<any[]>([]);
@@ -245,7 +245,7 @@ export default function HRHistoryPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                        {Number(item.hours).toFixed(2)} س
+                        {formatNumber(Number(item.hours))} س
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${

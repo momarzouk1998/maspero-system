@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Printer, Search, Filter, Calendar, FileText, ChevronRight, ChevronLeft, RefreshCw, X, User, Trash2, Edit3, ArrowRight } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
 export default function ServicesPage() {
   const [entries, setEntries] = useState<any[]>([]);
@@ -224,7 +224,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono whitespace-nowrap">
-                      {Number(item.amount).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1">

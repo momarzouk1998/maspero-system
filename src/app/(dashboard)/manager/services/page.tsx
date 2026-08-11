@@ -6,6 +6,7 @@ import {
   Printer, ArrowRight, Plus, Edit3, Trash2, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck, Percent
 } from 'lucide-react';
 import ServiceIcon from '@/components/ServiceIcon';
+import { formatNumberLocale } from '@/lib/user-utils';
 
 export default function ManagerServicesPage() {
   const [services, setServices] = useState<any[]>([]);
@@ -206,7 +207,7 @@ export default function ManagerServicesPage() {
                       {item.is_commissionable ? `${Number(item.commission_percent)}%` : '0%'}
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {Number(item.price || 0).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.price || 0), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">

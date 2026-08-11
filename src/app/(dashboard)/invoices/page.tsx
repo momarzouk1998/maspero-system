@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, RefreshCw, Eye, User, Trash2, ArrowRight
 } from 'lucide-react';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function InvoicesHistoryPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -297,7 +297,7 @@ export default function InvoicesHistoryPage() {
                     <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{inv.employeeName}</td>
                     <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">{inv.itemCount} عناصر</td>
                     <td className="px-4 py-3 font-bold font-mono text-slate-900 text-base whitespace-nowrap">
-                      {Number(inv.total).toFixed(2)}
+                      {formatNumber(Number(inv.total))}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">

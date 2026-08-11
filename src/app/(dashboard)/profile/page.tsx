@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { 
   User, Lock, Shield, Phone, KeyRound, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Wallet
 } from 'lucide-react';
+import { formatNumberLocale } from '@/lib/user-utils';
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -141,7 +142,7 @@ export default function ProfilePage() {
                 <span>عهدة الكاش الحالية:</span>
               </span>
               <span className="font-black font-mono text-sm text-emerald-700">
-                {Number(user?.wallet_balance || 0).toLocaleString('ar-EG')}
+                {formatNumberLocale(Number(user?.wallet_balance || 0), 'ar-EG')}
               </span>
             </div>
           </div>

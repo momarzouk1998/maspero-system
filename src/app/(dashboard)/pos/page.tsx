@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
+import { KioskPrintGuideModal } from '@/components/pos/kiosk-print-guide-modal';
 import ServiceIcon from '@/components/ServiceIcon';
+import { formatNumber } from '@/lib/user-utils';
 
 // ─── Types ───────────────────────────────────────────────
 interface OpenInvoice {
@@ -146,6 +148,11 @@ export default function POSPage() {
 
   // ─── Service Popup ───────────────────────────────────────
   const [svcPopup,    setSvcPopup]    = useState<any | null>(null);
+  const [printModalData, setPrintModalData] = useState<any | null>(null);
+  const [isCashierPrint, setIsCashierPrint] = useState(true);
+
+  // Kiosk Print Guide Modal
+  const [showKioskGuideModal, setShowKioskGuideModal] = useState(false);
   const [svcFace,     setSvcFace]     = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
   const [svcPaper,    setSvcPaper]    = useState(0);
   const [svcAmt,      setSvcAmt]      = useState(0);
@@ -280,18 +287,30 @@ export default function POSPage() {
             <h1 className="text-lg font-bold text-slate-900">صفحة البيع</h1>
           </div>
 
-          {/* Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
-          {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              {custodyData.onlineCashiers.map((c: any) => (
-                <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{c.name}:</span>
-                  <span className="font-mono text-emerald-700">{c.balance}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Kiosk Printing Setup Guide Button */}
+            <button
+              onClick={() => setShowKioskGuideModal(true)}
+              className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs rounded-xl border border-amber-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              title="دليل تفعيل الطباعة الفورية المباشرة بدون نافذة انتظار"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-700" />
+              <span>الطباعة الفورية (الكشك)</span>
+            </button>
+
+            {/* Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
+            {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                {custodyData.onlineCashiers.map((c: any) => (
+                  <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{c.name}:</span>
+                    <span className="font-mono text-emerald-700">{c.balance}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sales Lock Red Alert Warning Banner */}
@@ -461,7 +480,7 @@ export default function POSPage() {
                   <div className="flex items-center gap-2 text-xs text-slate-600 bg-white rounded-xl px-3 py-2 border border-slate-200">
                     <span>الإجمالي:</span>
                     <span className="font-bold font-mono text-emerald-700 text-sm">
-                      {((tktPrice + tktComm) * tktCount).toFixed(2)}
+                      {formatNumber((tktPrice + tktComm) * tktCount)}
                     </span>
                   </div>
                   <button
@@ -516,7 +535,7 @@ export default function POSPage() {
                             {w.wallet_number && <span className="text-xs text-slate-400 mr-1 font-mono">({w.wallet_number})</span>}
                           </td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
+                            {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
@@ -560,7 +579,7 @@ export default function POSPage() {
                         <tr key={w.id} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                            {Number(w.actual_balance || w.current_balance || 0).toFixed(2)}
+                            {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
@@ -863,7 +882,7 @@ export default function POSPage() {
                   {wltPopup.wallet_name}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  الرصيد الحالي: <span className="font-mono font-bold">{Number(wltPopup.actual_balance || wltPopup.current_balance || 0).toFixed(2)}</span>
+                  الرصيد الحالي: <span className="font-mono font-bold">{formatNumber(Number(wltPopup.actual_balance || wltPopup.current_balance || 0))}</span>
                 </p>
               </div>
               <button onClick={() => setWltPopup(null)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
@@ -929,7 +948,7 @@ export default function POSPage() {
             }`}>
               <span className="text-slate-600">الإجمالي المحصّل:</span>
               <span className={`font-bold font-mono ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
-                {(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm).toFixed(2)}
+                {formatNumber(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm)}
               </span>
             </div>
 
@@ -959,9 +978,15 @@ export default function POSPage() {
           employeeName={employeeName}
           items={activeInvoice.items}
           total={activeInvoice.total}
-          isCashierPrint={false}
+          isCashierPrint={isCashierPrint}
         />
       )}
+
+      {/* Kiosk Print Guide Modal */}
+      <KioskPrintGuideModal
+        isOpen={showKioskGuideModal}
+        onClose={() => setShowKioskGuideModal(false)}
+      />
     </div>
   );
 }

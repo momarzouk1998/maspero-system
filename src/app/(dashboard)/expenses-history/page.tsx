@@ -6,7 +6,7 @@ import {
   Receipt, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
   User, X, ArrowRight, Trash2, Edit3, DollarSign, Wallet
 } from 'lucide-react';
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
 export default function ExpensesHistoryPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -214,7 +214,7 @@ export default function ExpensesHistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
-                      {Number(item.amount).toLocaleString('ar-EG')}
+                      {formatNumberLocale(Number(item.amount), 'ar-EG')}
                     </td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>

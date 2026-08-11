@@ -9,7 +9,7 @@ import {
   PlusCircle, Send, Ban, User, Trash2
 } from 'lucide-react';
 
-import { getActiveUsers } from '@/lib/user-utils';
+import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function ShiftsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -670,7 +670,7 @@ export default function ShiftsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                      {formatNumber(Number(item.actual_balance || item.current_balance || 0))}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
@@ -741,7 +741,7 @@ export default function ShiftsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                      {formatNumber(Number(item.actual_balance || item.current_balance || 0))}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
@@ -812,7 +812,7 @@ export default function ShiftsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {Number(item.actual_balance || item.current_balance || 0).toFixed(2)}
+                      {formatNumber(Number(item.actual_balance || item.current_balance || 0))}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
@@ -1001,7 +1001,7 @@ export default function ShiftsPage() {
             <div className="space-y-3.5">
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex justify-between items-center text-xs">
                 <span className="text-slate-600">الرصيد المتوقع بالسيستم:</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">{expectedVal.toFixed(2)}</span>
+                <span className="font-bold text-slate-900 font-mono text-sm">{formatNumber(expectedVal)}</span>
               </div>
 
               <div>
@@ -1020,7 +1020,7 @@ export default function ShiftsPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">الفارق:</span>
                   <span className={`font-bold font-mono text-sm ${diffVal < 0 ? 'text-red-600' : diffVal > 0 ? 'text-blue-600' : 'text-emerald-600'}`}>
-                    {diffVal > 0 ? `+${diffVal.toFixed(2)}` : diffVal.toFixed(2)}
+                    {diffVal > 0 ? `+${formatNumber(diffVal)}` : formatNumber(diffVal)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-slate-200">
