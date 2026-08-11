@@ -239,15 +239,32 @@ export default function HandoverHistoryPage() {
                         {diff > 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                          item.review_status === 'تم المطابقة' || item.review_status?.includes('المطابقة') || item.review_status?.includes('المراجعة')
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                            : item.review_status?.includes('عجز')
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
-                            : 'bg-red-100 text-red-800 border-red-300'
-                        }`}>
-                          <span>{item.review_status || 'تم المطابقة'}</span>
-                        </span>
+                        {(() => {
+                          const status = item.review_status || 'تم المطابقة';
+                          let style = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                          let icon = '✅';
+
+                          if (status === 'الرجاء المراجعة') {
+                            style = 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
+                            icon = '⌛';
+                          } else if (status.includes('عجز')) {
+                            style = 'bg-red-100 text-red-800 border-red-300';
+                            icon = '⚠️';
+                          } else if (status.includes('زيادة')) {
+                            style = 'bg-blue-100 text-blue-800 border-blue-300';
+                            icon = '📈';
+                          } else if (status.includes('بواسطة المدير')) {
+                            style = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                            icon = '👍';
+                          }
+
+                          return (
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${style}`}>
+                              <span>{icon}</span>
+                              <span>{status}</span>
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.discrepancy_reason || '-'}</td>
                       <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
