@@ -33,6 +33,7 @@ export default function ShiftsPage() {
     drawers: any[];
     itemsInUserCustody: any[];
     pendingHandovers: any[];
+    onlineCashiers?: any[];
   }>({
     isUserShiftActive: false,
     isMorningOrSoloShift: true,
@@ -43,7 +44,8 @@ export default function ShiftsPage() {
     machines: [],
     drawers: [],
     itemsInUserCustody: [],
-    pendingHandovers: []
+    pendingHandovers: [],
+    onlineCashiers: []
   });
 
   // Peer Cash Transfers List
