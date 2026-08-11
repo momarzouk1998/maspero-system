@@ -263,6 +263,27 @@ export default function ShiftsPage() {
     }
   };
 
+  // Submit Bulk Deliver All Items to Maspero Center (Single-Click Day Closing)
+  const handleDeliverAllToMaspero = async () => {
+    if (!confirm('تسليم كافة المحافظ والماكينات المسجلة في عهدتك مباشرة لـ (ماسـبيرو - المركز الرئيسي)؟')) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/custody/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deliver_all' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تسليم العهدة');
+      showToast(data.message || 'تم تسليم كافة العهد إلى المركز الرئيسي بنجاح 🏛️');
+      fetchShiftsAndCustody();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Submit Deposit to Cash Drawer Action
   const handleConfirmDepositToDrawer = async (e: React.FormEvent) => {
     e.preventDefault();
