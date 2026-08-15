@@ -65,7 +65,7 @@ export async function GET(req: Request) {
     const totalPaperCount = services.reduce((sum, s) => sum + Number(s.paper_count || s.page_count || 1), 0);
 
     const totalTicketsAmount = tickets.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    const totalTicketCommission = tickets.reduce((sum, t) => sum + Number(t.employee_commission || 0), 0);
+    const totalTicketCommission = tickets.reduce((sum, t) => sum + Number((t as any).ticket_commission || 0), 0);
     const totalTicketsCount = tickets.reduce((sum, t) => sum + Number(t.item_count || 1), 0);
 
     const walletDeposits = walletTx.filter(w => w.transaction_type === 'إيداع').reduce((sum, w) => sum + Number(w.amount || 0), 0);
