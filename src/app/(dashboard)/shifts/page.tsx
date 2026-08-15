@@ -664,9 +664,13 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 text-xs font-mono text-slate-500 whitespace-nowrap">{item.wallet_number || '-'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        item.custodian_name ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        item.custodian_name?.includes('ماسـبيرو')
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : item.custodian_name
+                          ? 'bg-blue-100 text-blue-800 border-blue-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
-                        {item.custodian_name ? item.custodian_name.split(' ')[0] : 'غير مستلمة'}
+                        {item.custodian_name ? (item.custodian_name.includes('ماسـبيرو') ? 'ماسـبيرو (المركز)' : item.custodian_name.split(' ')[0]) : 'غير مستلمة'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
@@ -735,9 +739,13 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        item.custodian_name ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        item.custodian_name?.includes('ماسـبيرو')
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : item.custodian_name
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
-                        {item.custodian_name ? item.custodian_name.split(' ')[0] : 'غير مستلمة'}
+                        {item.custodian_name ? (item.custodian_name.includes('ماسـبيرو') ? 'ماسـبيرو (المركز)' : item.custodian_name.split(' ')[0]) : 'غير مستلمة'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
@@ -806,9 +814,13 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        isCustodyOfUser ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        item.custodian_name?.includes('ماسـبيرو')
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : item.custodian_name
+                          ? 'bg-purple-100 text-purple-800 border-purple-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}>
-                        {isCustodyOfUser ? 'في عهدتك' : 'متاح'}
+                        {item.custodian_name ? (item.custodian_name.includes('ماسـبيرو') ? 'ماسـبيرو (المركز)' : item.custodian_name.split(' ')[0]) : 'غير مستلمة'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">

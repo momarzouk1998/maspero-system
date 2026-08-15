@@ -6,7 +6,7 @@ const db = new PrismaClient();
 
 async function seedArchivedReports() {
   const csvPath = path.join(process.cwd(), 'archive', 'Financial Report Maspero - log Financial Report.csv');
-  
+
   if (!fs.existsSync(csvPath)) {
     console.error('CSV file not found at:', csvPath);
     process.exit(1);

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  ArrowLeftRight, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight, 
+import {
+  ArrowLeftRight, Search, Filter, Calendar, RefreshCw, ChevronLeft, ChevronRight,
   User, X, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, Info, Wallet, Trash2, ThumbsUp
 } from 'lucide-react';
 import { getActiveUsers, formatNumber } from '@/lib/user-utils';
@@ -27,7 +27,7 @@ export default function HandoverHistoryPage() {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data.user))
-      .catch(() => {});
+      .catch(() => { });
 
     fetch('/api/users')
       .then(r => r.json())
@@ -158,11 +158,10 @@ export default function HandoverHistoryPage() {
 
           <button
             onClick={() => setIsFilterOpen(true)}
-            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
-              hasActiveFilters
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${hasActiveFilters
                 ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                 : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-            }`}
+              }`}
           >
             <Filter className="w-4 h-4" />
             <span>تصفية</span>
@@ -233,9 +232,8 @@ export default function HandoverHistoryPage() {
                           )}
                         </div>
                       </td>
-                      <td className={`px-4 py-3 font-mono font-bold text-xs whitespace-nowrap ${
-                        diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-emerald-600'
-                      }`}>
+                      <td className={`px-4 py-3 font-mono font-bold text-xs whitespace-nowrap ${diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-emerald-600'
+                        }`}>
                         {diff > 0 ? `+${formatNumber(diff)}` : formatNumber(diff)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
