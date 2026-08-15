@@ -115,10 +115,7 @@ export async function GET() {
       lockReason = 'برجاء بدء الشفت أولاً من صفحة إدارة الشفتات قبل البدء في المبيعات.';
     } else if (!hasReceivedDrawer) {
       isSalesLocked = true;
-      lockReason = 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً.';
-    } else if (isMorningOrSoloShift && (!hasReceivedAllWallets || !hasReceivedAllMachines)) {
-      isSalesLocked = true;
-      lockReason = 'شفت صباحي/منفرد: برجاء استلام جميع أرصدة المحافظ والماكينات للبدء.';
+      lockReason = 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً لتفعيل خدمات المبيعات والطباعة والتذاكر.';
     }
 
     return NextResponse.json({
