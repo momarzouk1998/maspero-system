@@ -14,6 +14,21 @@ export default function ShiftsHistoryPage() {
 
   // Shift Audit Report Modal State (Item 4)
   const [selectedAuditShift, setSelectedAuditShift] = useState<any | null>(null);
+  const [auditData, setAuditData] = useState<any | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedAuditShift) {
+      setAuditData(null);
+      return;
+    }
+    setAuditLoading(true);
+    fetch(`/api/shifts/audit?shiftId=${selectedAuditShift.id}`)
+      .then(res => res.json())
+      .then(d => setAuditData(d))
+      .catch(console.error)
+      .finally(() => setAuditLoading(false));
+  }, [selectedAuditShift]);
 
   // Filter popup modal state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -241,7 +256,7 @@ export default function ShiftsHistoryPage() {
                           title="تقرير وتفاصيل الشفت التفصيلي"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          <span>كشف حساب</span>
+                          <span>تقرير الشفت</span>
                         </button>
                         {currentUser?.role === 'manager' && (
                           <>
@@ -460,79 +475,220 @@ export default function ShiftsHistoryPage() {
         </div>
       )}
 
-      {/* SHIFT AUDIT REPORT MODAL (Item 4: كشف حساب الشفت التفصيلي) */}
+      {/* SHIFT AUDIT REPORT MODAL (Item 4: تقرير الشفت التفصيلي) */}
       {selectedAuditShift && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-2xl space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-4xl space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+            {/* Header */}
             <div className="flex justify-between items-center border-b pb-4 border-slate-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold">
-                  <FileText className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-2xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold shadow-sm">
+                  <FileText className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <span>كشف حساب الشفت التفصيلي</span>
-                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-md border border-cyan-300 font-bold">
+                  <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                    <span>تقرير الشفت التفصيلي (كشف حساب العمليات)</span>
+                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2.5 py-0.5 rounded-lg border border-cyan-300 font-bold">
                       {selectedAuditShift.shift_type || 'صباحي'}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-500">الموظف: {selectedAuditShift.employee_name || 'موظف'}</p>
+                  <p className="text-xs text-slate-500 font-semibold">الكاشير / الموظف: <span className="text-slate-900 font-bold">{selectedAuditShift.employee_name || 'موظف'}</span></p>
                 </div>
               </div>
-              <button onClick={() => setSelectedAuditShift(null)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg">
+              <button onClick={() => setSelectedAuditShift(null)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs max-h-[70vh] overflow-y-auto p-1">
-              {/* Timing & Summary */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                <div>
-                  <span className="text-slate-500 block mb-1">وقت البداية:</span>
-                  <span className="font-bold font-mono text-slate-900 dir-ltr">
-                    {selectedAuditShift.start_time ? new Date(selectedAuditShift.start_time).toLocaleString('ar-EG') : '-'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">وقت الإغلاق:</span>
-                  <span className="font-bold font-mono text-slate-900 dir-ltr">
-                    {selectedAuditShift.end_time ? new Date(selectedAuditShift.end_time).toLocaleString('ar-EG') : 'نشط الآن'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block mb-1">إجمالي الساعات:</span>
-                  <span className="font-bold text-cyan-700 font-mono">
-                    {formatNumber(Number(selectedAuditShift.total_hours || 0))} ساعة
-                  </span>
-                </div>
+            {auditLoading ? (
+              <div className="py-16 text-center text-slate-500">
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-cyan-600" />
+                <span className="font-bold text-sm">جاري جلب وتجميع عمليات وتقارير الشفت...</span>
               </div>
-
-              {/* Notes */}
-              {selectedAuditShift.shift_note && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 font-bold">
-                  <span>ملاحظات الشفت عند الإغلاق: </span>
-                  <span className="font-normal">{selectedAuditShift.shift_note}</span>
+            ) : (
+              <div className="space-y-5 text-xs max-h-[75vh] overflow-y-auto p-1 pr-2">
+                {/* 1. Timing & Summary Header */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div>
+                    <span className="text-slate-500 block mb-1">توقيت البداية:</span>
+                    <span className="font-bold font-mono text-slate-900 dir-ltr text-xs">
+                      {selectedAuditShift.start_time ? new Date(selectedAuditShift.start_time).toLocaleString('ar-EG') : '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block mb-1">توقيت الإغلاق:</span>
+                    <span className="font-bold font-mono text-slate-900 dir-ltr text-xs">
+                      {selectedAuditShift.end_time ? new Date(selectedAuditShift.end_time).toLocaleString('ar-EG') : 'نشط الآن'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block mb-1">مدة العمل:</span>
+                    <span className="font-bold text-cyan-700 font-mono text-xs">
+                      {formatNumber(Number(selectedAuditShift.total_hours || 0))} ساعة
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block mb-1">النية النقدية المتوقعة بالدرج:</span>
+                    <span className="font-extrabold text-emerald-700 font-mono text-sm">
+                      {formatNumber(Number(auditData?.summary?.expectedCashDrawerBalance || 0))} ج
+                    </span>
+                  </div>
                 </div>
-              )}
 
-              {/* Shift Audit Instructions */}
-              <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200 text-cyan-900 space-y-2">
-                <div className="font-bold text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-600" />
-                  <span>تفاصيل العمليات والعهد المسجلة بالشفت:</span>
+                {/* 2. Operations Metrics Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-1">
+                    <span className="text-[11px] text-blue-700 font-bold block">مبيعات الخدمات والطباعة</span>
+                    <span className="text-base font-extrabold font-mono text-blue-900 block">
+                      {formatNumber(Number(auditData?.summary?.totalServicesAmount || 0))} ج
+                    </span>
+                    <span className="text-[10px] text-blue-600 block">عدد الورق: {auditData?.summary?.totalPaperCount || 0} ورقة</span>
+                  </div>
+
+                  <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-1">
+                    <span className="text-[11px] text-purple-700 font-bold block">حجوزات التذاكر</span>
+                    <span className="text-base font-extrabold font-mono text-purple-900 block">
+                      {formatNumber(Number(auditData?.summary?.totalTicketsAmount || 0))} ج
+                    </span>
+                    <span className="text-[10px] text-purple-600 block">عدد التذاكر: {auditData?.summary?.totalTicketsCount || 0} | عمولات: {formatNumber(Number(auditData?.summary?.totalTicketCommission || 0))} ج</span>
+                  </div>
+
+                  <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-1">
+                    <span className="text-[11px] text-emerald-700 font-bold block">المحافظ والماكينات</span>
+                    <span className="text-xs font-bold font-mono text-emerald-900 block">
+                      إيداع: {formatNumber(Number(auditData?.summary?.walletDeposits || 0))} | سحب: {formatNumber(Number(auditData?.summary?.walletWithdrawals || 0))}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 block">عمولات المحافظ: {formatNumber(Number(auditData?.summary?.walletCommissions || 0))} ج</span>
+                  </div>
+
+                  <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-1">
+                    <span className="text-[11px] text-rose-700 font-bold block">المصروفات والسلف</span>
+                    <span className="text-base font-extrabold font-mono text-rose-900 block">
+                      {formatNumber(Number((auditData?.summary?.totalExpenses || 0) + (auditData?.summary?.totalAdvances || 0)))} ج
+                    </span>
+                    <span className="text-[10px] text-rose-600 block">مصروفات: {formatNumber(Number(auditData?.summary?.totalExpenses || 0))} | سلف: {formatNumber(Number(auditData?.summary?.totalAdvances || 0))}</span>
+                  </div>
                 </div>
-                <p className="leading-relaxed">
-                  تم تسجيل كافة حركات المبيعات النقدية وتأكيد رصيد عهدة الكاش والشفت بنجاح في سجلات السيستم خلال هذه الفترة الزمنية للشفت.
-                </p>
+
+                {/* 3. Detailed Line Items Tables */}
+
+                {/* Services Table */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 border-b pb-1 border-slate-200">
+                    <span>🖨️ الخدمات والطباعة المسجلة بالشفت ({auditData?.details?.services?.length || 0})</span>
+                  </h4>
+                  {auditData?.details?.services?.length === 0 ? (
+                    <p className="text-slate-400 text-[11px]">لا توجد خدمات مسجلة خلال هذا الشفت</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                      <table className="w-full text-right text-[11px] table-auto">
+                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="p-2">الخدمة</th>
+                            <th className="p-2">عدد الورق</th>
+                            <th className="p-2">النوع</th>
+                            <th className="p-2">المبلغ</th>
+                            <th className="p-2">الوقت</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {auditData?.details?.services?.map((svc: any) => (
+                            <tr key={svc.id}>
+                              <td className="p-2 font-bold text-slate-900">{svc.service_name}</td>
+                              <td className="p-2 font-mono">{svc.paper_count || svc.page_count || 1}</td>
+                              <td className="p-2">{svc.face_type || '-'}</td>
+                              <td className="p-2 font-mono font-bold text-blue-700">{formatNumber(Number(svc.amount))} ج</td>
+                              <td className="p-2 text-slate-500 font-mono">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('ar-EG') : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Wallet Transactions Table */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 border-b pb-1 border-slate-200">
+                    <span>💳 حركات المحافظ والماكينات بالشفت ({auditData?.details?.walletTx?.length || 0})</span>
+                  </h4>
+                  {auditData?.details?.walletTx?.length === 0 ? (
+                    <p className="text-slate-400 text-[11px]">لا توجد حركات محافظ مسجلة خلال هذا الشفت</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                      <table className="w-full text-right text-[11px] table-auto">
+                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="p-2">المحفظة/الماكينة</th>
+                            <th className="p-2">نوع الحركة</th>
+                            <th className="p-2">المبلغ</th>
+                            <th className="p-2">العمولة</th>
+                            <th className="p-2">البيان / الوصف</th>
+                            <th className="p-2">الوقت</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {auditData?.details?.walletTx?.map((w: any) => (
+                            <tr key={w.id}>
+                              <td className="p-2 font-bold text-slate-900">{w.wallet_name}</td>
+                              <td className="p-2">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.transaction_type === 'إيداع' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                                  {w.transaction_type}
+                                </span>
+                              </td>
+                              <td className="p-2 font-mono font-bold text-slate-900">{formatNumber(Number(w.amount))} ج</td>
+                              <td className="p-2 font-mono text-emerald-700">{formatNumber(Number(w.wallet_commission))} ج</td>
+                              <td className="p-2 text-slate-600">{w.description || '-'}</td>
+                              <td className="p-2 text-slate-500 font-mono">{w.timestamp ? new Date(w.timestamp).toLocaleTimeString('ar-EG') : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Expenses Table */}
+                {auditData?.details?.expenses?.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 border-b pb-1 border-slate-200">
+                      <span>💸 المصروفات والسلف بالشفت ({auditData?.details?.expenses?.length})</span>
+                    </h4>
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                      <table className="w-full text-right text-[11px] table-auto">
+                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="p-2">النوع الرئيسي</th>
+                            <th className="p-2">طريقة الصرف</th>
+                            <th className="p-2">المبلغ</th>
+                            <th className="p-2">الملاحظات</th>
+                            <th className="p-2">الوقت</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {auditData?.details?.expenses?.map((e: any) => (
+                            <tr key={e.id}>
+                              <td className="p-2 font-bold text-slate-900">{e.main_type}</td>
+                              <td className="p-2">{e.expense_type || '-'}</td>
+                              <td className="p-2 font-mono font-bold text-rose-700">{formatNumber(Number(e.amount))} ج</td>
+                              <td className="p-2 text-slate-600">{e.notes || '-'}</td>
+                              <td className="p-2 text-slate-500 font-mono">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('ar-EG') : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             <div className="flex justify-end pt-3 border-t border-slate-200">
               <button
                 onClick={() => setSelectedAuditShift(null)}
                 className="py-2.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
               >
-                إغلاق الكشف
+                إغلاق التقرير
               </button>
             </div>
           </div>
