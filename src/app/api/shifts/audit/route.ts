@@ -20,43 +20,82 @@ export async function GET(req: Request) {
     const startTime = shift.start_time || new Date();
     const endTime = shift.end_time || new Date();
     const empId = shift.employee_id;
+    const shiftDate = shift.shift_date ? new Date(shift.shift_date) : startTime;
 
-    // Fetch all transactions during this shift period for this employee
-    const [services, tickets, walletTx, expenses, handovers] = await Promise.all([
+    // Expand search buffer by 5 minutes for start/end boundaries if timestamp slightly differs
+    const bufStart = new Date(startTime.getTime() - 5 * 60 * 1000);
+    const bufEnd = new Date(endTime.getTime() + 5 * 60 * 1000);
+
+    // Fetch shift employee user to get current wallet balance
+    const shiftEmployee = empId ? await db.users.findUnique({
+      where: { id: empId },
+      select: { id: true, name: true, wallet_balance: true }
+    }) : null;
+
+    // Fetch all transactions matching shift_id OR employee within shift time/date
+    const [services, tickets, walletTx, expenses, handovers, receiptConfirms] = await Promise.all([
       db.service_entries.findMany({
         where: {
-          employee_id: empId,
-          timestamp: { gte: startTime, lte: endTime }
+          OR: [
+            { shift_id: shiftId },
+            ...(empId ? [{ employee_id: empId, timestamp: { gte: bufStart, lte: bufEnd } }] : []),
+            ...(empId ? [{ employee_id: empId, date: shiftDate }] : [])
+          ]
         },
         orderBy: { timestamp: 'desc' }
       }),
+
       db.train_ticket_bookings.findMany({
         where: {
-          employee_id: empId,
-          timestamp: { gte: startTime, lte: endTime }
+          OR: [
+            { shift_id: shiftId },
+            ...(empId ? [{ employee_id: empId, timestamp: { gte: bufStart, lte: bufEnd } }] : []),
+            ...(empId ? [{ employee_id: empId, date: shiftDate }] : [])
+          ]
         },
         orderBy: { timestamp: 'desc' }
       }),
+
       db.wallet_transactions.findMany({
         where: {
-          employee_id: empId,
-          timestamp: { gte: startTime, lte: endTime }
+          OR: [
+            { shift_id: shiftId },
+            ...(empId ? [{ employee_id: empId, timestamp: { gte: bufStart, lte: bufEnd } }] : []),
+            ...(empId ? [{ employee_id: empId, date: shiftDate }] : [])
+          ]
         },
         orderBy: { timestamp: 'desc' }
       }),
+
       db.expenses.findMany({
         where: {
-          employee_id: empId,
-          timestamp: { gte: startTime, lte: endTime }
+          OR: [
+            { shift_id: shiftId },
+            ...(empId ? [{ employee_id: empId, timestamp: { gte: bufStart, lte: bufEnd } }] : []),
+            ...(empId ? [{ employee_id: empId, date: shiftDate }] : [])
+          ]
         },
         orderBy: { timestamp: 'desc' }
       }),
+
       db.wallet_custody_handovers.findMany({
         where: {
-          OR: [{ sender_id: empId }, { receiver_id: empId }],
-          created_at: { gte: startTime, lte: endTime }
+          OR: [
+            ...(empId ? [{ sender_id: empId }] : []),
+            ...(empId ? [{ receiver_id: empId }] : [])
+          ]
         },
         orderBy: { created_at: 'desc' }
+      }),
+
+      db.receipt_confirms.findMany({
+        where: {
+          OR: [
+            { shift_id: shiftId },
+            ...(empId ? [{ employee_id: empId, date: shiftDate }] : [])
+          ]
+        },
+        orderBy: { timestamp: 'desc' }
       })
     ]);
 
@@ -72,16 +111,14 @@ export async function GET(req: Request) {
     const walletWithdrawals = walletTx.filter(w => w.transaction_type === 'سحب').reduce((sum, w) => sum + Number(w.amount || 0), 0);
     const walletCommissions = walletTx.reduce((sum, w) => sum + Number(w.wallet_commission || 0), 0);
 
-    const totalExpenses = expenses.filter(e => e.main_type === 'مصروفات').reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const totalAdvances = expenses.filter(e => e.main_type === 'سلفة' || e.expense_type === 'سلفة').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const totalExpenses = expenses.filter(e => e.main_type === 'مصروفات' || e.expense_type === 'مصروفات').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const totalAdvances = expenses.filter(e => e.main_type === 'سلفة' || e.expense_type === 'سلفة' || e.main_type === 'قبض' || e.expense_type === 'قبض').reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    // Calculated expected cash drawer balance
-    const totalCashSales = totalServicesAmount + totalTicketsAmount;
-    const netWalletCashChange = walletDeposits - walletWithdrawals;
-    const expectedCashDrawerBalance = totalCashSales + netWalletCashChange - (totalExpenses + totalAdvances);
+    const currentCashCustody = Number(shiftEmployee?.wallet_balance || 0);
 
     return NextResponse.json({
       shift,
+      employee: shiftEmployee,
       summary: {
         totalServicesAmount,
         totalPaperCount,
@@ -93,15 +130,15 @@ export async function GET(req: Request) {
         walletCommissions,
         totalExpenses,
         totalAdvances,
-        totalCashSales,
-        expectedCashDrawerBalance
+        currentCashCustody
       },
       details: {
         services,
         tickets,
         walletTx,
         expenses,
-        handovers
+        handovers,
+        receiptConfirms
       }
     });
 

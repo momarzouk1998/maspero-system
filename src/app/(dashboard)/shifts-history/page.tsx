@@ -250,14 +250,14 @@ export default function ShiftsHistoryPage() {
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => setSelectedAuditShift(item)}
+                        <Link
+                          href={`/shifts-history/${item.id}`}
                           className="px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-xs font-bold rounded-lg border border-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="تقرير وتفاصيل الشفت التفصيلي"
+                          title="فتح صفحة تقرير الشفت التفصيلي"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           <span>تقرير الشفت</span>
-                        </button>
+                        </Link>
                         {currentUser?.role === 'manager' && (
                           <>
                             <button
