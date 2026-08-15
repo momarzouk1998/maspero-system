@@ -220,7 +220,7 @@ export async function POST(req: Request) {
               wallet_name: item.wallet_name,
               sender_id: user.id,
               sender_name: user.name,
-              receiver_id: 'maspero',
+              receiver_id: null,
               receiver_name: 'ماسـبيرو (المركز)',
               balance_at_time: bal,
               expected_balance: bal,
