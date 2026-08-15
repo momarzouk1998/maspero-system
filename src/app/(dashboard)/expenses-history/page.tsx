@@ -150,8 +150,8 @@ export default function ExpensesHistoryPage() {
               { id: '', label: 'الكل' },
               { id: 'قبض', label: 'قبض' },
               { id: 'سلفة', label: 'سلفة' },
-              { id: 'مصروفات تشغيل', label: 'مصروفات' },
-              { id: 'مشتريات خامات', label: 'مشتريات' },
+              { id: 'مصروفات', label: 'مصروفات' },
+              { id: 'مشتريات', label: 'مشتريات' },
               { id: 'أخرى', label: 'أخرى' }
             ].map(cat => (
               <button

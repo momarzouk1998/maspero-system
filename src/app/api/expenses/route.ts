@@ -59,7 +59,11 @@ export async function GET(req: Request) {
         { expense_type: mainType }
       ];
     } else {
-      whereCondition.main_type = mainType;
+      whereCondition.OR = [
+        { main_type: { contains: mainType, mode: 'insensitive' } },
+        { expense_type: { contains: mainType, mode: 'insensitive' } },
+        { items: { contains: mainType, mode: 'insensitive' } }
+      ];
     }
   }
 
