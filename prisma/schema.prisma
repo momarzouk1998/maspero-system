@@ -167,6 +167,10 @@ model external_wallets {
   custodian_id    String?  @db.Uuid
   sort            Int      @default(0)
   is_active       Boolean  @default(true)
+  min_deposit     Decimal? @default(0) @db.Decimal(15, 2)
+  max_deposit     Decimal? @default(0) @db.Decimal(15, 2)
+  min_withdraw    Decimal? @default(0) @db.Decimal(15, 2)
+  max_withdraw    Decimal? @default(0) @db.Decimal(15, 2)
 
   custodian       users?   @relation("WalletCustodian", fields: [custodian_id], references: [id])
   transactions    wallet_transactions[]

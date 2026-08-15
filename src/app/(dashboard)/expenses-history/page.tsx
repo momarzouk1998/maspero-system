@@ -170,6 +170,31 @@ export default function ExpensesHistoryPage() {
         </div>
       </div>
 
+      {/* Quick Category Filter Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-100 rounded-2xl border border-slate-200 no-scrollbar">
+        {[
+          { key: '', label: 'الكل' },
+          { key: 'مصروفات', label: 'مصروفات' },
+          { key: 'سلفة', label: 'سلفة' },
+          { key: 'قبض', label: 'قبض / راتب' },
+          { key: 'مشتريات', label: 'مشتريات' },
+          { key: 'مسحوبات', label: 'مسحوبات' },
+          { key: 'دعم مالي', label: 'دعم مالي' }
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setMainTypeFilter(tab.key)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              mainTypeFilter === tab.key
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
         <div className="overflow-x-auto">
@@ -177,6 +202,7 @@ export default function ExpensesHistoryPage() {
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">التصنيف الرئيسي</th>
+                <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
                 <th className="px-4 py-3 whitespace-nowrap">طريقة الصرف</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
@@ -188,65 +214,70 @@ export default function ExpensesHistoryPage() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
                     <span>جاري تحميل سجل المصروفات...</span>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد مصروفات مسجلة تطابق التصفية
                   </td>
                 </tr>
               ) : (
-                expenses.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                        item.main_type === 'سلفة' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                        item.main_type === 'قبض' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                        item.main_type === 'إيرادات' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
-                        'bg-red-100 text-red-800 border border-red-300'
-                      }`}>
-                        {item.main_type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
-                      {formatNumberLocale(Number(item.amount), 'en-US')}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                      {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
-                    </td>
-                    {currentUser?.role === 'manager' && (
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditModal(item)}
-                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg border border-rose-200 transition-colors"
-                            title="تعديل المعاملة"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
-                              await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
-                              fetchExpenses(pagination.page);
-                            }}
-                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                            title="حذف المصروف"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                expenses.map((item) => {
+                  const itemMonth = item.month || (item.date ? `${new Date(item.date).getFullYear()} ${new Date(item.date).getMonth() + 1}` : '-');
+
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          item.main_type === 'سلفة' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                          item.main_type === 'قبض' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                          item.main_type === 'إيرادات' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
+                          'bg-red-100 text-red-800 border border-red-300'
+                        }`}>
+                          {item.main_type}
+                        </span>
                       </td>
-                    )}
-                  </tr>
-                ))
+                      <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{itemMonth}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
+                        {formatNumberLocale(Number(item.amount), 'en-US')}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
+                        {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
+                      </td>
+                      {currentUser?.role === 'manager' && (
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg border border-rose-200 transition-colors"
+                              title="تعديل المعاملة"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
+                                await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
+                                fetchExpenses(pagination.page);
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف المصروف"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

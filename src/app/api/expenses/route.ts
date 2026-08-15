@@ -40,9 +40,49 @@ export async function GET(req: Request) {
 
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const search = searchParams.get('search') || '';
+  const mainType = searchParams.get('mainType') || '';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+  const employeeId = searchParams.get('employeeId') || '';
+  const monthFilter = searchParams.get('month') || '';
   const skip = (page - 1) * limit;
 
-  const whereCondition = user.role === 'manager' ? {} : { employee_id: user.id };
+  const whereCondition: any = {};
+
+  if (user.role !== 'manager') {
+    whereCondition.employee_id = user.id;
+  } else if (employeeId) {
+    whereCondition.employee_id = employeeId;
+  }
+
+  if (mainType) {
+    whereCondition.main_type = mainType;
+  }
+
+  if (monthFilter) {
+    whereCondition.month = monthFilter;
+  }
+
+  if (startDate && endDate) {
+    whereCondition.date = {
+      gte: new Date(startDate),
+      lte: new Date(endDate)
+    };
+  } else if (startDate) {
+    whereCondition.date = { gte: new Date(startDate) };
+  } else if (endDate) {
+    whereCondition.date = { lte: new Date(endDate) };
+  }
+
+  if (search) {
+    whereCondition.OR = [
+      { notes: { contains: search, mode: 'insensitive' } },
+      { main_type: { contains: search, mode: 'insensitive' } },
+      { expense_type: { contains: search, mode: 'insensitive' } },
+      { employee_name: { contains: search, mode: 'insensitive' } },
+    ];
+  }
 
   const [expenses, total] = await Promise.all([
     db.expenses.findMany({
@@ -69,7 +109,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'برجاء ادخال النوع والمبلغ بشكل صحيح' }, { status: 400 });
     }
 
-    const txDate = date ? new Date(date) : new Date();
+    const txDate = (user.role === 'manager' && date) ? new Date(date) : new Date();
 
     // Target employee is ONLY relevant for advances & salary
     let employeeId = user.id;

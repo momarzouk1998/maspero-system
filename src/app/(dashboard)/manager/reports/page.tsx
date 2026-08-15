@@ -107,6 +107,58 @@ export default function ManagerReportsPage() {
             إعادة ضبط
           </button>
         </div>
+
+        <button
+          onClick={async () => {
+            if (!startDate || !endDate) {
+              alert('برجاء تحديد الفترة أولاً (من تاريخ إلى تاريخ)');
+              return;
+            }
+            if (!confirm(`هل تريد توثيق وحفظ التقرير المالي للفترة من ${startDate} إلى ${endDate} في الأرشيف؟`)) return;
+
+            try {
+              const res = await fetch('/api/reports/financial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  startDate,
+                  endDate,
+                  walletCommission: metrics.walletCommission,
+                  ticketsCommission: metrics.ticketCommission,
+                  machineWithdrawalCommission: metrics.machineWithdrawlCommission,
+                  machineDepositsCommission: metrics.machineDepositsCommission,
+                  machineDeposits: metrics.machineDeposits,
+                  serviceValue: metrics.serviceValue,
+                  totalRevenue: metrics.totalRevenue,
+                  purchaseValue: metrics.purchaseValue,
+                  purchasesCost: metrics.purchasesCost,
+                  purchasesCostPercent: metrics.purchasesCostPercent,
+                  totalProfit: metrics.totalProfit,
+                  totalCommissions: metrics.totalCommissions,
+                  otherExpenses: metrics.otherExpenses,
+                  salaries: metrics.salaries,
+                  netProfit: metrics.netProfit,
+                  withdrawnRevenue: metrics.withdrawnRevenue,
+                  ticketCount: metrics.ticketCount,
+                  paperCount: metrics.paperCount
+                })
+              });
+              const resData = await res.json();
+              if (res.ok) {
+                alert(resData.message || 'تم التوثيق بنجاح 🎉');
+                fetchReports();
+              } else {
+                alert(resData.error || 'حدث خطأ في الحفظ');
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className="py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all"
+        >
+          <Archive className="w-4 h-4" />
+          <span>حفظ التقرير في الأرشيف 💾</span>
+        </button>
       </div>
 
       {/* MAIN CONTENT: FINANCIAL METRICS GRID */}
@@ -497,6 +549,108 @@ export default function ManagerReportsPage() {
                   </div>
                 </div>
               )}
+
+              {/* 5. أرشيف تقارير الشهور المحفوظة (مطابق لملف CSV) */}
+              <div className="glass-panel rounded-3xl border border-slate-200 p-6 space-y-4">
+                <div className="flex items-center justify-between border-b pb-4 border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Archive className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">سجل وأرشيف أرباح الشهور المحفوظة</h3>
+                      <p className="text-xs text-slate-500">تقارير وأرباح الشهور السابقة والموثقة بضغطة زر</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs text-slate-700 table-auto">
+                    <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
+                      <tr>
+                        <th className="px-3 py-3 whitespace-nowrap">الفترة الزمنية</th>
+                        <th className="px-3 py-3 whitespace-nowrap">الشهر النصي</th>
+                        <th className="px-3 py-3 whitespace-nowrap">الإيرادات</th>
+                        <th className="px-3 py-3 whitespace-nowrap">إجمالي العمولات</th>
+                        <th className="px-3 py-3 whitespace-nowrap">إجمالي الربح</th>
+                        <th className="px-3 py-3 whitespace-nowrap">المصروفات والرواتب</th>
+                        <th className="px-3 py-3 whitespace-nowrap">صافي الربح النهائي</th>
+                        <th className="px-3 py-3 whitespace-nowrap">تذاكر / ورق</th>
+                        <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {(!data?.savedReports || data.savedReports.length === 0) ? (
+                        <tr>
+                          <td colSpan={9} className="text-center py-8 text-slate-400">
+                            لا توجد تقارير محفوظات بالأرشيف حالياً
+                          </td>
+                        </tr>
+                      ) : (
+                        data.savedReports.map((rep: any) => {
+                          const startDateObj = new Date(rep.start_date);
+                          const monthText = `${startDateObj.getFullYear()} ${startDateObj.getMonth() + 1}`;
+                          const expAndSal = Number(rep.other_expenses || 0) + Number(rep.salaries || 0);
+
+                          return (
+                            <tr key={rep.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-3 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                                {new Date(rep.start_date).toLocaleDateString('en-US')} - {new Date(rep.end_date).toLocaleDateString('en-US')}
+                              </td>
+                              <td className="px-3 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
+                                {monthText}
+                              </td>
+                              <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                                {formatNumberLocale(Number(rep.total_revenue), 'en-US')}
+                              </td>
+                              <td className="px-3 py-3 font-mono text-purple-700 whitespace-nowrap">
+                                {formatNumberLocale(Number(rep.total_commissions), 'en-US')}
+                              </td>
+                              <td className="px-3 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                                {formatNumberLocale(Number(rep.total_profit), 'en-US')}
+                              </td>
+                              <td className="px-3 py-3 font-mono text-rose-600 whitespace-nowrap">
+                                {formatNumberLocale(expAndSal, 'en-US')}
+                              </td>
+                              <td className="px-3 py-3 font-mono font-bold text-emerald-600 text-sm whitespace-nowrap">
+                                {formatNumberLocale(Number(rep.net_profit), 'en-US')}
+                              </td>
+                              <td className="px-3 py-3 text-xs font-mono text-slate-600 whitespace-nowrap">
+                                🎫 {rep.ticket_count || 0} / 📄 {rep.paper_count || 0}
+                              </td>
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      const s = new Date(rep.start_date).toISOString().split('T')[0];
+                                      const e = new Date(rep.end_date).toISOString().split('T')[0];
+                                      setStartDate(s);
+                                      setEndDate(e);
+                                    }}
+                                    className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded-lg text-xs transition-colors"
+                                    title="معاينة واسترجاع التقرير 👁️"
+                                  >
+                                    معاينة 👁️
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm('حذف هذا التقرير من الأرشيف؟')) return;
+                                      await fetch(`/api/reports/financial?id=${rep.id}`, { method: 'DELETE' });
+                                      fetchReports();
+                                    }}
+                                    className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-lg text-xs transition-colors"
+                                    title="حذف من الأرشيف 🗑️"
+                                  >
+                                    حذف 🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </>

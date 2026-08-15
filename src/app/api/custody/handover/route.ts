@@ -177,6 +177,14 @@ export async function POST(req: Request) {
           }
         });
 
+        // Deduct from employee's personal cash custody balance (wallet_balance)
+        await tx.users.update({
+          where: { id: user.id },
+          data: {
+            wallet_balance: { decrement: depositAmount }
+          }
+        });
+
         await tx.wallet_transactions.create({
           data: {
             date: today,
@@ -280,13 +288,23 @@ export async function POST(req: Request) {
           }
         });
 
+        const isCashDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
+        const nextDrawerBal = isCashDrawer ? 0 : expectedBalance;
+
+        if (isCashDrawer && expectedBalance > 0) {
+          await tx.users.update({
+            where: { id: user.id },
+            data: { wallet_balance: { increment: expectedBalance } }
+          });
+        }
+
         return await tx.external_wallets.update({
           where: { id: walletId },
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: expectedBalance,
-            current_balance: expectedBalance
+            actual_balance: nextDrawerBal,
+            current_balance: nextDrawerBal
           }
         });
       });
@@ -344,13 +362,23 @@ export async function POST(req: Request) {
           }
         });
 
+        const isCashDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
+        const nextDrawerBal = isCashDrawer ? 0 : numActual;
+
+        if (isCashDrawer && numActual > 0) {
+          await tx.users.update({
+            where: { id: user.id },
+            data: { wallet_balance: { increment: numActual } }
+          });
+        }
+
         return await tx.external_wallets.update({
           where: { id: walletId },
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: numActual,
-            current_balance: numActual
+            actual_balance: nextDrawerBal,
+            current_balance: nextDrawerBal
           }
         });
       });

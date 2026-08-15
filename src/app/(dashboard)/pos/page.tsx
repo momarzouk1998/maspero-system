@@ -736,18 +736,30 @@ export default function POSPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                disabled={!activeInvoice || activeInvoice.items.length === 0}
+                onClick={() => {
+                  alert('تم إتمام وحفظ الفاتورة بنجاح 🎉');
+                  createNewInvoice();
+                }}
+                className="py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
+                title="إنهاء الفاتورة بدون طباعة"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>حفظ بدون طباعة</span>
+              </button>
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
                 onClick={() => handlePrint('cashier')}
-                className="py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm transition-colors"
+                className="py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
               >
                 <Printer className="w-4 h-4" /><span>كاشير</span>
               </button>
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
                 onClick={() => handlePrint('normal')}
-                className="py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm transition-colors"
+                className="py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
               >
                 <Receipt className="w-4 h-4" /><span>A4</span>
               </button>
@@ -833,9 +845,8 @@ export default function POSPage() {
               <div className="relative">
                 <input type="number" step="0.25" min="0" value={svcAmt || ''}
                   onChange={e => setSvcAmt(parseFloat(e.target.value) || 0)}
-                  disabled={isPrint(svcPopup.service_name)}
                   placeholder="0"
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:bg-slate-50 disabled:text-slate-700"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
             </div>

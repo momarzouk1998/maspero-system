@@ -83,6 +83,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   const handleLogout = async () => {
+    try {
+      const shiftRes = await fetch('/api/custody/handover');
+      if (shiftRes.ok) {
+        const cData = await shiftRes.json();
+        if (cData.isUserShiftActive) {
+          alert('⚠️ لا يمكن تسجيل الخروج أثناء وجود شفت مفتوح! برجاء تسليم العهدة وإنهاء الشفت أولاً من صفحة إدارة الشفتات.');
+          router.push('/shifts');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };

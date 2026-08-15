@@ -182,6 +182,7 @@ export default function ShiftsHistoryPage() {
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
+                <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
                 <th className="px-4 py-3 whitespace-nowrap">وقت البداية</th>
                 <th className="px-4 py-3 whitespace-nowrap">وقت النهاية</th>
@@ -193,65 +194,70 @@ export default function ShiftsHistoryPage() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
+                  <td colSpan={9} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
                     <span>جاري تحميل سجل الشفتات...</span>
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
+                  <td colSpan={9} className="text-center py-12 text-slate-500">
                     لا توجد شفتات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
               ) : (
-                shifts.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                        item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
-                      }`}>
-                        {item.shift_type || 'صباحي'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
-                        <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
-                      {formatNumber(Number(item.total_hours || 0))} ساعة
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
-                    {currentUser?.role === 'manager' && (
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditModal(item)}
-                            className="p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 rounded-lg border border-cyan-200 transition-colors"
-                            title="تعديل الشفت"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteShift(item.id)}
-                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                            title="حذف الشفت"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                shifts.map((item) => {
+                  const shiftMonth = item.month || (item.start_time ? `${new Date(item.start_time).getFullYear()} ${new Date(item.start_time).getMonth() + 1}` : '-');
+
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                        }`}>
+                          {item.shift_type || 'صباحي'}
+                        </span>
                       </td>
-                    )}
-                  </tr>
-                ))
+                      <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{shiftMonth}</td>
+                      <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
+                        {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                        {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                        {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
+                          <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
+                        {formatNumber(Number(item.total_hours || 0))} ساعة
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
+                      {currentUser?.role === 'manager' && (
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 rounded-lg border border-cyan-200 transition-colors"
+                              title="تعديل الشفت"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteShift(item.id)}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف الشفت"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
