@@ -34,9 +34,12 @@ export function formatNumberLocale(num: number | string, locale: string = 'en-US
   return formatted;
 }
 
-// Format Date to legacy text month format: "YYYY M" e.g. "2026 7", "2026 8"
+// Format date into text month string e.g. "2026 7"
 export function formatMonthText(d?: Date | string | null): string {
   const dateObj = d ? new Date(d) : new Date();
-  if (isNaN(dateObj.getTime())) return '';
+  if (isNaN(dateObj.getTime())) {
+    const now = new Date();
+    return `${now.getFullYear()} ${now.getMonth() + 1}`;
+  }
   return `${dateObj.getFullYear()} ${dateObj.getMonth() + 1}`;
 }

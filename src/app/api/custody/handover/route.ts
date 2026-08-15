@@ -150,13 +150,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, walletId, actualBalance, discrepancyReason, receiverId, amount } = body;
 
-    // --- Action: Deposit Cash from Employee Custody into Cash Drawer ---
+    // --- Action: Deposit Cash from Employee Custody into Cash Drawer (Item 9 & 10: Single Click Deposit + Delivery + Zero Custody) ---
     if (action === 'deposit_to_drawer') {
       const drawerId = walletId;
-      const depositAmount = Number(amount || 0);
 
-      if (!drawerId || depositAmount <= 0) {
-        return NextResponse.json({ error: 'برجاء تحديد الدرج والمبلغ المراد إيداعه' }, { status: 400 });
+      if (!drawerId) {
+        return NextResponse.json({ error: 'برجاء تحديد الدرج' }, { status: 400 });
       }
 
       const drawer = await db.external_wallets.findUnique({ where: { id: drawerId } });
@@ -164,9 +163,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'درج الكاشير غير موجود' }, { status: 404 });
       }
 
+      const dbUser = await db.users.findUnique({ where: { id: user.id } });
+      const empCustodyBal = Number(dbUser?.wallet_balance || 0);
+      const depositAmount = amount ? Number(amount) : empCustodyBal;
+
       const today = new Date();
+      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
 
       await db.$transaction(async (tx: any) => {
+        // 1. Transfer custody cash into cash drawer balance
         await tx.external_wallets.update({
           where: { id: drawerId },
           data: {
@@ -177,35 +182,70 @@ export async function POST(req: Request) {
           }
         });
 
-        // Deduct from employee's personal cash custody balance (wallet_balance)
+        // 2. Reset employee's personal cash custody balance to 0
         await tx.users.update({
           where: { id: user.id },
-          data: {
-            wallet_balance: { decrement: depositAmount }
-          }
+          data: { wallet_balance: 0 }
         });
 
+        // 3. Log transaction
         await tx.wallet_transactions.create({
           data: {
             date: today,
-            transaction_month: `${today.getFullYear()} ${today.getMonth() + 1}`,
+            transaction_month: monthStr,
+            month: monthStr,
             time_str: today.toLocaleTimeString('en-US'),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
             transaction_type: 'إيداع',
             wallet_type: 'درج كاشير',
             amount: depositAmount,
-            description: `إيداع نقدية محصلة من عهدة الموظف (${user.name}) في ${drawer.wallet_name}`,
+            description: `إيداع وتصفية عهدة الكاشير (${user.name}) بالدرج (${drawer.wallet_name})`,
             employee_id: user.id,
             employee_name: user.name,
             timestamp: today
           }
         });
+
+        // 4. Single-Click Handover of all user custody items directly to Maspero Center
+        const userItems = await tx.external_wallets.findMany({
+          where: { is_active: true, custodian_id: user.id }
+        });
+
+        for (const item of userItems) {
+          const bal = Number(item.actual_balance || item.current_balance || 0);
+          await tx.wallet_custody_handovers.create({
+            data: {
+              wallet_id: item.id,
+              wallet_name: item.wallet_name,
+              sender_id: user.id,
+              sender_name: user.name,
+              receiver_id: 'maspero',
+              receiver_name: 'ماسـبيرو (المركز)',
+              balance_at_time: bal,
+              expected_balance: bal,
+              actual_balance: bal,
+              difference: 0,
+              review_status: 'تم المطابقة',
+              created_at: today,
+              month: monthStr
+            }
+          });
+
+          await tx.external_wallets.update({
+            where: { id: item.id },
+            data: {
+              custodian_id: null,
+              custodian_name: 'ماسـبيرو (المركز)',
+              status: 'متاح'
+            }
+          });
+        }
       });
 
       return NextResponse.json({
         success: true,
-        message: `تم تحويل إيداع (${depositAmount.toFixed(2)}) ج نقدية في (${drawer.wallet_name}) بنجاح 💰`
+        message: `تم تصفية عهدة الكاش وتغذية الدرج والتسليم للمركز بنجاح 💰🏛️`
       });
     }
 
@@ -288,10 +328,10 @@ export async function POST(req: Request) {
           }
         });
 
-        const isCashDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
-        const nextDrawerBal = isCashDrawer ? 0 : expectedBalance;
+        const isDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
 
-        if (isCashDrawer && expectedBalance > 0) {
+        if (isDrawer && expectedBalance > 0) {
+          // Transfer drawer cash to receiving employee's personal cash custody
           await tx.users.update({
             where: { id: user.id },
             data: { wallet_balance: { increment: expectedBalance } }
@@ -303,8 +343,8 @@ export async function POST(req: Request) {
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: nextDrawerBal,
-            current_balance: nextDrawerBal
+            actual_balance: isDrawer ? 0 : expectedBalance,
+            current_balance: isDrawer ? 0 : expectedBalance
           }
         });
       });
@@ -362,23 +402,13 @@ export async function POST(req: Request) {
           }
         });
 
-        const isCashDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
-        const nextDrawerBal = isCashDrawer ? 0 : numActual;
-
-        if (isCashDrawer && numActual > 0) {
-          await tx.users.update({
-            where: { id: user.id },
-            data: { wallet_balance: { increment: numActual } }
-          });
-        }
-
         return await tx.external_wallets.update({
           where: { id: walletId },
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: nextDrawerBal,
-            current_balance: nextDrawerBal
+            actual_balance: numActual,
+            current_balance: numActual
           }
         });
       });

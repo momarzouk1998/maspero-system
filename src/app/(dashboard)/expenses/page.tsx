@@ -259,17 +259,19 @@ export default function FinancialAndHROperationsPage() {
 
             <form id="finForm" onSubmit={handleFinSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Date */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
-                  <input
-                    type="date"
-                    required
-                    value={finDate}
-                    onChange={(e) => setFinDate(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+                {/* Date - ONLY SHOWN FOR MANAGERS (Item 11) */}
+                {currentUser?.role === 'manager' && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
+                    <input
+                      type="date"
+                      required
+                      value={finDate}
+                      onChange={(e) => setFinDate(e.target.value)}
+                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                )}
 
                 {/* Item / Statement Dropdown */}
                 <div>

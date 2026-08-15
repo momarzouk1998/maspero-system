@@ -221,8 +221,8 @@ export default function HandoverHistoryPage() {
                       <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <span>{formatNumber(act)}</span>
-                          {/* Item 5: Concise Like 👍 button right next to value for manager review */}
-                          {currentUser?.role === 'manager' && item.review_status !== 'تم المراجعة بواسطة المدير' && (
+                          {/* Item 5: Like 👍 button ONLY for operations with discrepancy (diff !== 0 or requiring review) */}
+                          {currentUser?.role === 'manager' && item.review_status !== 'تم المراجعة بواسطة المدير' && (diff !== 0 || item.review_status === 'الرجاء المراجعة') && (
                             <button
                               onClick={() => handleApproveReview(item.id)}
                               className="p-1 hover:bg-emerald-100 rounded-md text-emerald-700 transition-colors cursor-pointer"

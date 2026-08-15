@@ -22,6 +22,10 @@ export default function ManagerReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('إيرادات');
 
+  // Archival Monthly Profit Reports State (CSV Matching)
+  const [archivedReports, setArchivedReports] = useState<any[]>([]);
+  const [savingArchive, setSavingArchive] = useState(false);
+
   const fetchReports = async () => {
     setLoading(true);
     try {
@@ -38,6 +42,13 @@ export default function ManagerReportsPage() {
           setSelectedMonth(result.monthlyReports[0].month);
         }
       }
+
+      // Fetch archived reports
+      const archRes = await fetch('/api/reports/monthly-archive');
+      if (archRes.ok) {
+        const archData = await archRes.json();
+        setArchivedReports(archData.reports || []);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -48,6 +59,53 @@ export default function ManagerReportsPage() {
   useEffect(() => {
     fetchReports();
   }, [startDate, endDate]);
+
+  const handleSaveMonthArchive = async () => {
+    if (!metrics) return;
+    setSavingArchive(true);
+    try {
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()} ${now.getMonth() + 1}`;
+      
+      const payload = {
+        month: currentMonthStr,
+        wallet_commission: metrics.walletCommissions || 0,
+        tickets_commission: metrics.ticketCommissions || 0,
+        machine_withdrawal_commission: metrics.machineWithdrawalCommissions || 0,
+        machine_deposit_commission: metrics.machineDepositCommissions || 0,
+        machine_deposits: metrics.machineDeposits || 0,
+        service_revenue: metrics.servicesRevenue || 0,
+        total_revenue: metrics.totalRevenue || 0,
+        opening_balance: metrics.openingBalance || 0,
+        closing_balance: metrics.closingBalance || 0,
+        purchases_cost: metrics.purchasesCost || 0,
+        purchases_cost_percent: metrics.purchasesCostPercent || 0,
+        total_profit: metrics.grossProfit || 0,
+        total_commissions: metrics.totalCommissions || 0,
+        other_expenses: metrics.otherExpenses || 0,
+        salaries: metrics.totalSalaries || 0,
+        net_profit: metrics.netProfit || 0,
+        withdrawn_revenue: metrics.withdrawnRevenue || 0,
+        ticket_count: metrics.ticketCount || 0,
+        paper_count: metrics.paperCount || 0
+      };
+
+      const res = await fetch('/api/reports/monthly-archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        fetchReports();
+        alert('تم أرشفة وتقييد تقرير هذا الشهر بنجاح في سجل التقارير الشهرية 💾');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingArchive(false);
+    }
+  };
 
   const metrics = data?.metrics || {};
   const monthlyReports = data?.monthlyReports || [];
@@ -107,58 +165,6 @@ export default function ManagerReportsPage() {
             إعادة ضبط
           </button>
         </div>
-
-        <button
-          onClick={async () => {
-            if (!startDate || !endDate) {
-              alert('برجاء تحديد الفترة أولاً (من تاريخ إلى تاريخ)');
-              return;
-            }
-            if (!confirm(`هل تريد توثيق وحفظ التقرير المالي للفترة من ${startDate} إلى ${endDate} في الأرشيف؟`)) return;
-
-            try {
-              const res = await fetch('/api/reports/financial', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  startDate,
-                  endDate,
-                  walletCommission: metrics.walletCommission,
-                  ticketsCommission: metrics.ticketCommission,
-                  machineWithdrawalCommission: metrics.machineWithdrawlCommission,
-                  machineDepositsCommission: metrics.machineDepositsCommission,
-                  machineDeposits: metrics.machineDeposits,
-                  serviceValue: metrics.serviceValue,
-                  totalRevenue: metrics.totalRevenue,
-                  purchaseValue: metrics.purchaseValue,
-                  purchasesCost: metrics.purchasesCost,
-                  purchasesCostPercent: metrics.purchasesCostPercent,
-                  totalProfit: metrics.totalProfit,
-                  totalCommissions: metrics.totalCommissions,
-                  otherExpenses: metrics.otherExpenses,
-                  salaries: metrics.salaries,
-                  netProfit: metrics.netProfit,
-                  withdrawnRevenue: metrics.withdrawnRevenue,
-                  ticketCount: metrics.ticketCount,
-                  paperCount: metrics.paperCount
-                })
-              });
-              const resData = await res.json();
-              if (res.ok) {
-                alert(resData.message || 'تم التوثيق بنجاح 🎉');
-                fetchReports();
-              } else {
-                alert(resData.error || 'حدث خطأ في الحفظ');
-              }
-            } catch (e) {
-              console.error(e);
-            }
-          }}
-          className="py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all"
-        >
-          <Archive className="w-4 h-4" />
-          <span>حفظ التقرير في الأرشيف 💾</span>
-        </button>
       </div>
 
       {/* MAIN CONTENT: FINANCIAL METRICS GRID */}
@@ -550,105 +556,77 @@ export default function ManagerReportsPage() {
                 </div>
               )}
 
-              {/* 5. أرشيف تقارير الشهور المحفوظة (مطابق لملف CSV) */}
-              <div className="glass-panel rounded-3xl border border-slate-200 p-6 space-y-4">
-                <div className="flex items-center justify-between border-b pb-4 border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <Archive className="w-5 h-5 text-emerald-600" />
+              {/* 📊 ARCHIVAL MONTHLY PROFIT REPORT (مطابق لملف CSV التاريخي) */}
+              <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">
+                <div className="p-5 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                      <Archive className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="text-base font-bold text-slate-900">سجل وأرشيف أرباح الشهور المحفوظة</h3>
-                      <p className="text-xs text-slate-500">تقارير وأرباح الشهور السابقة والموثقة بضغطة زر</p>
+                      <h3 className="font-bold text-base flex items-center gap-2">
+                        <span>سجل التقارير والأرشيف الشهري الموحد (ربحية كل شهر)</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">مطابق لهيكل وتنسيق التقرير التاريخي CSV للعودة بنقرة واحدة</p>
                     </div>
                   </div>
+
+                  <button
+                    onClick={handleSaveMonthArchive}
+                    disabled={savingArchive}
+                    className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
+                  >
+                    {savingArchive ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+                    <span>حفظ / أرشفة تقرير الشهر الحالي 💾</span>
+                  </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs text-slate-700 table-auto">
-                    <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="px-3 py-3 whitespace-nowrap">الفترة الزمنية</th>
-                        <th className="px-3 py-3 whitespace-nowrap">الشهر النصي</th>
-                        <th className="px-3 py-3 whitespace-nowrap">الإيرادات</th>
-                        <th className="px-3 py-3 whitespace-nowrap">إجمالي العمولات</th>
-                        <th className="px-3 py-3 whitespace-nowrap">إجمالي الربح</th>
-                        <th className="px-3 py-3 whitespace-nowrap">المصروفات والرواتب</th>
-                        <th className="px-3 py-3 whitespace-nowrap">صافي الربح النهائي</th>
-                        <th className="px-3 py-3 whitespace-nowrap">تذاكر / ورق</th>
-                        <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {(!data?.savedReports || data.savedReports.length === 0) ? (
-                        <tr>
-                          <td colSpan={9} className="text-center py-8 text-slate-400">
-                            لا توجد تقارير محفوظات بالأرشيف حالياً
-                          </td>
-                        </tr>
-                      ) : (
-                        data.savedReports.map((rep: any) => {
-                          const startDateObj = new Date(rep.start_date);
-                          const monthText = `${startDateObj.getFullYear()} ${startDateObj.getMonth() + 1}`;
-                          const expAndSal = Number(rep.other_expenses || 0) + Number(rep.salaries || 0);
-
-                          return (
-                            <tr key={rep.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-3 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                                {new Date(rep.start_date).toLocaleDateString('en-US')} - {new Date(rep.end_date).toLocaleDateString('en-US')}
-                              </td>
-                              <td className="px-3 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
-                                {monthText}
-                              </td>
-                              <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
-                                {formatNumberLocale(Number(rep.total_revenue), 'en-US')}
-                              </td>
-                              <td className="px-3 py-3 font-mono text-purple-700 whitespace-nowrap">
-                                {formatNumberLocale(Number(rep.total_commissions), 'en-US')}
-                              </td>
-                              <td className="px-3 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                                {formatNumberLocale(Number(rep.total_profit), 'en-US')}
-                              </td>
-                              <td className="px-3 py-3 font-mono text-rose-600 whitespace-nowrap">
-                                {formatNumberLocale(expAndSal, 'en-US')}
-                              </td>
-                              <td className="px-3 py-3 font-mono font-bold text-emerald-600 text-sm whitespace-nowrap">
-                                {formatNumberLocale(Number(rep.net_profit), 'en-US')}
-                              </td>
-                              <td className="px-3 py-3 text-xs font-mono text-slate-600 whitespace-nowrap">
-                                🎫 {rep.ticket_count || 0} / 📄 {rep.paper_count || 0}
-                              </td>
-                              <td className="px-3 py-3 text-center whitespace-nowrap">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    onClick={() => {
-                                      const s = new Date(rep.start_date).toISOString().split('T')[0];
-                                      const e = new Date(rep.end_date).toISOString().split('T')[0];
-                                      setStartDate(s);
-                                      setEndDate(e);
-                                    }}
-                                    className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded-lg text-xs transition-colors"
-                                    title="معاينة واسترجاع التقرير 👁️"
-                                  >
-                                    معاينة 👁️
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      if (!confirm('حذف هذا التقرير من الأرشيف؟')) return;
-                                      await fetch(`/api/reports/financial?id=${rep.id}`, { method: 'DELETE' });
-                                      fetchReports();
-                                    }}
-                                    className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-lg text-xs transition-colors"
-                                    title="حذف من الأرشيف 🗑️"
-                                  >
-                                    حذف 🗑️
-                                  </button>
-                                </div>
-                              </td>
+                {/* Archived Monthly Snapshots Table */}
+                <div className="p-5 space-y-4">
+                  {archivedReports.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-xs">
+                      لا توجد أرشفات شهرية مسجلة بعد. اضغط زر أرشفة تقرير الشهر أعلاه لتقييد أول شهر.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-right text-xs text-slate-700 table-auto border border-slate-200 rounded-2xl overflow-hidden">
+                        <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
+                          <tr>
+                            <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عمولة المحافظ</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عمولة التذاكر</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عمولة إيداع المكن</th>
+                            <th className="px-3 py-3 whitespace-nowrap">إيراد الخدمات والطباعة</th>
+                            <th className="px-3 py-3 whitespace-nowrap">المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap">نسبة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap">إجمالي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap">الرواتب والسلف</th>
+                            <th className="px-3 py-3 whitespace-nowrap">المصروفات الأخرى</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                          {archivedReports.map((report: any) => (
+                            <tr key={report.id} className="hover:bg-slate-50 font-semibold">
+                              <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
+                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
+                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
+                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                              <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(Number(report.service_revenue))}</td>
+                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.purchases_cost))}</td>
+                              <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.purchases_cost_percent}%</td>
+                              <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(Number(report.total_profit))}</td>
+                              <td className="px-3 py-3 text-purple-700 whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
+                              <td className="px-3 py-3 text-amber-700 whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
+                              <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(Number(report.net_profit))}</td>
+                              <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
                             </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

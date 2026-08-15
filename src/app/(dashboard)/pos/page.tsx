@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Printer, Train, Wallet, Plus, Trash2, RefreshCw, X, Receipt,
   Bus, CheckCircle2, Info, ArrowDownLeft, ArrowUpRight, ChevronRight,
-  FileText, PlusCircle, Cpu, Lock
+  FileText, PlusCircle, Cpu, Lock, HelpCircle
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
@@ -253,6 +253,18 @@ export default function POSPage() {
       setWltPopup(null);
       fetchInvoice(activeInvoiceCode);
     } finally { setWltLoading(false); }
+  };
+
+  const handleFinishInvoiceWithoutPrint = () => {
+    fetch('/api/pos/new-invoice', { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.code) {
+          setActiveInvoiceCode(d.code);
+          fetchInvoice(d.code);
+        }
+      })
+      .catch(console.error);
   };
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -524,6 +536,28 @@ export default function POSPage() {
                       <tr>
                         <th className="px-4 py-2.5 whitespace-nowrap">المحفظة</th>
                         <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <span>إيداع الشهر</span>
+                            <div className="relative group cursor-pointer">
+                              <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
+                              <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
+                                إجمالي مبالغ الإيداع المنفذة على هذه المحفظة خلال الشهر الحالي لمنع تجاوز ليمت المحافظ وتجميد الحساب.
+                              </div>
+                            </div>
+                          </div>
+                        </th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <span>سحب الشهر</span>
+                            <div className="relative group cursor-pointer">
+                              <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
+                              <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
+                                إجمالي مبالغ السحب المنفذة على هذه المحفظة خلال الشهر الحالي لتتبع حدود السحب الشهرية.
+                              </div>
+                            </div>
+                          </div>
+                        </th>
                         <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
                         <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
                       </tr>
@@ -536,6 +570,12 @@ export default function POSPage() {
                           </td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
                             {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap text-xs">
+                            {formatNumber(Number(w.monthly_deposit || 0))}
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold text-red-700 whitespace-nowrap text-xs">
+                            {formatNumber(Number(w.monthly_withdrawal || 0))}
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button onClick={() => openWltPopup(w, 'إيداع')}
@@ -736,32 +776,24 @@ export default function POSPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
                 onClick={() => {
-                  alert('تم إتمام وحفظ الفاتورة بنجاح 🎉');
-                  createNewInvoice();
+                  handleFinishInvoiceWithoutPrint();
                 }}
-                className="py-2.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
-                title="إنهاء الفاتورة بدون طباعة"
+                className="py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>حفظ بدون طباعة</span>
+                <span>إنهاء الفاتورة</span>
               </button>
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
                 onClick={() => handlePrint('cashier')}
-                className="py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
+                className="py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors cursor-pointer shadow-md shadow-emerald-600/20"
               >
-                <Printer className="w-4 h-4" /><span>كاشير</span>
-              </button>
-              <button
-                disabled={!activeInvoice || activeInvoice.items.length === 0}
-                onClick={() => handlePrint('normal')}
-                className="py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors"
-              >
-                <Receipt className="w-4 h-4" /><span>A4</span>
+                <Printer className="w-4 h-4" />
+                <span>إنهاء وطباعة</span>
               </button>
             </div>
           </div>
@@ -824,8 +856,13 @@ export default function POSPage() {
 
             {/* Paper count (the SECOND field in all service sale modals) */}
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-2">
-                عدد الورق {isPrint(svcPopup.service_name) ? '*' : '(اختياري)'}
+              <label className="block text-xs font-medium text-slate-700 mb-2 flex items-center justify-between">
+                <span>{isPrint(svcPopup.service_name) ? 'عدد الأوجه المطلوبة' : 'عدد الورق (اختياري)'} *</span>
+                {isPrint(svcPopup.service_name) && svcFace === 'وجهين' && (
+                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    عدد الورق الفعلي: {Math.ceil(svcPaper / 2)} ورقة
+                  </span>
+                )}
               </label>
               <div className="flex items-center gap-3">
                 <button onClick={() => setSvcPaper(p => Math.max(0, p - 1))}
@@ -839,9 +876,12 @@ export default function POSPage() {
               </div>
             </div>
 
-            {/* Amount */}
+            {/* Amount - Item 14: Allow manual total price override */}
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-2">المبلغ الإجمالي</label>
+              <label className="block text-xs font-medium text-slate-700 mb-2 flex items-center justify-between">
+                <span>المبلغ الإجمالي</span>
+                <span className="text-[10px] text-slate-400 font-normal">(يمكن تعديل المبلغ النهائي يدويًا)</span>
+              </label>
               <div className="relative">
                 <input type="number" step="0.25" min="0" value={svcAmt || ''}
                   onChange={e => setSvcAmt(parseFloat(e.target.value) || 0)}

@@ -65,9 +65,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const parsedPages = parseInt(String(pageCount || paperCount)) || 1;
-    const isDoubleSided = (faceType === 'وجهين');
-    const finalPaper = isDoubleSided ? Math.ceil(parsedPages / 2) : Math.max(0, parsedPages);
+    const parsedPaper = paperCount !== undefined && paperCount !== null ? parseInt(String(paperCount)) : 0;
+    const finalPaper = isNaN(parsedPaper) ? 0 : Math.max(0, parsedPaper);
 
     const result = await db.$transaction(async (tx: any) => {
       // 1. Create Service Entry record
@@ -78,7 +77,7 @@ export async function POST(req: Request) {
           service_id: validServiceId,
           service_name: serviceName,
           paper_count: finalPaper,
-          page_count: parsedPages,
+          page_count: parseInt(String(pageCount)) || 1,
           face_type: faceType || 'وجه واحد',
           amount: numAmount,
           notes: notes || null,

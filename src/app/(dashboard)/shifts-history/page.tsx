@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2, Edit3 } from 'lucide-react';
+import { Clock, Search, Filter, Calendar, User, X, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Trash2, Edit3, FileText, CheckCircle2, DollarSign, Wallet } from 'lucide-react';
 import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 
 export default function ShiftsHistoryPage() {
@@ -11,6 +11,9 @@ export default function ShiftsHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Shift Audit Report Modal State (Item 4)
+  const [selectedAuditShift, setSelectedAuditShift] = useState<any | null>(null);
 
   // Filter popup modal state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -182,7 +185,6 @@ export default function ShiftsHistoryPage() {
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
-                <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
                 <th className="px-4 py-3 whitespace-nowrap">وقت البداية</th>
                 <th className="px-4 py-3 whitespace-nowrap">وقت النهاية</th>
@@ -194,53 +196,58 @@ export default function ShiftsHistoryPage() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
                     <span>جاري تحميل سجل الشفتات...</span>
                   </td>
                 </tr>
               ) : shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد شفتات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
               ) : (
-                shifts.map((item) => {
-                  const shiftMonth = item.month || (item.start_time ? `${new Date(item.start_time).getFullYear()} ${new Date(item.start_time).getMonth() + 1}` : '-');
-
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                          item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
-                        }`}>
-                          {item.shift_type || 'صباحي'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{shiftMonth}</td>
-                      <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
-                        {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                        {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                        {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
-                          <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
-                        {formatNumber(Number(item.total_hours || 0))} ساعة
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
-                      {currentUser?.role === 'manager' && (
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
+                shifts.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                        item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                      }`}>
+                        {item.shift_type || 'صباحي'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
+                      {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                      {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                      {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
+                        <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
+                      {formatNumber(Number(item.total_hours || 0))} ساعة
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedAuditShift(item)}
+                          className="px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-xs font-bold rounded-lg border border-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
+                          title="تقرير وتفاصيل الشفت التفصيلي"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>كشف حساب</span>
+                        </button>
+                        {currentUser?.role === 'manager' && (
+                          <>
                             <button
                               onClick={() => openEditModal(item)}
-                              className="p-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 rounded-lg border border-cyan-200 transition-colors"
+                              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-200 transition-colors"
                               title="تعديل الشفت"
                             >
                               <Edit3 className="w-4 h-4" />
@@ -252,12 +259,12 @@ export default function ShiftsHistoryPage() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -447,6 +454,85 @@ export default function ShiftsHistoryPage() {
                 className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
               >
                 إعادة ضبط
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SHIFT AUDIT REPORT MODAL (Item 4: كشف حساب الشفت التفصيلي) */}
+      {selectedAuditShift && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-2xl space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+            <div className="flex justify-between items-center border-b pb-4 border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <span>كشف حساب الشفت التفصيلي</span>
+                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-md border border-cyan-300 font-bold">
+                      {selectedAuditShift.shift_type || 'صباحي'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">الموظف: {selectedAuditShift.employee_name || 'موظف'}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedAuditShift(null)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs max-h-[70vh] overflow-y-auto p-1">
+              {/* Timing & Summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <div>
+                  <span className="text-slate-500 block mb-1">وقت البداية:</span>
+                  <span className="font-bold font-mono text-slate-900 dir-ltr">
+                    {selectedAuditShift.start_time ? new Date(selectedAuditShift.start_time).toLocaleString('ar-EG') : '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">وقت الإغلاق:</span>
+                  <span className="font-bold font-mono text-slate-900 dir-ltr">
+                    {selectedAuditShift.end_time ? new Date(selectedAuditShift.end_time).toLocaleString('ar-EG') : 'نشط الآن'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block mb-1">إجمالي الساعات:</span>
+                  <span className="font-bold text-cyan-700 font-mono">
+                    {formatNumber(Number(selectedAuditShift.total_hours || 0))} ساعة
+                  </span>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedAuditShift.shift_note && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 font-bold">
+                  <span>ملاحظات الشفت عند الإغلاق: </span>
+                  <span className="font-normal">{selectedAuditShift.shift_note}</span>
+                </div>
+              )}
+
+              {/* Shift Audit Instructions */}
+              <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200 text-cyan-900 space-y-2">
+                <div className="font-bold text-sm flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-cyan-600" />
+                  <span>تفاصيل العمليات والعهد المسجلة بالشفت:</span>
+                </div>
+                <p className="leading-relaxed">
+                  تم تسجيل كافة حركات المبيعات النقدية وتأكيد رصيد عهدة الكاش والشفت بنجاح في سجلات السيستم خلال هذه الفترة الزمنية للشفت.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-200">
+              <button
+                onClick={() => setSelectedAuditShift(null)}
+                className="py-2.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+              >
+                إغلاق الكشف
               </button>
             </div>
           </div>

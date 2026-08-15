@@ -82,23 +82,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, []);
 
+  const [logoutBlocked, setLogoutBlocked] = useState(false);
+
   const handleLogout = async () => {
     try {
-      const shiftRes = await fetch('/api/custody/handover');
+      // Check if user has active shift (Item 5)
+      const shiftRes = await fetch('/api/shifts');
       if (shiftRes.ok) {
-        const cData = await shiftRes.json();
-        if (cData.isUserShiftActive) {
-          alert('⚠️ لا يمكن تسجيل الخروج أثناء وجود شفت مفتوح! برجاء تسليم العهدة وإنهاء الشفت أولاً من صفحة إدارة الشفتات.');
-          router.push('/shifts');
+        const shiftData = await shiftRes.json();
+        const activeShift = (shiftData.shifts || []).find((s: any) => !s.end_time && s.employee_id === user?.id);
+        if (activeShift) {
+          setLogoutBlocked(true);
           return;
         }
       }
+
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
     } catch (e) {
       console.error(e);
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
     }
-
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
   };
 
   if (loading) {
@@ -308,6 +313,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* LOGOUT BLOCKED MODAL (Item 5) */}
+      {logoutBlocked && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto font-bold">
+              <LogOut className="w-8 h-8" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg">لا يمكن تسجيل الخروج الآن ⚠️</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+              لديك شفت عمل نشط حالياً. يشترط النظام إنهاء الشفت وتصفية وتسليم كافة العهد أولاً قبل السماح بتسجيل الخروج الحساب.
+            </p>
+
+            <div className="pt-3 flex gap-3">
+              <Link
+                href="/shifts"
+                onClick={() => setLogoutBlocked(false)}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Clock className="w-4 h-4" />
+                <span>الذهاب لصفحة الشفتات والعهد</span>
+              </Link>
+              <button
+                onClick={() => setLogoutBlocked(false)}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

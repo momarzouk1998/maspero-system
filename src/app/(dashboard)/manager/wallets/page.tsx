@@ -22,10 +22,6 @@ export default function ManagerWalletsPage() {
   const [walletNumber, setWalletNumber] = useState('');
   const [initialBalance, setInitialBalance] = useState('0');
   const [custodianName, setCustodianName] = useState('');
-  const [minDeposit, setMinDeposit] = useState('0');
-  const [maxDeposit, setMaxDeposit] = useState('0');
-  const [minWithdraw, setMinWithdraw] = useState('0');
-  const [maxWithdraw, setMaxWithdraw] = useState('0');
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -68,10 +64,6 @@ export default function ManagerWalletsPage() {
     setWalletNumber('');
     setInitialBalance('0');
     setCustodianName('');
-    setMinDeposit('0');
-    setMaxDeposit('0');
-    setMinWithdraw('0');
-    setMaxWithdraw('0');
     setModalOpen(true);
   };
 
@@ -82,10 +74,6 @@ export default function ManagerWalletsPage() {
     setWalletNumber(item.wallet_number || '');
     setInitialBalance((item.current_balance || 0).toString());
     setCustodianName(item.custodian_name || '');
-    setMinDeposit((item.min_deposit || 0).toString());
-    setMaxDeposit((item.max_deposit || 0).toString());
-    setMinWithdraw((item.min_withdraw || 0).toString());
-    setMaxWithdraw((item.max_withdraw || 0).toString());
     setModalOpen(true);
   };
 
@@ -98,17 +86,19 @@ export default function ManagerWalletsPage() {
       const url = '/api/wallets';
       const method = isEditing ? 'PUT' : 'POST';
 
-      const body = {
-        ...(isEditing ? { walletId: editingItem.id } : {}),
+      const body = isEditing ? {
+        walletId: editingItem.id,
         walletName,
         walletType,
         walletNumber,
         initialBalance: parseFloat(initialBalance || '0'),
-        custodianName,
-        minDeposit: parseFloat(minDeposit || '0'),
-        maxDeposit: parseFloat(maxDeposit || '0'),
-        minWithdraw: parseFloat(minWithdraw || '0'),
-        maxWithdraw: parseFloat(maxWithdraw || '0')
+        custodianName
+      } : {
+        walletName,
+        walletType,
+        walletNumber,
+        initialBalance: parseFloat(initialBalance || '0'),
+        custodianName
       };
 
       const res = await fetch(url, {
@@ -343,50 +333,6 @@ export default function ManagerWalletsPage() {
                     <option key={u.id} value={u.name}>{u.name}</option>
                   ))}
                 </select>
-              </div>
-
-              {/* Deposit & Withdraw Limits */}
-              <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-200">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">أقل مبلغ إيداع (مسموح)</label>
-                  <input
-                    type="number"
-                    value={minDeposit}
-                    onChange={(e) => setMinDeposit(e.target.value)}
-                    placeholder="0"
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">أقصى مبلغ إيداع (مسموح)</label>
-                  <input
-                    type="number"
-                    value={maxDeposit}
-                    onChange={(e) => setMaxDeposit(e.target.value)}
-                    placeholder="0 = بدون حد"
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">أقل مبلغ سحب (مسموح)</label>
-                  <input
-                    type="number"
-                    value={minWithdraw}
-                    onChange={(e) => setMinWithdraw(e.target.value)}
-                    placeholder="0"
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">أقصى مبلغ سحب (مسموح)</label>
-                  <input
-                    type="number"
-                    value={maxWithdraw}
-                    onChange={(e) => setMaxWithdraw(e.target.value)}
-                    placeholder="0 = بدون حد"
-                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono text-xs font-bold"
-                  />
-                </div>
               </div>
 
               <div className="flex gap-3 pt-3 border-t border-slate-200">

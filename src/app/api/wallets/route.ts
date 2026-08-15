@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'إضافة المحافظ والماكينات متاح للمدير فقط' }, { status: 403 });
       }
 
-      const { walletName, walletType, walletNumber, initialBalance, custodianName, minDeposit, maxDeposit, minWithdraw, maxWithdraw } = body;
+      const { walletName, walletType, walletNumber, initialBalance, custodianName } = body;
       if (!walletName || !walletType) {
         return NextResponse.json({ error: 'اسم المحفظة ونوعها مطلوبان' }, { status: 400 });
       }
@@ -81,10 +81,6 @@ export async function POST(req: Request) {
           current_balance: Number(initialBalance || 0),
           actual_balance: Number(initialBalance || 0),
           custodian_name: custodianName || 'ماسـبيرو (المركز)',
-          min_deposit: minDeposit ? Number(minDeposit) : 0,
-          max_deposit: maxDeposit ? Number(maxDeposit) : 0,
-          min_withdraw: minWithdraw ? Number(minWithdraw) : 0,
-          max_withdraw: maxWithdraw ? Number(maxWithdraw) : 0,
           is_active: true,
         }
       });
@@ -107,23 +103,6 @@ export async function POST(req: Request) {
 
     const numAmount = Number(amount);
     const numCommission = Number(commission || 0);
-
-    // Validate deposit / withdrawal limits
-    if (transactionType === 'إيداع') {
-      if (wallet.min_deposit && Number(wallet.min_deposit) > 0 && numAmount < Number(wallet.min_deposit)) {
-        return NextResponse.json({ error: `مبلغ الإيداع أقل من الحد الأدنى المسموح به (${wallet.min_deposit})` }, { status: 400 });
-      }
-      if (wallet.max_deposit && Number(wallet.max_deposit) > 0 && numAmount > Number(wallet.max_deposit)) {
-        return NextResponse.json({ error: `مبلغ الإيداع يتجاوز الحد الأقصى المسموح به (${wallet.max_deposit})` }, { status: 400 });
-      }
-    } else if (transactionType === 'سحب') {
-      if (wallet.min_withdraw && Number(wallet.min_withdraw) > 0 && numAmount < Number(wallet.min_withdraw)) {
-        return NextResponse.json({ error: `مبلغ السحب أقل من الحد الأدنى المسموح به (${wallet.min_withdraw})` }, { status: 400 });
-      }
-      if (wallet.max_withdraw && Number(wallet.max_withdraw) > 0 && numAmount > Number(wallet.max_withdraw)) {
-        return NextResponse.json({ error: `مبلغ السحب يتجاوز الحد الأقصى المسموح به (${wallet.max_withdraw})` }, { status: 400 });
-      }
-    }
     const today = new Date();
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
@@ -191,7 +170,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { walletId, walletName, walletType, walletNumber, initialBalance, custodianName, minDeposit, maxDeposit, minWithdraw, maxWithdraw } = await req.json();
+    const { walletId, walletName, walletType, walletNumber, initialBalance, custodianName } = await req.json();
 
     if (!walletId) {
       return NextResponse.json({ error: 'معرف المحفظة مطلوب' }, { status: 400 });
@@ -206,10 +185,6 @@ export async function PUT(req: Request) {
       updateData.actual_balance = Number(initialBalance);
     }
     if (custodianName !== undefined) updateData.custodian_name = custodianName || 'ماسـبيرو (المركز)';
-    if (minDeposit !== undefined) updateData.min_deposit = Number(minDeposit || 0);
-    if (maxDeposit !== undefined) updateData.max_deposit = Number(maxDeposit || 0);
-    if (minWithdraw !== undefined) updateData.min_withdraw = Number(minWithdraw || 0);
-    if (maxWithdraw !== undefined) updateData.max_withdraw = Number(maxWithdraw || 0);
 
     const updated = await db.external_wallets.update({
       where: { id: walletId },

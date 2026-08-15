@@ -167,10 +167,6 @@ model external_wallets {
   custodian_id    String?  @db.Uuid
   sort            Int      @default(0)
   is_active       Boolean  @default(true)
-  min_deposit     Decimal? @default(0) @db.Decimal(15, 2)
-  max_deposit     Decimal? @default(0) @db.Decimal(15, 2)
-  min_withdraw    Decimal? @default(0) @db.Decimal(15, 2)
-  max_withdraw    Decimal? @default(0) @db.Decimal(15, 2)
 
   custodian       users?   @relation("WalletCustodian", fields: [custodian_id], references: [id])
   transactions    wallet_transactions[]
@@ -496,6 +492,39 @@ model expense_categories {
   created_at  DateTime? @default(now()) @db.Timestamptz()
 
   @@map("expense_categories")
+  @@schema("maspero")
+}
+
+// 19. Monthly Financial Reports Archive (سجل التقارير المالية الشهرية الأرشيفية)
+model monthly_financial_reports {
+  id                            String    @id @default(uuid()) @db.Uuid
+  month                         String    @unique @db.VarChar(20) // e.g. "2026 7"
+  start_date                    DateTime? @db.Date
+  end_date                      DateTime? @db.Date
+  wallet_commission             Decimal   @default(0) @db.Decimal(15, 2)
+  tickets_commission            Decimal   @default(0) @db.Decimal(15, 2)
+  machine_withdrawal_commission  Decimal   @default(0) @db.Decimal(15, 2)
+  machine_deposit_commission     Decimal   @default(0) @db.Decimal(15, 2)
+  machine_deposits              Decimal   @default(0) @db.Decimal(15, 2)
+  service_revenue               Decimal   @default(0) @db.Decimal(15, 2)
+  total_revenue                 Decimal   @default(0) @db.Decimal(15, 2)
+  opening_balance               Decimal   @default(0) @db.Decimal(15, 2)
+  closing_balance               Decimal   @default(0) @db.Decimal(15, 2)
+  purchases_cost                Decimal   @default(0) @db.Decimal(15, 2)
+  purchases_cost_percent        Decimal   @default(0) @db.Decimal(5, 2)
+  total_profit                  Decimal   @default(0) @db.Decimal(15, 2)
+  total_commissions             Decimal   @default(0) @db.Decimal(15, 2)
+  other_expenses                Decimal   @default(0) @db.Decimal(15, 2)
+  salaries                      Decimal   @default(0) @db.Decimal(15, 2)
+  net_profit                    Decimal   @default(0) @db.Decimal(15, 2)
+  withdrawn_revenue             Decimal   @default(0) @db.Decimal(15, 2)
+  ticket_count                  Int       @default(0)
+  paper_count                   Int       @default(0)
+  notes                         String?   @db.Text
+  created_at                    DateTime? @default(now()) @db.Timestamptz()
+  updated_at                    DateTime? @default(now()) @db.Timestamptz()
+
+  @@map("monthly_financial_reports")
   @@schema("maspero")
 }
 
