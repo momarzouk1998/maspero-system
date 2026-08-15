@@ -20,6 +20,12 @@ export default function ExpensesHistoryPage() {
   const [endDate, setEndDate] = useState('');
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
 
+  // Dynamic Months & Days State
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [availableDays, setAvailableDays] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState<string>('');
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
 
@@ -42,6 +48,30 @@ export default function ExpensesHistoryPage() {
       .then(d => setUsersList(getActiveUsers(d.users || [])))
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    fetch(`/api/expenses/months?mainType=${encodeURIComponent(mainTypeFilter)}&employeeId=${filterEmployeeId}`)
+      .then(r => r.json())
+      .then(d => {
+        setAvailableMonths(d.months || []);
+        setSelectedMonth('');
+        setAvailableDays([]);
+        setSelectedDay('');
+      })
+      .catch(console.error);
+  }, [mainTypeFilter, filterEmployeeId]);
+
+  useEffect(() => {
+    if (!selectedMonth) {
+      setAvailableDays([]);
+      setSelectedDay('');
+      return;
+    }
+    fetch(`/api/expenses/days?mainType=${encodeURIComponent(mainTypeFilter)}&month=${encodeURIComponent(selectedMonth)}&employeeId=${filterEmployeeId}`)
+      .then(r => r.json())
+      .then(d => setAvailableDays(d.days || []))
+      .catch(console.error);
+  }, [selectedMonth, mainTypeFilter, filterEmployeeId]);
 
   const hasActiveFilters = mainTypeFilter || startDate || endDate || filterEmployeeId;
 
@@ -168,27 +198,72 @@ export default function ExpensesHistoryPage() {
             ))}
           </div>
 
-          {/* Quick Date Filters */}
-          <button
-            onClick={() => {
-              const today = new Date().toISOString().split('T')[0];
-              setStartDate(today);
-              setEndDate(today);
-            }}
-            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 cursor-pointer"
-          >
-            اليوم
-          </button>
-          <button
-            onClick={() => {
-              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              setStartDate(yesterday);
-              setEndDate(yesterday);
-            }}
-            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 cursor-pointer"
-          >
-            أمس
-          </button>
+          {/* Dynamic Months Action Buttons */}
+          {availableMonths.length > 0 && (
+            <div className="flex items-center gap-1 bg-amber-50 p-1 rounded-xl border border-amber-200 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] text-amber-800 font-bold px-1.5 whitespace-nowrap">الشهور المتاحة:</span>
+              {availableMonths.map(m => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    if (selectedMonth === m) {
+                      setSelectedMonth('');
+                      setStartDate('');
+                      setEndDate('');
+                    } else {
+                      setSelectedMonth(m);
+                      const parts = m.split(' ');
+                      if (parts.length === 2) {
+                        const yyyy = parseInt(parts[0]);
+                        const mm = parseInt(parts[1]);
+                        const start = new Date(yyyy, mm - 1, 1).toISOString().split('T')[0];
+                        const end = new Date(yyyy, mm, 0).toISOString().split('T')[0];
+                        setStartDate(start);
+                        setEndDate(end);
+                      }
+                    }
+                  }}
+                  className={`py-1 px-2.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedMonth === m
+                      ? 'bg-amber-600 text-white shadow-sm'
+                      : 'bg-white text-amber-900 hover:bg-amber-100 border border-amber-200'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Dynamic Days Action Buttons */}
+          {availableDays.length > 0 && (
+            <div className="flex items-center gap-1 bg-cyan-50 p-1 rounded-xl border border-cyan-200 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] text-cyan-800 font-bold px-1.5 whitespace-nowrap">الأيام المتاحة:</span>
+              {availableDays.map(dStr => (
+                <button
+                  key={dStr}
+                  onClick={() => {
+                    if (selectedDay === dStr) {
+                      setSelectedDay('');
+                      setStartDate('');
+                      setEndDate('');
+                    } else {
+                      setSelectedDay(dStr);
+                      setStartDate(dStr);
+                      setEndDate(dStr);
+                    }
+                  }}
+                  className={`py-1 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedDay === dStr
+                      ? 'bg-cyan-700 text-white shadow-sm'
+                      : 'bg-white text-cyan-900 hover:bg-cyan-100 border border-cyan-200'
+                  }`}
+                >
+                  {dStr}
+                </button>
+              ))}
+            </div>
+          )}
           <button
             onClick={() => {
               const now = new Date();

@@ -70,7 +70,7 @@ export async function GET() {
 
     // 5. Calculate online cashiers summary (active shift cashiers & cash balances)
     const userRecords = await (db.users as any).findMany({
-      select: { id: true, name: true, short_name: true }
+      select: { id: true, name: true, short_name: true, wallet_balance: true }
     });
 
     const onlineCashiers = activeShifts.map((s: any) => {
