@@ -121,7 +121,9 @@ export default function ShiftsPage() {
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setFeedbackMsg({ text, type });
-    setTimeout(() => setFeedbackMsg(null), 4000);
+    if (type === 'success') {
+      setTimeout(() => setFeedbackMsg(null), 8000);
+    }
   };
 
   const handleStartShift = async () => {
@@ -679,8 +681,12 @@ export default function ShiftsPage() {
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
                         <button
-                          onClick={() => setDeliverModalItem(item)}
-                          className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm"
+                          onClick={() => {
+                            setDeliverModalItem(item);
+                            setDeliverReceiverId('maspero');
+                            setActualBalanceInput('');
+                          }}
+                          className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
                         >
                           تسليم
                         </button>
@@ -1151,18 +1157,14 @@ export default function ShiftsPage() {
 
             <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">اختر الموظف المستلم *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">الجهة المستلمة *</label>
                 <select
                   required
                   value={deliverReceiverId}
                   onChange={(e) => setDeliverReceiverId(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-amber-500"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-amber-500"
                 >
-                  <option value="">-- اختر الموظف المستلم أو المركز --</option>
-                  <option value="maspero">🏢 ماسـبيرو (المركز نفسه)</option>
-                  {users.filter(u => u.id !== activeShift?.employee_id).map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
+                  <option value="maspero">🏢 ماسـبيرو (المركز الرئيسي)</option>
                 </select>
               </div>
 

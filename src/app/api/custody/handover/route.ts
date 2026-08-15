@@ -75,8 +75,7 @@ export async function GET() {
 
     const onlineCashiers = activeShifts.map((s: any) => {
       const uRec = userRecords.find((u: any) => u.id === s.employee_id);
-      const userDrawer = drawers.find((d: any) => d.custodian_id === s.employee_id);
-      const bal = userDrawer ? Number(userDrawer.actual_balance || userDrawer.current_balance || 0) : 0;
+      const bal = Number(uRec?.wallet_balance || 0);
 
       let displayName = uRec?.short_name || s.employee_name || 'موظف';
       if (!uRec?.short_name) {

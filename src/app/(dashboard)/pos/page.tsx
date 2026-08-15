@@ -180,13 +180,15 @@ export default function POSPage() {
     setSvcLoading(true);
     try {
       const isOther = svcPopup.service_name === 'أخرى';
+      const actualPaperCount = svcFace === 'وجهين' ? Math.ceil(svcPaper / 2) : svcPaper;
+
       await fetch('/api/service-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceId: svcPopup.id,
           serviceName: isOther && svcNotes ? `أخرى: ${svcNotes}` : svcPopup.service_name,
-          paperCount: svcPaper, pageCount: 1, faceType: svcFace,
+          paperCount: actualPaperCount, pageCount: svcPaper, faceType: svcFace,
           amount: svcAmt, notes: svcNotes || null,
           invoice_code: activeInvoiceCode,
         }),

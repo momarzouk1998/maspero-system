@@ -144,7 +144,11 @@ export async function POST(req: Request) {
         }
       });
 
-      const employeeCashChange = transactionType === 'إيداع' ? (numAmount + numCommission) : -(numAmount - numCommission);
+      const isDrawer = wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج');
+      const employeeCashChange = isDrawer
+        ? (transactionType === 'إيداع' ? -numAmount : numAmount)
+        : (transactionType === 'إيداع' ? (numAmount + numCommission) : -(numAmount - numCommission));
+
       await tx.users.update({
         where: { id: user.id },
         data: {

@@ -237,6 +237,7 @@ export default function ExpensesHistoryPage() {
                 <th className="px-4 py-3 whitespace-nowrap">التصنيف الرئيسي</th>
                 <th className="px-4 py-3 whitespace-nowrap">طريقة الصرف</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
                 <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
@@ -246,14 +247,14 @@ export default function ExpensesHistoryPage() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
                     <span>جاري تحميل سجل المصروفات...</span>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={8} className="text-center py-12 text-slate-500">
                     لا توجد مصروفات مسجلة تطابق التصفية
                   </td>
                 </tr>
@@ -274,6 +275,7 @@ export default function ExpensesHistoryPage() {
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
                       {formatNumberLocale(Number(item.amount), 'en-US')}
                     </td>
+                    <td className="px-4 py-3 text-xs font-bold text-slate-800 font-mono whitespace-nowrap">{item.month || item.transaction_month || '-'}</td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">{item.employee_name || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
