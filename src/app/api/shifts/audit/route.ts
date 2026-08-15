@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const shift = await db.shifts.findUnique({ where: { id: shiftId } });
     if (!shift) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 });
 
-    const startTime = shift.start_time;
+    const startTime = shift.start_time || new Date();
     const endTime = shift.end_time || new Date();
     const empId = shift.employee_id;
 
