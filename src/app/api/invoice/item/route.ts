@@ -3,6 +3,77 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 
+// PUT: Edit invoice item (service or ticket) — adjust amount difference in custody
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  try {
+    const { id, type, newAmount, newCount, newNotes } = await req.json();
+
+    if (!id || !type || newAmount === undefined) {
+      return NextResponse.json({ error: 'معرف العنصر ونوعه والمبلغ الجديد مطلوبان' }, { status: 400 });
+    }
+
+    const numNewAmount = Number(newAmount);
+
+    await db.$transaction(async (tx) => {
+      if (type === 'service') {
+        const entry = await tx.service_entries.findUnique({ where: { id } });
+        if (!entry) throw new Error('العنصر غير موجود');
+        if (entry.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
+
+        const oldAmount = Number(entry.amount);
+        const diff = numNewAmount - oldAmount;
+
+        // adjust custody by the difference only
+        if (diff !== 0) {
+          await WalletService.adjustEmployeeWallet(entry.employee_id!, diff, tx);
+        }
+
+        await tx.service_entries.update({
+          where: { id },
+          data: {
+            amount: numNewAmount,
+            ...(newCount !== undefined ? { paper_count: Number(newCount) } : {}),
+            ...(newNotes !== undefined ? { notes: newNotes } : {}),
+          }
+        });
+      }
+      else if (type === 'ticket') {
+        const ticket = await tx.train_ticket_bookings.findUnique({ where: { id } });
+        if (!ticket) throw new Error('العنصر غير موجود');
+        if (ticket.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
+
+        const oldAmount = Number(ticket.amount);
+        const diff = numNewAmount - oldAmount;
+
+        if (diff !== 0) {
+          await WalletService.adjustEmployeeWallet(ticket.employee_id!, diff, tx);
+        }
+
+        await tx.train_ticket_bookings.update({
+          where: { id },
+          data: {
+            amount: numNewAmount,
+            ...(newCount !== undefined ? { item_count: Number(newCount) } : {}),
+            ...(newNotes !== undefined ? { notes: newNotes } : {}),
+          }
+        });
+      }
+      else {
+        throw new Error('تعديل عمليات المحافظ غير مدعوم — يرجى الحذف وإعادة الإدخال');
+      }
+    });
+
+    return NextResponse.json({ success: true, message: 'تم تعديل البند بنجاح' });
+
+  } catch (error: any) {
+    console.error('Invoice Item Edit Error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء التعديل' }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });

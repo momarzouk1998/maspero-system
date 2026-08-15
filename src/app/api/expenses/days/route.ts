@@ -16,25 +16,50 @@ export async function GET(req: Request) {
       ? (filterEmpId ? { employee_id: filterEmpId } : {})
       : { employee_id: user.id };
 
+    const andConditions: any[] = [];
+
     if (mainType) {
       if (['قبض', 'سلفة'].includes(mainType)) {
-        whereCondition.OR = [
-          { main_type: mainType },
-          { expense_type: mainType }
-        ];
+        andConditions.push({
+          OR: [
+            { main_type: mainType },
+            { expense_type: mainType }
+          ]
+        });
       } else {
-        whereCondition.OR = [
-          { main_type: { contains: mainType, mode: 'insensitive' } },
-          { expense_type: { contains: mainType, mode: 'insensitive' } },
-          { items: { contains: mainType, mode: 'insensitive' } }
-        ];
+        andConditions.push({
+          OR: [
+            { main_type: { contains: mainType, mode: 'insensitive' } },
+            { expense_type: { contains: mainType, mode: 'insensitive' } },
+            { items: { contains: mainType, mode: 'insensitive' } }
+          ]
+        });
       }
     }
 
     if (month) {
-      whereCondition.OR = [
-        ...(whereCondition.OR || []),
-        { month: month }
+      // فلتر الشهر بناءً على حقل month أو من خلال حساب التاريخ
+      const parts = month.split(' ');
+      if (parts.length === 2) {
+        const yyyy = parseInt(parts[0]);
+        const mm = parseInt(parts[1]);
+        const startOfMonth = new Date(yyyy, mm - 1, 1);
+        const endOfMonth = new Date(yyyy, mm, 0, 23, 59, 59);
+        andConditions.push({
+          OR: [
+            { month: month },
+            { date: { gte: startOfMonth, lte: endOfMonth } }
+          ]
+        });
+      } else {
+        andConditions.push({ month: month });
+      }
+    }
+
+    if (andConditions.length > 0) {
+      whereCondition.AND = [
+        ...(whereCondition.AND || []),
+        ...andConditions
       ];
     }
 

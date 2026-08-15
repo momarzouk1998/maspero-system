@@ -11,6 +11,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const startDateStr = searchParams.get('startDate');
   const endDateStr = searchParams.get('endDate');
+  // نسبة عمولة إيداع المكن — قابلة للتعديل من الواجهة (default: 7 لكل 1000)
+  const machineCommissionRateStr = searchParams.get('machineCommissionRate');
+  const machineCommissionRate = machineCommissionRateStr
+    ? Math.max(0, Math.min(100, parseFloat(machineCommissionRateStr)))
+    : 7;
 
   const now = new Date();
   const startDate = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), 1);
@@ -122,7 +127,7 @@ export async function GET(req: Request) {
   const machineWithdrawlCommission = Number(machineWithdrawlCommissions._sum.wallet_commission || 0);
   const machineDeposits = Number(machineDepositsAggregate._sum.amount || 0);
   const machineWithdrawl = Number(machineWithdrawlsAggregate._sum.amount || 0);
-  const machineDepositsCommission = (machineDeposits * 7) / 1000; // 0.7% commission
+  const machineDepositsCommission = (machineDeposits * machineCommissionRate) / 1000; // نسبة قابلة للتعديل
 
   const totalCommissions = walletCommission + ticketCommission + machineWithdrawlCommission + machineDepositsCommission;
   const totalRevenue = serviceValue;
@@ -287,6 +292,7 @@ export async function GET(req: Request) {
       machineDeposits,
       machineWithdrawl,
       machineDepositsCommission,
+      machineCommissionRate,
       totalCommissions,
       totalRevenue,
       purchaseValue,

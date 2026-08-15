@@ -26,12 +26,16 @@ export default function ManagerReportsPage() {
   const [archivedReports, setArchivedReports] = useState<any[]>([]);
   const [savingArchive, setSavingArchive] = useState(false);
 
+  // نسبة عمولة إيداع المكن — قابلة للتعديل (default: 7 لكل 1000)
+  const [machineCommissionRate, setMachineCommissionRate] = useState<number>(7);
+
   const fetchReports = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
+      params.set('machineCommissionRate', String(machineCommissionRate));
 
       const res = await fetch(`/api/reports/financial?${params.toString()}`);
       if (res.ok) {
@@ -58,7 +62,7 @@ export default function ManagerReportsPage() {
 
   useEffect(() => {
     fetchReports();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, machineCommissionRate]);
 
   const handleSaveMonthArchive = async () => {
     if (!metrics) return;
@@ -164,6 +168,25 @@ export default function ManagerReportsPage() {
           >
             إعادة ضبط
           </button>
+        </div>
+
+        {/* نسبة عمولة إيداع المكن */}
+        <div className="flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
+          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">عمولة إيداع المكن (÷1000):</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.5"
+            value={machineCommissionRate}
+            onChange={(e) => setMachineCommissionRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+            className="w-20 py-1.5 px-3 bg-white border border-amber-300 rounded-xl text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 text-center"
+            title="نسبة عمولة إيداع الماكينات — يتم حساب: (إجمالي الإيداع × النسبة) ÷ 1000"
+          />
+          <span className="text-[11px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg whitespace-nowrap">
+            = {metrics ? formatNumber((metrics.machineDeposits * machineCommissionRate) / 1000) : '0'} ج
+          </span>
         </div>
       </div>
 

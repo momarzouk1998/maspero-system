@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Printer, Train, Wallet, Plus, Trash2, RefreshCw, X, Receipt,
   Bus, CheckCircle2, Info, ArrowDownLeft, ArrowUpRight, ChevronRight,
-  FileText, PlusCircle, Cpu, Lock, HelpCircle
+  FileText, PlusCircle, Cpu, Lock, HelpCircle, Edit3
 } from 'lucide-react';
 import { calculatePrintPrice } from '@/lib/print-pricing';
 import { InvoicePrint, InvoiceItem } from '@/components/pos/invoice-print';
@@ -107,6 +107,46 @@ export default function POSPage() {
       });
       if (activeInvoiceCode) fetchInvoice(activeInvoiceCode);
     } finally { setRefreshing(false); }
+  };
+
+  // ─── Edit item ───────────────────────────────────────────
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editCount, setEditCount] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+
+  const openEditItem = (item: any) => {
+    setEditItem(item);
+    setEditAmount(String(item.total ?? item.price ?? 0));
+    setEditCount(String(item.count ?? 1));
+    setEditNotes(item.notes ?? '');
+  };
+
+  const handleEditItem = async () => {
+    if (!editItem || !activeInvoiceCode) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch('/api/invoice/item', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editItem.id,
+          type: editItem.type,
+          newAmount: parseFloat(editAmount) || 0,
+          newCount: editItem.type !== 'wallet' ? (parseInt(editCount) || 1) : undefined,
+          newNotes: editNotes || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل التعديل');
+      setEditItem(null);
+      fetchInvoice(activeInvoiceCode);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   // ─── Services & Custody data ──────────────────────────────
@@ -744,6 +784,17 @@ export default function POSPage() {
                     </div>
                   </div>
                   <div className="shrink-0 font-bold text-slate-900 font-mono text-sm">{item.total} ج</div>
+                  {/* زرار تعديل — خدمات وتذاكر فقط */}
+                  {item.type !== 'wallet' && (
+                    <button
+                      onClick={() => openEditItem(item)}
+                      className="absolute -top-1.5 left-5 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex"
+                      title="تعديل البند"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                  )}
+                  {/* زرار حذف */}
                   <button
                     onClick={() => handleDeleteItem(item.id, item.type)}
                     className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex"
@@ -1040,6 +1091,102 @@ export default function POSPage() {
         isOpen={showKioskGuideModal}
         onClose={() => setShowKioskGuideModal(false)}
       />
+
+      {/* ══════════════════════════════════════════════════
+           MODAL: EDIT INVOICE ITEM (خدمة / تذكرة)
+      ══════════════════════════════════════════════════ */}
+      {editItem && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-200">
+
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-blue-600" />
+                  تعديل بند الفاتورة
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{editItem.name}</p>
+              </div>
+              <button onClick={() => setEditItem(null)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* المبلغ الإجمالي */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">المبلغ الإجمالي *</label>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  value={editAmount}
+                  onChange={e => setEditAmount(e.target.value)}
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  autoFocus
+                />
+              </div>
+
+              {/* العدد — خدمات فقط */}
+              {editItem.type === 'service' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">عدد الأوراق / الوحدات</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editCount}
+                    onChange={e => setEditCount(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              {/* عدد التذاكر */}
+              {editItem.type === 'ticket' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">عدد التذاكر</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editCount}
+                    onChange={e => setEditCount(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              {/* ملاحظات */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">ملاحظات (اختياري)</label>
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={e => setEditNotes(e.target.value)}
+                  placeholder="ملاحظات تفصيلية..."
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={handleEditItem}
+                disabled={editLoading || !editAmount || parseFloat(editAmount) <= 0}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md"
+              >
+                {editLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+                حفظ التعديل
+              </button>
+              <button
+                onClick={() => setEditItem(null)}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -30,23 +30,33 @@ export async function GET(req: Request) {
       }
     }
 
-    const records = await db.expenses.findMany({
+    // استخدام distinct لجلب الأشهر الفريدة مباشرة بدون تحميل كل السجلات
+    const distinctMonthRecords = await db.expenses.findMany({
       where: whereCondition,
       select: { month: true, date: true },
+      distinct: ['month'],
       orderBy: { date: 'desc' }
     });
 
-    const monthsSet = new Set<string>();
-    records.forEach(r => {
-      if (r.month) {
-        monthsSet.add(r.month);
-      } else if (r.date) {
-        const d = new Date(r.date);
-        monthsSet.add(`${d.getFullYear()} ${d.getMonth() + 1}`);
+    // بناء قائمة الأشهر المرتبة بدون تكرار
+    const monthsMap = new Map<string, Date>();
+    distinctMonthRecords.forEach(r => {
+      const key = r.month
+        ? r.month.trim()
+        : r.date
+        ? `${new Date(r.date).getFullYear()} ${new Date(r.date).getMonth() + 1}`
+        : null;
+      if (key && !monthsMap.has(key)) {
+        monthsMap.set(key, r.date ? new Date(r.date) : new Date(0));
       }
     });
 
-    return NextResponse.json({ months: Array.from(monthsSet) });
+    // ترتيب تنازلي بالتاريخ (الأحدث أولاً)
+    const months = Array.from(monthsMap.entries())
+      .sort((a, b) => b[1].getTime() - a[1].getTime())
+      .map(([month]) => month);
+
+    return NextResponse.json({ months });
   } catch (error: any) {
     console.error('Error fetching expense months:', error);
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء جلب الأشهر' }, { status: 500 });
