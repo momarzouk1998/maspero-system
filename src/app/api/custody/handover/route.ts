@@ -241,8 +241,7 @@ export async function POST(req: Request) {
               actual_balance: bal,
               difference: 0,
               review_status: 'تم المطابقة',
-              created_at: today,
-              month: monthStr
+              created_at: today
             }
           });
 
@@ -251,7 +250,7 @@ export async function POST(req: Request) {
             data: {
               custodian_id: null,
               custodian_name: 'ماسـبيرو (المركز)',
-              status: 'متاح'
+              confirm_status: 'متاح'
             }
           });
         }
