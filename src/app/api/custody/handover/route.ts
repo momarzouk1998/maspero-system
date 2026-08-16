@@ -122,6 +122,19 @@ export async function GET() {
       lockReason = 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً لتفعيل خدمات المبيعات والطباعة والتذاكر.';
     }
 
+    const userMap = new Map(userRecords.map((u: any) => [u.id, Number(u.wallet_balance || 0)]));
+
+    const formattedDrawers = drawers.map((d: any) => {
+      const custodianCash = d.custodian_id ? userMap.get(d.custodian_id) : undefined;
+      const displayBalance = custodianCash !== undefined ? custodianCash : Number(d.actual_balance || d.current_balance || 0);
+
+      return {
+        ...d,
+        actual_balance: displayBalance,
+        current_balance: displayBalance
+      };
+    });
+
     return NextResponse.json({
       isUserShiftActive,
       isMorningOrSoloShift,
@@ -130,7 +143,7 @@ export async function GET() {
       lockReason,
       wallets,
       machines,
-      drawers,
+      drawers: formattedDrawers,
       itemsInUserCustody,
       onlineCashiers,
       pendingHandovers
