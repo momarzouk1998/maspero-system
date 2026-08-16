@@ -272,16 +272,23 @@ export default function POSPage() {
   const [wltComm, setWltComm] = useState(0);
   const [wltNotes, setWltNotes] = useState('');
   const [wltLoading, setWltLoading] = useState(false);
+  const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا'>('011');
 
   const openWltPopup = (w: any, defaultType: 'إيداع' | 'سحب' = 'إيداع') => {
     setWltPopup(w);
     setWltOpType(defaultType);
     setWltAmt(0); setWltComm(0); setWltNotes('');
+    setKomandaProvider('011');
   };
 
   const handleAddWallet = async () => {
     if (!wltPopup || wltAmt <= 0 || !activeInvoiceCode) return;
     setWltLoading(true);
+    const isKomanda = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
+    const finalDescription = isKomanda
+      ? `[${komandaProvider}] ${wltNotes}`.trim()
+      : wltNotes;
+
     try {
       await fetch('/api/wallets', {
         method: 'POST',
@@ -289,7 +296,7 @@ export default function POSPage() {
         body: JSON.stringify({
           walletId: wltPopup.id, transactionType: wltOpType,
           amount: wltAmt, commission: wltComm,
-          description: wltNotes, invoice_code: activeInvoiceCode,
+          description: finalDescription, invoice_code: activeInvoiceCode,
         }),
       });
       setWltPopup(null);
@@ -1005,6 +1012,29 @@ export default function POSPage() {
                 </button>
               </div>
             </div>
+
+            {/* Komanda Provider Buttons */}
+            {(wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا')) && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">كوماندا *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['011', '010', 'انستا'] as const).map(prov => (
+                    <button
+                      key={prov}
+                      type="button"
+                      onClick={() => setKomandaProvider(prov)}
+                      className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all flex items-center justify-center cursor-pointer ${
+                        komandaProvider === prov
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {prov}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
