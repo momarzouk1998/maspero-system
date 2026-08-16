@@ -69,31 +69,36 @@ export async function GET() {
     const itemsInUserCustody = allCustodyItems.filter((i: any) => i.custodian_id === user.id);
 
     // 5. Calculate online cashiers summary (active shift cashiers & cash balances)
-    const userRecords = await (db.users as any).findMany({
+    const userRecords = await db.users.findMany({
+      where: { is_active: true },
       select: { id: true, name: true, short_name: true, wallet_balance: true }
     });
 
-    const onlineCashiers = activeShifts.map((s: any) => {
-      const uRec = userRecords.find((u: any) => u.id === s.employee_id);
-      const bal = Number(uRec?.wallet_balance || 0);
+    const activeUserIds = new Set(userRecords.map(u => u.id));
 
-      let displayName = uRec?.short_name || s.employee_name || 'موظف';
-      if (!uRec?.short_name) {
-        if (displayName.startsWith('أ/ ')) {
-          displayName = displayName.replace(/^أ\/\s*/, '').trim();
-        }
-        if (displayName.includes(' ')) {
-          displayName = displayName.split(' ')[0];
-        }
-      }
+    const onlineCashiers = activeShifts
+      .filter((s: any) => s.employee_id && activeUserIds.has(s.employee_id))
+      .map((s: any) => {
+        const uRec = userRecords.find((u: any) => u.id === s.employee_id);
+        const bal = Number(uRec?.wallet_balance || 0);
 
-      return {
-        id: s.employee_id,
-        name: displayName,
-        fullName: s.employee_name || 'موظف',
-        balance: Math.round(bal)
-      };
-    });
+        let displayName = uRec?.short_name || s.employee_name || 'موظف';
+        if (!uRec?.short_name) {
+          if (displayName.startsWith('أ/ ')) {
+            displayName = displayName.replace(/^أ\/\s*/, '').trim();
+          }
+          if (displayName.includes(' ')) {
+            displayName = displayName.split(' ')[0];
+          }
+        }
+
+        return {
+          id: s.employee_id,
+          name: displayName,
+          fullName: s.employee_name || 'موظف',
+          balance: Math.round(bal)
+        };
+      });
 
     // 6. Pending handover requests sent to user
     const pendingHandovers = await db.wallet_custody_handovers.findMany({

@@ -50,18 +50,22 @@ export async function GET(req: Request) {
       ];
     }
 
-    const [shifts, total] = await Promise.all([
+    const [shifts, total, myActiveShift] = await Promise.all([
       db.shifts.findMany({
         where,
         orderBy: { start_time: 'desc' },
         skip,
         take: limit,
       }),
-      db.shifts.count({ where })
+      db.shifts.count({ where }),
+      db.shifts.findFirst({
+        where: { employee_id: user.id, end_time: null }
+      })
     ]);
 
     return NextResponse.json({
       shifts,
+      myActiveShift,
       pagination: {
         page,
         limit,

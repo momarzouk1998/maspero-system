@@ -14,6 +14,7 @@ import { getActiveUsers, formatNumber } from '@/lib/user-utils';
 export default function ShiftsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [shifts, setShifts] = useState<any[]>([]);
+  const [myActiveShiftServer, setMyActiveShiftServer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,6 +89,7 @@ export default function ShiftsPage() {
       if (sRes.ok) {
         const sData = await sRes.json();
         setShifts(sData.shifts || []);
+        setMyActiveShiftServer(sData.myActiveShift || null);
       }
 
       if (cRes.ok) {
@@ -149,7 +151,7 @@ export default function ShiftsPage() {
     }
   };
 
-  const activeShift = shifts.find((s) => !s.end_time && s.employee_id === currentUser?.id);
+  const activeShift = myActiveShiftServer || shifts.find((s) => !s.end_time && s.employee_id === currentUser?.id);
 
   const handleEndShift = async (shiftId: string) => {
     setSubmitting(true);
