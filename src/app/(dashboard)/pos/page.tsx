@@ -808,7 +808,9 @@ export default function POSPage() {
                       <span>{item.price} ج</span>
                     </div>
                   </div>
-                  <div className="shrink-0 font-bold text-slate-900 font-mono text-sm">{item.total} ج</div>
+                  <div className={`shrink-0 font-bold font-mono text-sm ${item.total < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                    {item.total < 0 ? `-${formatNumber(Math.abs(item.total))}` : formatNumber(item.total)} ج
+                  </div>
                   {/* زرار تعديل */}
                   <button
                     onClick={() => openEditItem(item)}
@@ -834,7 +836,7 @@ export default function POSPage() {
             <div className="flex justify-between items-center">
               <span className="text-slate-600 font-bold text-sm">الإجمالي الكلي</span>
               <span className={`text-2xl font-bold font-mono ${(activeInvoice?.total ?? 0) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                {Math.abs(activeInvoice?.total ?? 0)}
+                {(activeInvoice?.total ?? 0) < 0 ? `-${formatNumber(Math.abs(activeInvoice?.total ?? 0))}` : formatNumber(activeInvoice?.total ?? 0)}
               </span>
             </div>
 

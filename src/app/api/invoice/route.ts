@@ -69,16 +69,21 @@ export async function GET(req: Request) {
     });
 
     wallets.forEach(w => {
+      const isWithdrawal = w.transaction_type === 'سحب';
+      const amt = Number(w.amount);
+      const comm = Number(w.wallet_commission || 0);
+      const netTotal = isWithdrawal ? -(amt - comm) : +(amt + comm);
+
       items.push({
         id: w.id,
         type: 'wallet',
         name: `${w.transaction_type} ${w.wallet_name} - ${w.description || ''}`,
-        amount: Number(w.amount),
-        commission: Number(w.wallet_commission || 0),
+        amount: amt,
+        commission: comm,
         description: w.description,
-        price: Number(w.amount), // for wallet, price is the amount itself
+        price: amt,
         count: 1,
-        total: Number(w.amount) + Number(w.wallet_commission), // Total collected from customer
+        total: netTotal,
         timestamp: w.timestamp,
         employeeName: w.employee_name
       });

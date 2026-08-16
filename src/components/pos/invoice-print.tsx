@@ -373,7 +373,9 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
                   {items.map((item, index) => (
                     <tr key={index}>
                       <td>{item.name}</td>
-                      <td>{item.total}</td>
+                      <td style={{ color: item.total < 0 ? '#c62828' : 'inherit', fontWeight: item.total < 0 ? 'bold' : 'normal' }}>
+                        {item.total < 0 ? `-${formatNumber(Math.abs(item.total))}` : formatNumber(item.total)}
+                      </td>
                       <td>{item.count}</td>
                     </tr>
                   ))}
@@ -389,7 +391,7 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
             <div className="total-section">
               <h3>الإجمالي الكلي</h3>
               <div className="total-amount" style={{ color: total < 0 ? '#c62828' : '#2e7d32' }}>
-                <span>{formatNumber(Math.abs(total))}</span>
+                <span>{total < 0 ? `-${formatNumber(Math.abs(total))}` : formatNumber(total)}</span>
               </div>
             </div>
           </div>
