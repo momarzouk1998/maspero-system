@@ -24,11 +24,70 @@ export default function InvoicesHistoryPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  const [treeData, setTreeData] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedDay, setSelectedDay] = useState('');
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  const fetchTreeData = () => {
+    fetch('/api/invoices/tree')
+      .then(res => res.json())
+      .then(d => setTreeData(d))
+      .catch(console.error);
+  };
+
+  const toggleMonth = (m: string) => {
+    setExpandedMonths(prev =>
+      prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]
+    );
+  };
+
+  const toggleDay = (d: string) => {
+    setExpandedDays(prev =>
+      prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]
+    );
+  };
+
+  const handleSelectAllNode = () => {
+    setStartDate('');
+    setEndDate('');
+    setSelectedMonth('');
+    setSelectedDay('');
+  };
+
+  const handleSelectMonth = (m: string) => {
+    setSelectedMonth(m);
+    setSelectedDay('');
+    const parts = m.split(' ');
+    if (parts.length === 2) {
+      const yyyy = parseInt(parts[0]);
+      const mm = parseInt(parts[1]);
+      const start = new Date(yyyy, mm - 1, 1).toISOString().split('T')[0];
+      const end = new Date(yyyy, mm, 0).toISOString().split('T')[0];
+      setStartDate(start);
+      setEndDate(end);
+    }
+  };
+
+  const handleSelectDay = (dStr: string, monthName: string) => {
+    setSelectedMonth(monthName);
+    setSelectedDay(dStr);
+    const parts = dStr.split('/');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      setStartDate(formatted);
+      setEndDate(formatted);
+    }
+  };
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => setCurrentUser(data.user))
       .catch(() => {});
+
+    fetchTreeData();
   }, []);
 
   const hasActiveFilters = startDate || endDate || filterEmployeeId || minTotal || maxTotal;
@@ -253,112 +312,197 @@ export default function InvoicesHistoryPage() {
         </div>
       )}
 
-      {/* Invoices Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700 table-auto">
-            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 whitespace-nowrap">رقم الفاتورة</th>
-                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
-                <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
-                <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
-                <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
-                <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
-                    <span>جاري تحميل سجل الفواتير...</span>
-                  </td>
-                </tr>
-              ) : invoices.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-500">
-                    لا توجد فواتير مسجلة
-                  </td>
-                </tr>
-              ) : (
-                invoices.map((inv) => (
-                  <tr
-                    key={inv.code}
-                    onClick={() => handleOpenDrawer(inv.code)}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors group"
-                  >
-                    <td className="px-4 py-3 font-mono font-bold text-emerald-700 group-hover:underline whitespace-nowrap">
-                      {inv.code}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {inv.timestamp ? new Date(inv.timestamp).toLocaleString('en-US') : '-'}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{inv.employeeName}</td>
-                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">{inv.itemCount} عناصر</td>
-                    <td className="px-4 py-3 font-bold font-mono text-slate-900 text-base whitespace-nowrap">
-                      {formatNumber(Number(inv.total))}
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        {/* Hierarchical Sidebar Tree View */}
+        <div className="lg:col-span-1 glass-panel p-5 rounded-3xl border border-slate-200 bg-white max-h-[800px] overflow-y-auto space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Filter className="w-4 h-4 text-emerald-600" />
+              <span>التصفية الهرمية</span>
+            </h3>
+            <button
+              onClick={handleSelectAllNode}
+              className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold"
+            >
+              إعادة تعيين
+            </button>
+          </div>
+
+          <div className="space-y-1 text-slate-800 text-xs">
+            {/* Grand Total "الكل" node */}
+            <div
+              onClick={handleSelectAllNode}
+              className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                !selectedMonth && !selectedDay
+                  ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm'
+                  : 'hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
+                <span>الكل</span>
+              </div>
+              <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+                {formatNumber(treeData?.totalSum || 0)} ج
+              </span>
+            </div>
+
+            {/* Months level */}
+            <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+              {treeData?.months?.map((m: any) => {
+                const isMonthExpanded = expandedMonths.includes(m.month);
+                const isMonthSelected = selectedMonth === m.month && !selectedDay;
+
+                return (
+                  <div key={m.month} className="space-y-1">
+                    {/* Month header */}
+                    <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-center gap-1 min-w-0">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDrawer(inv.code);
+                            toggleMonth(m.month);
                           }}
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs flex items-center justify-center gap-1 transition-colors border border-slate-200"
+                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
                         >
-                          <Eye className="w-4 h-4 text-emerald-600" />
-                          <span>عرض</span>
+                          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
                         </button>
-
-                        {currentUser?.role === 'manager' && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (!confirm(`هل أنت تأكد من رغبتك في حذف الفاتورة (${inv.code}) وكافة عناصرها؟`)) return;
-                              await fetch(`/api/invoices?code=${inv.code}`, { method: 'DELETE' });
-                              fetchInvoices(pagination.page);
-                            }}
-                            className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs border border-red-200"
-                            title="حذف الفاتورة"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <span
+                          onClick={() => handleSelectMonth(m.month)}
+                          className={`cursor-pointer truncate ${isMonthSelected ? 'text-emerald-700 font-bold' : ''}`}
+                        >
+                          {m.month}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+                        {formatNumber(m.totalSum)} ج
+                      </span>
+                    </div>
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-            <span className="text-xs text-slate-600">
-              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => fetchInvoices(pagination.page - 1)}
-                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => fetchInvoices(pagination.page + 1)}
-                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+                    {/* Days level */}
+                    {isMonthExpanded && (
+                      <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                        {m.days?.map((d: any) => {
+                          const isDaySelected = selectedDay === d.day;
+
+                          return (
+                            <div
+                              key={d.day}
+                              onClick={() => handleSelectDay(d.day, m.month)}
+                              className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer hover:bg-emerald-50/50 transition-colors ${
+                                isDaySelected ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                <span className="truncate">{d.day}</span>
+                                <span className="text-[9px] text-slate-400">({d.invoiceCount})</span>
+                              </div>
+                              <span className="text-[9px] text-slate-600 font-mono font-bold">
+                                {formatNumber(d.totalSum)} ج
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Invoices Table & Pagination */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-sm text-slate-700 table-auto">
+                <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 whitespace-nowrap">رقم الفاتورة</th>
+                    <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                    <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
+                    <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
+                    <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-slate-500">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                        <span>جاري تحميل سجل الفواتير...</span>
+                      </td>
+                    </tr>
+                  ) : invoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-slate-500">
+                        لا توجد فواتير مسجلة تطابق التصفية
+                      </td>
+                    </tr>
+                  ) : (
+                    invoices.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          {inv.invoice_code}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
+                          {inv.created_at ? new Date(inv.created_at).toLocaleString('en-US') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">
+                          {inv.employee_name || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">
+                          {inv.item_count || 0} عناصر
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold text-emerald-700 text-base whitespace-nowrap">
+                          {formatNumber(Number(inv.total_amount))} ج
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleOpenDrawer(inv.invoice_code || inv.code)}
+                            className="py-1.5 px-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1 mx-auto transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>عرض وتكبير</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                <span className="text-xs text-slate-600">
+                  صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={pagination.page <= 1}
+                    onClick={() => fetchInvoices(pagination.page - 1)}
+                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    disabled={pagination.page >= pagination.totalPages}
+                    onClick={() => fetchInvoices(pagination.page + 1)}
+                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Slide-over Drawer for Invoice Details */}

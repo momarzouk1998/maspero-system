@@ -38,6 +38,85 @@ export default function ShiftsHistoryPage() {
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  const [treeData, setTreeData] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedDay, setSelectedDay] = useState('');
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  const fetchTreeData = () => {
+    fetch('/api/shifts/tree')
+      .then(res => res.json())
+      .then(d => setTreeData(d))
+      .catch(console.error);
+  };
+
+  const toggleMonth = (m: string) => {
+    setExpandedMonths(prev =>
+      prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]
+    );
+  };
+
+  const toggleDay = (d: string) => {
+    setExpandedDays(prev =>
+      prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]
+    );
+  };
+
+  const handleSelectAllNode = () => {
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setFilterType('');
+    setSelectedMonth('');
+    setSelectedDay('');
+  };
+
+  const handleSelectMonth = (m: string) => {
+    setSelectedMonth(m);
+    setSelectedDay('');
+    const parts = m.split(' ');
+    if (parts.length === 2) {
+      const yyyy = parseInt(parts[0]);
+      const mm = parseInt(parts[1]);
+      const start = new Date(yyyy, mm - 1, 1).toISOString().split('T')[0];
+      const end = new Date(yyyy, mm, 0).toISOString().split('T')[0];
+      setFilterStartDate(start);
+      setFilterEndDate(end);
+    }
+  };
+
+  const handleSelectDay = (dStr: string, monthName: string) => {
+    setSelectedMonth(monthName);
+    setSelectedDay(dStr);
+    const parts = dStr.split('/');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      setFilterStartDate(formatted);
+      setFilterEndDate(formatted);
+    }
+  };
+
+  const handleSelectCategory = (cat: string, dStr: string, monthName: string) => {
+    setSelectedMonth(monthName);
+    setSelectedDay(dStr);
+    setFilterType(cat);
+    const parts = dStr.split('/');
+    if (parts.length === 3) {
+      const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      setFilterStartDate(formatted);
+      setFilterEndDate(formatted);
+    }
+  };
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setCurrentUser(data.user))
+      .catch(() => {});
+
+    fetchTreeData();
+  }, []);
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editShiftType, setEditShiftType] = useState('');
@@ -192,123 +271,266 @@ export default function ShiftsHistoryPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700 table-auto">
-            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
-                <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
-                <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
-                <th className="px-4 py-3 whitespace-nowrap">وقت البداية</th>
-                <th className="px-4 py-3 whitespace-nowrap">وقت النهاية</th>
-                <th className="px-4 py-3 whitespace-nowrap">إجمالي الساعات</th>
-                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
-                    <span>جاري تحميل سجل الشفتات...</span>
-                  </td>
-                </tr>
-              ) : shifts.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
-                    لا توجد شفتات مسجلة تطابق التصفية الحالية
-                  </td>
-                </tr>
-              ) : (
-                shifts.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                        item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
-                      }`}>
-                        {item.shift_type || 'صباحي'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                      {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
-                        <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
-                      {formatNumber(Number(item.total_hours || 0))} ساعة
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => setSelectedAuditShift(item)}
-                          className="px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-xs font-bold rounded-lg border border-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="عرض تقرير الشفت التفصيلي"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>تقرير الشفت</span>
-                        </button>
-                        {currentUser?.role === 'manager' && (
-                          <>
-                            <button
-                              onClick={() => openEditModal(item)}
-                              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-200 transition-colors"
-                              title="تعديل الشفت"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteShift(item.id)}
-                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                              title="حذف الشفت"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        {/* Hierarchical Sidebar Tree View */}
+        <div className="lg:col-span-1 glass-panel p-5 rounded-3xl border border-slate-200 bg-white max-h-[800px] overflow-y-auto space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Filter className="w-4 h-4 text-cyan-600" />
+              <span>التصفية الهرمية</span>
+            </h3>
+            <button
+              onClick={handleSelectAllNode}
+              className="text-[11px] text-cyan-600 hover:text-cyan-700 font-bold"
+            >
+              إعادة تعيين
+            </button>
+          </div>
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-            <span className="text-xs text-slate-600">
-              صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={pagination.page <= 1}
-                onClick={() => fetchShifts(pagination.page - 1)}
-                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => fetchShifts(pagination.page + 1)}
-                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+          <div className="space-y-1 text-slate-800 text-xs">
+            {/* Grand Total "الكل" node */}
+            <div
+              onClick={handleSelectAllNode}
+              className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                !selectedMonth && !selectedDay && !filterType
+                  ? 'bg-cyan-50 text-cyan-700 font-bold shadow-sm'
+                  : 'hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
+                <span>الكل</span>
+              </div>
+              <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+                {treeData?.totalShifts || 0} شفت
+              </span>
+            </div>
+
+            {/* Months level */}
+            <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+              {treeData?.months?.map((m: any) => {
+                const isMonthExpanded = expandedMonths.includes(m.month);
+                const isMonthSelected = selectedMonth === m.month && !selectedDay;
+
+                return (
+                  <div key={m.month} className="space-y-1">
+                    {/* Month header */}
+                    <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMonth(m.month);
+                          }}
+                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                        >
+                          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
+                        </button>
+                        <span
+                          onClick={() => handleSelectMonth(m.month)}
+                          className={`cursor-pointer truncate ${isMonthSelected ? 'text-cyan-700 font-bold' : ''}`}
+                        >
+                          {m.month}
+                        </span>
+                      </div>
+                      <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+                        {m.totalShifts} شفت
+                      </span>
+                    </div>
+
+                    {/* Days level */}
+                    {isMonthExpanded && (
+                      <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                        {m.days?.map((d: any) => {
+                          const isDayExpanded = expandedDays.includes(d.day);
+                          const isDaySelected = selectedDay === d.day && !filterType;
+
+                          return (
+                            <div key={d.day} className="space-y-1">
+                              {/* Day header */}
+                              <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleDay(d.day);
+                                    }}
+                                    className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
+                                  >
+                                    <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isDayExpanded ? '-rotate-90' : ''}`} />
+                                  </button>
+                                  <span
+                                    onClick={() => handleSelectDay(d.day, m.month)}
+                                    className={`cursor-pointer truncate ${isDaySelected ? 'text-cyan-700 font-bold' : ''}`}
+                                  >
+                                    {d.day}
+                                  </span>
+                                </div>
+                                <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1 py-0.5 rounded font-mono">
+                                  {d.shiftCount} شفت
+                                </span>
+                              </div>
+
+                              {/* Categories level */}
+                              {isDayExpanded && (
+                                <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                                  {d.categories?.map((c: any) => {
+                                    const isCatSelected = selectedDay === d.day && filterType === c.category;
+
+                                    return (
+                                      <div
+                                        key={c.category}
+                                        onClick={() => handleSelectCategory(c.category, d.day, m.month)}
+                                        className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-cyan-50/50 transition-colors ${
+                                          isCatSelected ? 'bg-cyan-50 text-cyan-700 font-bold' : 'text-slate-600'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0" />
+                                          <span>شفت {c.category}</span>
+                                        </div>
+                                        <span className="text-[9px] text-slate-500 font-mono">
+                                          {c.count}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Shifts Table & Pagination */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-sm text-slate-700 table-auto">
+                <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                    <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
+                    <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
+                    <th className="px-4 py-3 whitespace-nowrap">وقت البداية</th>
+                    <th className="px-4 py-3 whitespace-nowrap">وقت النهاية</th>
+                    <th className="px-4 py-3 whitespace-nowrap">إجمالي الساعات</th>
+                    <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                    {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
+                        <span>جاري تحميل سجل الشفتات...</span>
+                      </td>
+                    </tr>
+                  ) : shifts.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                        لا توجد شفتات مسجلة تطابق التصفية الحالية
+                      </td>
+                    </tr>
+                  ) : (
+                    shifts.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                            item.shift_type === 'صباحي' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'
+                          }`}>
+                            {item.shift_type || 'صباحي'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
+                          {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                          {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                          {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
+                            <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-bold text-slate-900 font-mono whitespace-nowrap">
+                          {formatNumber(Number(item.total_hours || 0))} ساعة
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.shift_note || '-'}</td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedAuditShift(item)}
+                              className="px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-xs font-bold rounded-lg border border-cyan-300 transition-colors flex items-center gap-1 cursor-pointer"
+                              title="عرض تقرير الشفت التفصيلي"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>تقرير الشفت</span>
+                            </button>
+                            {currentUser?.role === 'manager' && (
+                              <>
+                                <button
+                                  onClick={() => openEditModal(item)}
+                                  className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-200 transition-colors"
+                                  title="تعديل الشفت"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteShift(item.id)}
+                                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                  title="حذف الشفت"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                <span className="text-xs text-slate-600">
+                  صفحة {pagination.page} من {pagination.totalPages} (إجمالي {pagination.total})
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={pagination.page <= 1}
+                    onClick={() => fetchShifts(pagination.page - 1)}
+                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    disabled={pagination.page >= pagination.totalPages}
+                    onClick={() => fetchShifts(pagination.page + 1)}
+                    className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl disabled:opacity-40 border border-slate-200"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Manager Edit Modal */}
