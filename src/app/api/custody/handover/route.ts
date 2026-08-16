@@ -207,7 +207,6 @@ export async function POST(req: Request) {
           data: {
             date: today,
             transaction_month: monthStr,
-            month: monthStr,
             time_str: today.toLocaleTimeString('en-US'),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
