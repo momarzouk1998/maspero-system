@@ -35,6 +35,7 @@ export default function ShiftsPage() {
     itemsInUserCustody: any[];
     pendingHandovers: any[];
     onlineCashiers?: any[];
+    myCustodyBalance?: number;
   }>({
     isUserShiftActive: false,
     isMorningOrSoloShift: true,
@@ -46,7 +47,8 @@ export default function ShiftsPage() {
     drawers: [],
     itemsInUserCustody: [],
     pendingHandovers: [],
-    onlineCashiers: []
+    onlineCashiers: [],
+    myCustodyBalance: 0
   });
 
   // Peer Cash Transfers List
@@ -302,16 +304,16 @@ export default function ShiftsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'deposit_to_drawer',
+          action: 'deliver_to_drawer',
           walletId: drawerDepositItem.id,
           amount: parseFloat(depositAmountInput)
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل الإيداع في الدرج');
+      if (!res.ok) throw new Error(data.error || 'فشل تسليم العهدة بالدرج');
 
-      showToast(data.message || 'تم تحويل النقدية وإيداعها في الدرج بنجاح 💰');
+      showToast(data.message || 'تم تسليم عهدة الكاش بالدرج بنجاح 📥');
       setDrawerDepositItem(null);
       setDepositAmountInput('');
       fetchShiftsAndCustody();
@@ -819,60 +821,57 @@ export default function ShiftsPage() {
             <tbody className="divide-y divide-slate-200">
               {custodyData.drawers.map((item: any) => {
                 const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+                const myCustodyBalance = Number(custodyData?.myCustodyBalance ?? activeShift?.employee?.wallet_balance ?? 0);
+                const drawerBal = Number(item.actual_balance || item.current_balance || 0);
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">{item.wallet_name}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
-                        item.custodian_name?.includes('ماسـبيرو')
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                          : item.custodian_name
+                        drawerBal > 0
                           ? 'bg-purple-100 text-purple-800 border-purple-300'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
-                        {item.custodian_name ? (item.custodian_name.includes('ماسـبيرو') ? 'ماسـبيرو (المركز)' : item.custodian_name.split(' ')[0]) : 'غير مستلمة'}
+                        {drawerBal > 0 ? `محتفظ بنقدية (${formatNumber(drawerBal)} ج)` : 'فارغ (متاح)'}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                      {formatNumber(Number(item.actual_balance || item.current_balance || 0))}
+                      {formatNumber(drawerBal)}
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
-                        {/* Deposit to Drawer Action Button */}
-                        <button
-                          onClick={() => {
-                            setDrawerDepositItem(item);
-                            setDepositAmountInput('');
-                          }}
-                          className="py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />
-                          <span>إيداع بالدرج</span>
-                        </button>
-
-                        {isCustodyOfUser ? (
+                        {/* Deliver Cash Custody to Drawer Action Button */}
+                        {myCustodyBalance > 0 && (
                           <button
-                            onClick={() => setDeliverModalItem(item)}
-                            className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm"
+                            onClick={() => {
+                              setDrawerDepositItem(item);
+                              setDepositAmountInput(String(myCustodyBalance));
+                            }}
+                            className="py-1.5 px-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm cursor-pointer"
+                            title="تسليم عهدة الكاش بالدرج للموظف التالي"
                           >
-                            تسليم
+                            <ArrowLeftRight className="w-3.5 h-3.5" />
+                            <span>تسليم للدرج</span>
                           </button>
-                        ) : (
+                        )}
+
+                        {/* Receive Buttons (when drawer has money) */}
+                        {drawerBal > 0 && (
                           <>
                             <button
                               onClick={() => handleFastLikeReceive(item)}
-                              className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
-                              title="مطابق واستلام 👍"
+                              className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm cursor-pointer"
+                              title="تأكيد ومطابقة الاستلام بالكامل 👍"
                             >
                               <ThumbsUp className="w-3.5 h-3.5" />
-                              <span>تأكيد</span>
+                              <span>استلام 👍</span>
                             </button>
 
                             <button
                               onClick={() => openDislikeReceiveModal(item)}
-                              className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200"
-                              title="تعديل الرصيد 👎"
+                              className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 cursor-pointer"
+                              title="استلام بفارق أو عجز 👎"
                             >
                               <ThumbsDown className="w-3.5 h-3.5 text-red-600" />
                             </button>
@@ -1092,14 +1091,14 @@ export default function ShiftsPage() {
         </div>
       )}
 
-      {/* DEPOSIT TO CASH DRAWER MODAL */}
+      {/* DELIVER CUSTODY TO CASH DRAWER MODAL */}
       {drawerDepositItem && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form onSubmit={handleConfirmDepositToDrawer} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-blue-600" />
-                <span>إيداع نقدية في ({drawerDepositItem.wallet_name})</span>
+                <ArrowLeftRight className="w-5 h-5 text-amber-600" />
+                <span>تسليم عهدة الكاش بالدرج ({drawerDepositItem.wallet_name})</span>
               </h3>
               <button type="button" onClick={() => setDrawerDepositItem(null)} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
                 <X className="w-5 h-5" />
@@ -1108,11 +1107,11 @@ export default function ShiftsPage() {
 
             <div className="space-y-3.5">
               <p className="text-xs text-slate-600 leading-relaxed">
-                سيتم تحويل المبلغ المالي من عهدتك النقدية وإضافته مباشرة إلى رصيد {drawerDepositItem.wallet_name}.
+                سيتم نقل عهدة الكاش المتاحة لديك وإيداعها بالدرج ليتمكن الموظف التالي من استلامها لبدء الشفت.
               </p>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">المبلغ المراد إيداعه *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">المبلغ المراد تسليمه بالدرج *</label>
                 <input
                   type="number"
                   step="0.25"
@@ -1121,7 +1120,7 @@ export default function ShiftsPage() {
                   value={depositAmountInput}
                   onChange={(e) => setDepositAmountInput(e.target.value)}
                   placeholder="المبلغ"
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-lg font-bold focus:outline-none focus:border-blue-500"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-lg font-bold focus:outline-none focus:border-amber-500"
                 />
               </div>
             </div>
@@ -1130,9 +1129,9 @@ export default function ShiftsPage() {
               <button
                 type="submit"
                 disabled={depositSubmitting}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 disabled:opacity-50"
+                className="flex-1 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-600/20 disabled:opacity-50"
               >
-                تأكيد الإيداع بالدرج
+                تأكيد التسليم بالدرج 📥
               </button>
               <button
                 type="button"

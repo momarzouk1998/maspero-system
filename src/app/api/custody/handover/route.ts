@@ -107,33 +107,21 @@ export async function GET() {
     });
 
     // 7. Check if sales are locked
-    const hasReceivedDrawer = drawers.some((d: any) => d.custodian_id === user.id);
-    const hasReceivedAllWallets = wallets.every((w: any) => w.custodian_id === user.id);
-    const hasReceivedAllMachines = machines.every((m: any) => m.custodian_id === user.id);
-
     let isSalesLocked = false;
     let lockReason = '';
 
     if (!isUserShiftActive) {
       isSalesLocked = true;
       lockReason = 'برجاء بدء الشفت أولاً من صفحة إدارة الشفتات قبل البدء في المبيعات.';
-    } else if (!hasReceivedDrawer) {
-      isSalesLocked = true;
-      lockReason = 'برجاء استلام عهدة درج الكاشير الخاص بك أولاً لتفعيل خدمات المبيعات والطباعة والتذاكر.';
     }
 
-    const userMap = new Map(userRecords.map((u: any) => [u.id, Number(u.wallet_balance || 0)]));
+    const formattedDrawers = drawers.map((d: any) => ({
+      ...d,
+      actual_balance: Number(d.actual_balance || d.current_balance || 0),
+      current_balance: Number(d.actual_balance || d.current_balance || 0)
+    }));
 
-    const formattedDrawers = drawers.map((d: any) => {
-      const custodianCash = d.custodian_id ? userMap.get(d.custodian_id) : undefined;
-      const displayBalance = custodianCash !== undefined ? custodianCash : Number(d.actual_balance || d.current_balance || 0);
-
-      return {
-        ...d,
-        actual_balance: displayBalance,
-        current_balance: displayBalance
-      };
-    });
+    const currentUserRecord = userRecords.find(u => u.id === user.id);
 
     return NextResponse.json({
       isUserShiftActive,
@@ -146,7 +134,8 @@ export async function GET() {
       drawers: formattedDrawers,
       itemsInUserCustody,
       onlineCashiers,
-      pendingHandovers
+      pendingHandovers,
+      myCustodyBalance: Number(currentUserRecord?.wallet_balance || 0)
     });
 
   } catch (error: any) {
@@ -164,8 +153,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, walletId, actualBalance, discrepancyReason, receiverId, amount, notes } = body;
 
-    // --- Action: Deposit Cash from Employee Custody into Cash Drawer (Item 9 & 10: Single Click Deposit + Delivery + Zero Custody) ---
-    if (action === 'deposit_to_drawer') {
+    // --- Action: Deliver Cash Custody to Drawer (Transfer Cash Custody to Drawer for next shift) ---
+    if (action === 'deliver_to_drawer') {
       const drawerId = walletId;
 
       if (!drawerId) {
@@ -179,27 +168,36 @@ export async function POST(req: Request) {
 
       const dbUser = await db.users.findUnique({ where: { id: user.id } });
       const empCustodyBal = Number(dbUser?.wallet_balance || 0);
-      const depositAmount = amount ? Number(amount) : empCustodyBal;
+
+      if (empCustodyBal <= 0) {
+        return NextResponse.json({ error: 'عذراً، ليس لديك عهدة كاش لتسليمها بالدرج!' }, { status: 400 });
+      }
+
+      const deliverAmount = amount ? Number(amount) : empCustodyBal;
+
+      if (deliverAmount > empCustodyBal) {
+        return NextResponse.json({ error: `المبلغ المطلوب (${deliverAmount}) أكبر من عهدة الكاش المتاحة لديك (${empCustodyBal})` }, { status: 400 });
+      }
 
       const today = new Date();
       const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
 
       await db.$transaction(async (tx: any) => {
-        // 1. Transfer custody cash into cash drawer balance
+        // 1. Transfer cash custody into cash drawer balance
         await tx.external_wallets.update({
           where: { id: drawerId },
           data: {
-            current_balance: { increment: depositAmount },
-            actual_balance: { increment: depositAmount },
+            current_balance: { increment: deliverAmount },
+            actual_balance: { increment: deliverAmount },
             custodian_id: user.id,
-            custodian_name: user.name
+            custodian_name: `${user.name} (سلم بالدرج)`
           }
         });
 
-        // 2. Reset employee's personal cash custody balance to 0
+        // 2. Deduct delivered cash from employee's personal cash custody balance
         await tx.users.update({
           where: { id: user.id },
-          data: { wallet_balance: 0 }
+          data: { wallet_balance: { decrement: deliverAmount } }
         });
 
         // 3. Log transaction
@@ -210,54 +208,20 @@ export async function POST(req: Request) {
             time_str: today.toLocaleTimeString('en-US'),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
-            transaction_type: 'إيداع',
+            transaction_type: 'تسليم للدرج',
             wallet_type: 'درج كاشير',
-            amount: depositAmount,
-            description: `إيداع وتصفية عهدة الكاشير (${user.name}) بالدرج (${drawer.wallet_name})`,
+            amount: deliverAmount,
+            description: `تسليم عهدة كاش الموظف (${user.name}) بالدرج (${drawer.wallet_name}) للموظف التالي`,
             employee_id: user.id,
             employee_name: user.name,
             timestamp: today
           }
         });
-
-        // 4. Single-Click Handover of all user custody items directly to Maspero Center
-        const userItems = await tx.external_wallets.findMany({
-          where: { is_active: true, custodian_id: user.id }
-        });
-
-        for (const item of userItems) {
-          const bal = Number(item.actual_balance || item.current_balance || 0);
-          await tx.wallet_custody_handovers.create({
-            data: {
-              wallet_id: item.id,
-              wallet_name: item.wallet_name,
-              sender_id: user.id,
-              sender_name: user.name,
-              receiver_id: null,
-              receiver_name: 'ماسـبيرو (المركز)',
-              balance_at_time: bal,
-              expected_balance: bal,
-              actual_balance: bal,
-              difference: 0,
-              review_status: 'تم المطابقة',
-              created_at: today
-            }
-          });
-
-          await tx.external_wallets.update({
-            where: { id: item.id },
-            data: {
-              custodian_id: null,
-              custodian_name: 'ماسـبيرو (المركز)',
-              confirm_status: 'متاح'
-            }
-          });
-        }
       });
 
       return NextResponse.json({
         success: true,
-        message: `تم تصفية عهدة الكاش وتغذية الدرج والتسليم للمركز بنجاح 💰🏛️`
+        message: `تم تسليم ${deliverAmount} ج من عهدتك النقدية بالدرج (${drawer.wallet_name}) بنجاح 📥`
       });
     }
 
@@ -414,13 +378,21 @@ export async function POST(req: Request) {
           }
         });
 
+        const isDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
+        if (isDrawer && numActual > 0) {
+          await tx.users.update({
+            where: { id: user.id },
+            data: { wallet_balance: { increment: numActual } }
+          });
+        }
+
         return await tx.external_wallets.update({
           where: { id: walletId },
           data: {
             custodian_id: user.id,
             custodian_name: user.name,
-            actual_balance: numActual,
-            current_balance: numActual
+            actual_balance: isDrawer ? 0 : numActual,
+            current_balance: isDrawer ? 0 : numActual
           }
         });
       });
