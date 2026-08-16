@@ -27,6 +27,40 @@ export async function GET() {
     return a.sort - b.sort;
   });
 
+  // Monthly Deposits & Withdrawals aggregation per wallet for current month
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  const monthlyTx = await db.wallet_transactions.groupBy({
+    by: ['wallet_id', 'transaction_type'],
+    where: {
+      timestamp: { gte: startOfMonth, lte: endOfMonth }
+    },
+    _sum: {
+      amount: true
+    }
+  });
+
+  const depositMap: Record<string, number> = {};
+  const withdrawalMap: Record<string, number> = {};
+
+  monthlyTx.forEach(txGroup => {
+    if (!txGroup.wallet_id) return;
+    const sumAmt = Number(txGroup._sum.amount || 0);
+    if (txGroup.transaction_type === 'إيداع') {
+      depositMap[txGroup.wallet_id] = sumAmt;
+    } else if (txGroup.transaction_type === 'سحب') {
+      withdrawalMap[txGroup.wallet_id] = sumAmt;
+    }
+  });
+
+  const externalWalletsWithTotals = externalWallets.map(w => ({
+    ...w,
+    monthly_deposit: depositMap[w.id] || 0,
+    monthly_withdrawal: withdrawalMap[w.id] || 0
+  }));
+
   // Clean Employee Wallets list
   const employeeWallets = await db.users.findMany({
     where: {
@@ -51,7 +85,7 @@ export async function GET() {
     orderBy: { name: 'asc' }
   });
 
-  return NextResponse.json({ externalWallets, employeeWallets });
+  return NextResponse.json({ externalWallets: externalWalletsWithTotals, employeeWallets });
 }
 
 // Transaction Logging OR Wallet Creation (Manager)

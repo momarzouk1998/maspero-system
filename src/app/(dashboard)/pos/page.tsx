@@ -116,6 +116,7 @@ export default function POSPage() {
   const [editCount, setEditCount] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editFaceType, setEditFaceType] = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
+  const [editTransactionType, setEditTransactionType] = useState<'إيداع' | 'سحب'>('إيداع');
   const [editLoading, setEditLoading] = useState(false);
 
   const openEditItem = (item: any) => {
@@ -125,6 +126,8 @@ export default function POSPage() {
     setEditCount(String(item.count ?? 1));
     setEditNotes(item.type === 'wallet' ? (item.description ?? '') : (item.notes ?? ''));
     setEditFaceType(item.faceType === 'وجهين' ? 'وجهين' : 'وجه واحد');
+    const initialTxType = item.transaction_type || (item.name?.includes('سحب') ? 'سحب' : 'إيداع');
+    setEditTransactionType(initialTxType === 'سحب' ? 'سحب' : 'إيداع');
   };
 
   const handleEditItem = async () => {
@@ -142,6 +145,7 @@ export default function POSPage() {
           newCount: editItem.type !== 'wallet' ? (parseInt(editCount) || 1) : undefined,
           newNotes: editNotes || undefined,
           newFaceType: editItem.type === 'service' ? editFaceType : undefined,
+          newTransactionType: editItem.type === 'wallet' ? editTransactionType : undefined,
         }),
       });
       const data = await res.json();
@@ -1180,6 +1184,37 @@ export default function POSPage() {
             </div>
 
             <div className="space-y-4">
+              {/* اختيار نوع العملية للمحافظ (إيداع / سحب) */}
+              {editItem.type === 'wallet' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">نوع العملية *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditTransactionType('إيداع')}
+                      className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        editTransactionType === 'إيداع'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                      }`}
+                    >
+                      <ArrowDownLeft className="w-4 h-4" /> إيداع
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditTransactionType('سحب')}
+                      className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        editTransactionType === 'سحب'
+                          ? 'bg-red-600 text-white border-red-600 shadow-md'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-red-300'
+                      }`}
+                    >
+                      <ArrowUpRight className="w-4 h-4" /> سحب
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* اختيار نوع الوجه لخدمات الطباعة */}
               {editItem.type === 'service' && isPrint(editItem.rawServiceName || editItem.name) && (
                 <div>

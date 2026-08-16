@@ -9,7 +9,7 @@ export async function PUT(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { id, type, newAmount, newCount, newNotes, newFaceType, newCommission } = await req.json();
+    const { id, type, newAmount, newCount, newNotes, newFaceType, newCommission, newTransactionType } = await req.json();
 
     if (!id || !type || newAmount === undefined) {
       return NextResponse.json({ error: 'معرف العنصر ونوعه والمبلغ الجديد مطلوبان' }, { status: 400 });
@@ -67,6 +67,8 @@ export async function PUT(req: Request) {
         if (!txItem) throw new Error('العنصر غير موجود');
         if (txItem.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
 
+        const targetTxType = newTransactionType || txItem.transaction_type;
+
         const oldAmount = Number(txItem.amount || 0);
         const oldCommission = Number(txItem.wallet_commission || 0);
         const numNewCommission = newCommission !== undefined ? Number(newCommission) : oldCommission;
@@ -74,7 +76,7 @@ export async function PUT(req: Request) {
         const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
 
         const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
-        const newBalanceChange = txItem.transaction_type === 'إيداع' ? -numNewAmount : numNewAmount;
+        const newBalanceChange = targetTxType === 'إيداع' ? -numNewAmount : numNewAmount;
         const diffExternal = newBalanceChange - oldBalanceChange;
 
         const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
@@ -83,8 +85,8 @@ export async function PUT(req: Request) {
           : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
 
         const newEmployeeCash = isDrawer
-          ? (txItem.transaction_type === 'إيداع' ? -numNewAmount : numNewAmount)
-          : (txItem.transaction_type === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
+          ? (targetTxType === 'إيداع' ? -numNewAmount : numNewAmount)
+          : (targetTxType === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
 
         const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
 
@@ -107,6 +109,7 @@ export async function PUT(req: Request) {
           data: {
             amount: numNewAmount,
             wallet_commission: numNewCommission,
+            transaction_type: targetTxType,
             ...(newNotes !== undefined ? { description: newNotes } : {})
           }
         });
