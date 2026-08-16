@@ -201,6 +201,7 @@ export default function POSPage() {
 
   // ─── Wallets data ────────────────────────────────────────
   const [extWallets, setExtWallets] = useState<any[]>([]);
+  const [mobilePosView, setMobilePosView] = useState<'catalog' | 'invoice'>('catalog');
   useEffect(() => {
     fetch('/api/wallets').then(r => r.json()).then(d => setExtWallets(d.externalWallets || d.wallets || []));
   }, []);
@@ -260,6 +261,7 @@ export default function POSPage() {
       });
       setSvcPopup(null);
       fetchInvoice(activeInvoiceCode);
+      setMobilePosView('invoice');
     } finally { setSvcLoading(false); }
   };
 
@@ -287,6 +289,7 @@ export default function POSPage() {
       });
       fetchInvoice(activeInvoiceCode);
       setTktCount(1); setTktPrice(0); setTktComm(0); setTktNotes('');
+      setMobilePosView('invoice');
     } finally { setTktLoading(false); }
   };
 
@@ -333,6 +336,7 @@ export default function POSPage() {
       });
       setWltPopup(null);
       fetchInvoice(activeInvoiceCode);
+      setMobilePosView('invoice');
     } finally { setWltLoading(false); }
   };
 
@@ -381,10 +385,43 @@ export default function POSPage() {
   //  RENDER
   // ════════════════════════════════════════════════════════
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4 overflow-hidden">
+    <div className="min-h-[calc(100vh-6rem)] md:h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-4 md:overflow-hidden pb-16 md:pb-0">
+
+      {/* Mobile View Switcher Tabs (Only on small screens) */}
+      <div className="flex md:hidden glass-panel p-1 rounded-2xl border border-slate-200 gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobilePosView('catalog')}
+          className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            mobilePosView === 'catalog'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Printer className="w-4 h-4" />
+          <span>الخدمات والعمليات</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePosView('invoice')}
+          className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all relative cursor-pointer ${
+            mobilePosView === 'invoice'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>سلة الفاتورة</span>
+          {activeInvoice && activeInvoice.items.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-mono font-bold mr-1">
+              {activeInvoice.items.length}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* ── LEFT PANEL ────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col gap-3 overflow-y-auto min-w-0">
+      <div className={`flex-1 flex flex-col gap-3 min-w-0 ${mobilePosView === 'invoice' ? 'hidden md:flex' : 'flex'} md:overflow-y-auto`}>
 
         {/* Page title */}
         <div className="glass-panel px-5 py-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
@@ -741,7 +778,7 @@ export default function POSPage() {
       </div>
 
       {/* ── RIGHT PANEL: INVOICE ──────────────────────────── */}
-      <div className="w-full md:w-[390px] shrink-0 flex flex-col gap-3 overflow-hidden">
+      <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden`}>
 
         {/* ── Invoice Tabs (open invoices) ──────────────── */}
         <div className="glass-panel p-2 rounded-2xl border border-slate-200">
@@ -1341,6 +1378,29 @@ export default function POSPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Sticky Bottom Cart Bar for Mobile */}
+      {activeInvoice && activeInvoice.items.length > 0 && mobilePosView === 'catalog' && (
+        <div className="fixed bottom-3 inset-x-3 z-40 md:hidden animate-in slide-in-from-bottom duration-300">
+          <button
+            onClick={() => setMobilePosView('invoice')}
+            className="w-full py-3 px-4 bg-slate-900 text-white rounded-2xl font-bold text-xs shadow-2xl flex items-center justify-between border border-slate-700 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-emerald-400" />
+              <span>سلة الفاتورة الحالية ({activeInvoice.items.length} بند)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-bold text-emerald-400">
+                {(activeInvoice.total ?? 0) < 0 ? `-${formatNumber(Math.abs(activeInvoice.total))}` : formatNumber(activeInvoice.total)} ج
+              </span>
+              <span className="bg-blue-600 text-white text-[11px] px-2.5 py-1 rounded-xl flex items-center gap-1 font-bold">
+                عرض 🛒
+              </span>
+            </div>
+          </button>
         </div>
       )}
     </div>
