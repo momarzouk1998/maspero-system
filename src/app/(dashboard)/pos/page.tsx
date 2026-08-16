@@ -273,20 +273,25 @@ export default function POSPage() {
   const [wltNotes, setWltNotes] = useState('');
   const [wltLoading, setWltLoading] = useState(false);
   const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا'>('011');
+  const [fawryWithdrawalType, setFawryWithdrawalType] = useState<'عادية' | 'مشتريات'>('عادية');
 
   const openWltPopup = (w: any, defaultType: 'إيداع' | 'سحب' = 'إيداع') => {
     setWltPopup(w);
     setWltOpType(defaultType);
     setWltAmt(0); setWltComm(0); setWltNotes('');
     setKomandaProvider('011');
+    setFawryWithdrawalType('عادية');
   };
 
   const handleAddWallet = async () => {
     if (!wltPopup || wltAmt <= 0 || !activeInvoiceCode) return;
     setWltLoading(true);
     const isKomanda = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
+    const isFawryWithdrawal = (wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2') && wltOpType === 'سحب';
     const finalDescription = isKomanda
       ? `[${komandaProvider}] ${wltNotes}`.trim()
+      : isFawryWithdrawal
+      ? `[${fawryWithdrawalType}] ${wltNotes}`.trim()
       : wltNotes;
 
     try {
@@ -1030,6 +1035,31 @@ export default function POSPage() {
                       }`}
                     >
                       {prov}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fawry Withdrawal Sub-Type Buttons (سحب فوري1 / سحب فوري2 + سحب only) */}
+            {(wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2') && wltOpType === 'سحب' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">نوع السحب *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['عادية', 'مشتريات'] as const).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFawryWithdrawalType(type)}
+                      className={`py-2.5 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center cursor-pointer ${
+                        fawryWithdrawalType === type
+                          ? type === 'مشتريات'
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-md'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                      }`}
+                    >
+                      {type}
                     </button>
                   ))}
                 </div>
