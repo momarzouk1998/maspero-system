@@ -114,6 +114,7 @@ export default function POSPage() {
   const [editAmount, setEditAmount] = useState('');
   const [editCount, setEditCount] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editFaceType, setEditFaceType] = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
   const [editLoading, setEditLoading] = useState(false);
 
   const openEditItem = (item: any) => {
@@ -121,6 +122,7 @@ export default function POSPage() {
     setEditAmount(String(item.total ?? item.price ?? 0));
     setEditCount(String(item.count ?? 1));
     setEditNotes(item.notes ?? '');
+    setEditFaceType(item.faceType === 'وجهين' ? 'وجهين' : 'وجه واحد');
   };
 
   const handleEditItem = async () => {
@@ -136,6 +138,7 @@ export default function POSPage() {
           newAmount: parseFloat(editAmount) || 0,
           newCount: editItem.type !== 'wallet' ? (parseInt(editCount) || 1) : undefined,
           newNotes: editNotes || undefined,
+          newFaceType: editItem.type === 'service' ? editFaceType : undefined,
         }),
       });
       const data = await res.json();
@@ -1159,6 +1162,29 @@ export default function POSPage() {
             </div>
 
             <div className="space-y-4">
+              {/* اختيار نوع الوجه لخدمات الطباعة */}
+              {editItem.type === 'service' && isPrint(editItem.rawServiceName || editItem.name) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">نوع الوجه *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['وجه واحد', 'وجهين'] as const).map(f => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setEditFaceType(f)}
+                        className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer ${
+                          editFaceType === f
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* المبلغ الإجمالي */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2">المبلغ الإجمالي *</label>

@@ -26,6 +26,9 @@ export async function GET(req: Request) {
       id: string;
       type: 'service' | 'ticket' | 'wallet';
       name: string;
+      rawServiceName?: string;
+      faceType?: string | null;
+      notes?: string | null;
       price: number;
       count: number;
       total: number;
@@ -38,6 +41,9 @@ export async function GET(req: Request) {
         id: s.id,
         type: 'service',
         name: s.service_name + (s.face_type ? ` (${s.face_type})` : ''),
+        rawServiceName: s.service_name,
+        faceType: s.face_type,
+        notes: s.notes,
         price: Number(s.amount) / (s.paper_count || 1), // Assuming amount is total
         count: s.paper_count || 1,
         total: Number(s.amount),

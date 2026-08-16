@@ -9,7 +9,7 @@ export async function PUT(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { id, type, newAmount, newCount, newNotes } = await req.json();
+    const { id, type, newAmount, newCount, newNotes, newFaceType } = await req.json();
 
     if (!id || !type || newAmount === undefined) {
       return NextResponse.json({ error: 'معرف العنصر ونوعه والمبلغ الجديد مطلوبان' }, { status: 400 });
@@ -37,6 +37,7 @@ export async function PUT(req: Request) {
             amount: numNewAmount,
             ...(newCount !== undefined ? { paper_count: Number(newCount) } : {}),
             ...(newNotes !== undefined ? { notes: newNotes } : {}),
+            ...(newFaceType !== undefined ? { face_type: newFaceType } : {}),
           }
         });
       }
