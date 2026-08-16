@@ -171,9 +171,18 @@ export default function ManagerUsersPage() {
     setPermissionUser(u);
     let parsed: Record<string, { read: boolean; create: boolean; update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
 
-    if (u.permissions && typeof u.permissions === 'object') {
+    let rawPerms = u.permissions;
+    if (typeof rawPerms === 'string') {
+      try {
+        rawPerms = JSON.parse(rawPerms);
+      } catch (e) {
+        rawPerms = {};
+      }
+    }
+
+    if (rawPerms && typeof rawPerms === 'object') {
       FEATURES_LIST.forEach(feat => {
-        const p = u.permissions[feat.key];
+        const p = rawPerms[feat.key];
         if (p && typeof p === 'object') {
           parsed[feat.key] = {
             read: Boolean(p.read ?? true),

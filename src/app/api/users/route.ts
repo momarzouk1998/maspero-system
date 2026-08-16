@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         role: role || 'employee',
         job_title: jobTitle || 'كاشير',
         salary: salary ? parseFloat(salary) : 0,
-        permissions: permissions || {},
+        permissions: typeof permissions === 'string' ? permissions : JSON.stringify(permissions || {}),
         is_active: true,
       }
     });
@@ -97,7 +97,7 @@ export async function PUT(req: Request) {
     if (role) updateData.role = role;
     if (jobTitle !== undefined) updateData.job_title = jobTitle;
     if (salary !== undefined) updateData.salary = parseFloat(salary);
-    if (permissions !== undefined) updateData.permissions = permissions;
+    if (permissions !== undefined) updateData.permissions = typeof permissions === 'string' ? permissions : JSON.stringify(permissions);
     if (isActive !== undefined) updateData.is_active = isActive;
 
     const updatedUser = await (db.users as any).update({
