@@ -11,10 +11,40 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const search = searchParams.get('search') || '';
+  const serviceName = searchParams.get('serviceName') || '';
+  const faceType = searchParams.get('faceType') || '';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+  const employeeId = searchParams.get('employeeId') || '';
+
   const skip = (page - 1) * limit;
 
-  // Filter: Manager sees all; Employee sees only their own entries
-  const whereCondition = user.role === 'manager' ? {} : { employee_id: user.id };
+  // Filter: Manager sees all (or filtered by employeeId); Employee sees only their own entries
+  const whereCondition: any = user.role === 'manager' ? (employeeId ? { employee_id: employeeId } : {}) : { employee_id: user.id };
+
+  if (serviceName) whereCondition.service_name = { contains: serviceName, mode: 'insensitive' };
+  if (faceType) whereCondition.face_type = faceType;
+
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    whereCondition.timestamp = {
+      gte: start,
+      lte: end
+    };
+  }
+
+  if (search) {
+    whereCondition.OR = [
+      { service_name: { contains: search, mode: 'insensitive' } },
+      { employee_name: { contains: search, mode: 'insensitive' } },
+      { notes: { contains: search, mode: 'insensitive' } }
+    ];
+  }
 
   const [entries, total] = await Promise.all([
     db.service_entries.findMany({

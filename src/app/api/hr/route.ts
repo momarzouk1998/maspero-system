@@ -11,9 +11,13 @@ export async function GET(req: Request) {
   const limit = parseInt(searchParams.get('limit') || '50');
   const skip = (page - 1) * limit;
   const statusFilter = searchParams.get('status'); // 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+  const employeeId = searchParams.get('employeeId') || '';
+  const search = searchParams.get('search') || '';
 
   const whereCondition: any = user.role === 'manager'
-    ? {}
+    ? (employeeId ? { employee_id: employeeId } : {})
     : {
         OR: [
           { employee_id: user.id },
@@ -23,6 +27,27 @@ export async function GET(req: Request) {
 
   if (statusFilter && statusFilter !== 'ALL') {
     whereCondition.approval = statusFilter === 'PENDING' ? 'معلق' : statusFilter === 'APPROVED' ? 'موافقة' : 'مرفوض';
+  }
+
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    whereCondition.timestamp = {
+      gte: start,
+      lte: end
+    };
+  }
+
+  if (search) {
+    whereCondition.OR = [
+      { employee_name: { contains: search, mode: 'insensitive' } },
+      { e_hr_name: { contains: search, mode: 'insensitive' } },
+      { hr_items: { contains: search, mode: 'insensitive' } },
+      { notes: { contains: search, mode: 'insensitive' } }
+    ];
   }
 
   const [hrItems, total] = await Promise.all([

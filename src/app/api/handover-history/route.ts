@@ -40,9 +40,14 @@ export async function GET(req: Request) {
     }
 
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
       where.created_at = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
+        gte: start,
+        lte: end
       };
     }
 

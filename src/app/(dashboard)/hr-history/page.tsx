@@ -20,11 +20,16 @@ export default function HRHistoryPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
   const fetchHRHistory = async (page = 1) => {
     setLoading(true);
     try {
       let url = `/api/hr?page=${page}&limit=20`;
       if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
+      if (filterStartDate && filterEndDate) url += `&startDate=${filterStartDate}&endDate=${filterEndDate}`;
+      if (filterEmployeeId) url += `&employeeId=${filterEmployeeId}`;
 
       const res = await fetch(url);
       if (res.ok) {
@@ -63,7 +68,7 @@ export default function HRHistoryPage() {
 
     fetchHRHistory(1);
     fetchTreeData();
-  }, [statusFilter]);
+  }, [statusFilter, filterStartDate, filterEndDate, filterEmployeeId]);
 
   const handleApproveReject = async (id: string, newApproval: 'موافقة' | 'مرفوض') => {
     try {
@@ -232,6 +237,10 @@ export default function HRHistoryPage() {
                         setExpandedMonths(prev =>
                           isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
                         );
+                        const [yyyy, mm] = m.month.split(' ');
+                        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+                        setFilterStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
+                        setFilterEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
                       }}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 cursor-pointer flex items-center justify-between transition-all"
                     >
@@ -252,6 +261,9 @@ export default function HRHistoryPage() {
                                   setExpandedDays(prev =>
                                     isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
                                   );
+                                  const [dd, mm, yyyy] = d.day.split('/');
+                                  setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                  setFilterEndDate(`${yyyy}-${mm}-${dd}`);
                                 }}
                                 className="p-1.5 rounded-lg bg-white hover:bg-indigo-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
                               >
@@ -265,6 +277,11 @@ export default function HRHistoryPage() {
                                   {d.categories.map((c: any) => (
                                     <div
                                       key={c.category}
+                                      onClick={() => {
+                                        const [dd, mm, yyyy] = d.day.split('/');
+                                        setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                        setFilterEndDate(`${yyyy}-${mm}-${dd}`);
+                                      }}
                                       className="p-1 rounded bg-slate-50 hover:bg-indigo-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
                                     >
                                       <span>🎁 {c.category}</span>

@@ -11,9 +11,34 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const search = searchParams.get('search') || '';
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+  const employeeId = searchParams.get('employeeId') || '';
+
   const skip = (page - 1) * limit;
 
-  const whereCondition = user.role === 'manager' ? {} : { employee_id: user.id };
+  const whereCondition: any = user.role === 'manager' ? (employeeId ? { employee_id: employeeId } : {}) : { employee_id: user.id };
+
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    whereCondition.timestamp = {
+      gte: start,
+      lte: end
+    };
+  }
+
+  if (search) {
+    whereCondition.OR = [
+      { employee_name: { contains: search, mode: 'insensitive' } },
+      { notes: { contains: search, mode: 'insensitive' } },
+      { service_name: { contains: search, mode: 'insensitive' } }
+    ];
+  }
 
   const [bookings, total] = await Promise.all([
     db.train_ticket_bookings.findMany({
