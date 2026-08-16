@@ -16,6 +16,8 @@ export default function ManagerReportsPage() {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [closingBalance, setClosingBalance] = useState<number>(0);
 
   // Hidden tabs state (kept in code as requested, but default is 'financial')
   const [activeTab, setActiveTab] = useState<'financial' | 'monthly' | 'category'>('financial');
@@ -73,21 +75,21 @@ export default function ManagerReportsPage() {
       
       const payload = {
         month: currentMonthStr,
-        wallet_commission: metrics.walletCommissions || 0,
-        tickets_commission: metrics.ticketCommissions || 0,
-        machine_withdrawal_commission: metrics.machineWithdrawalCommissions || 0,
-        machine_deposit_commission: metrics.machineDepositCommissions || 0,
+        wallet_commission: metrics.walletCommission || 0,
+        tickets_commission: metrics.ticketCommission || 0,
+        machine_withdrawal_commission: metrics.machineWithdrawlCommission || 0,
+        machine_deposit_commission: metrics.machineDepositsCommission || 0,
         machine_deposits: metrics.machineDeposits || 0,
-        service_revenue: metrics.servicesRevenue || 0,
+        service_revenue: metrics.serviceValue || 0,
         total_revenue: metrics.totalRevenue || 0,
-        opening_balance: metrics.openingBalance || 0,
-        closing_balance: metrics.closingBalance || 0,
+        opening_balance: openingBalance,
+        closing_balance: closingBalance,
         purchases_cost: metrics.purchasesCost || 0,
         purchases_cost_percent: metrics.purchasesCostPercent || 0,
-        total_profit: metrics.grossProfit || 0,
+        total_profit: metrics.totalProfit || 0,
         total_commissions: metrics.totalCommissions || 0,
         other_expenses: metrics.otherExpenses || 0,
-        salaries: metrics.totalSalaries || 0,
+        salaries: metrics.salaries || 0,
         net_profit: metrics.netProfit || 0,
         withdrawn_revenue: metrics.withdrawnRevenue || 0,
         ticket_count: metrics.ticketCount || 0,
@@ -170,23 +172,48 @@ export default function ManagerReportsPage() {
           </button>
         </div>
 
-        {/* نسبة عمولة إيداع المكن */}
-        <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
-          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">عمولة إيداع المكن (÷1000):</span>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="0.5"
-            value={machineCommissionRate}
-            onChange={(e) => setMachineCommissionRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-            className="w-20 py-1.5 px-3 bg-white border border-amber-300 rounded-xl text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 text-center"
-            title="نسبة عمولة إيداع الماكينات — يتم حساب: (إجمالي الإيداع × النسبة) ÷ 1000"
-          />
-          <span className="text-[11px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg whitespace-nowrap">
-            = {metrics ? formatNumber((metrics.machineDeposits * machineCommissionRate) / 1000) : '0'} ج
-          </span>
+        {/* نسبة عمولة إيداع المكن + رصيد افتتاحي/ختامي */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-amber-600 shrink-0" />
+            <span className="text-xs font-bold text-slate-700 whitespace-nowrap">عمولة إيداع المكن (÷1000):</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.5"
+              value={machineCommissionRate}
+              onChange={(e) => setMachineCommissionRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+              className="w-20 py-1.5 px-3 bg-white border border-amber-300 rounded-xl text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 text-center"
+              title="نسبة عمولة إيداع الماكينات — يتم حساب: (إجمالي الإيداع × النسبة) ÷ 1000"
+            />
+            <span className="text-[11px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg whitespace-nowrap">
+              = {metrics ? formatNumber((metrics.machineDeposits * machineCommissionRate) / 1000) : '0'} ج
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Banknote className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span className="text-xs font-bold text-slate-700 whitespace-nowrap">رصيد افتتاحي:</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={openingBalance}
+              onChange={(e) => setOpeningBalance(parseFloat(e.target.value) || 0)}
+              className="w-24 py-1.5 px-3 bg-white border border-indigo-300 rounded-xl text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-center"
+              placeholder="0"
+            />
+            <span className="text-xs font-bold text-slate-700 whitespace-nowrap">رصيد ختامي:</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={closingBalance}
+              onChange={(e) => setClosingBalance(parseFloat(e.target.value) || 0)}
+              className="w-24 py-1.5 px-3 bg-white border border-indigo-300 rounded-xl text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-center"
+              placeholder="0"
+            />
+          </div>
         </div>
       </div>
 
@@ -334,9 +361,9 @@ export default function ManagerReportsPage() {
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">عمولات المحافظ</span>
-                    <Zap className="w-5 h-5 text-slate-600" />
+                    <Zap className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
                     {formatNumber(Number(metrics.walletCommission || 0))}
                   </h3>
                   <p className="text-[11px] text-slate-500">فودافون كاش</p>
@@ -345,10 +372,10 @@ export default function ManagerReportsPage() {
                 {/* 10. Machine Withdrawals Commission */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولات السحب</span>
-                    <Cpu className="w-5 h-5 text-slate-600" />
+                    <span className="text-xs font-bold text-slate-700">عمولات سحب المكن</span>
+                    <Cpu className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
                     {formatNumber(Number(metrics.machineWithdrawlCommission || 0))}
                   </h3>
                   <p className="text-[11px] text-slate-500">فوري وأمان</p>
@@ -357,13 +384,37 @@ export default function ManagerReportsPage() {
                 {/* 11. Machine Deposits Commission */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولات الإيداع</span>
-                    <Coins className="w-5 h-5 text-slate-600" />
+                    <span className="text-xs font-bold text-slate-700">عمولات إيداع المكن</span>
+                    <Coins className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
                     {formatNumber(Number(metrics.machineDepositsCommission || 0))}
                   </h3>
-                  <p className="text-[11px] text-slate-500">{formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')}</p>
+                  <p className="text-[11px] text-slate-500">إيداع: {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')} ج</p>
+                </div>
+
+                {/* 12. Ticket Commissions */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">عمولة التذاكر</span>
+                    <Train className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
+                    {formatNumber(Number(metrics.ticketCommission || 0))}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">{formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')} تذكرة</p>
+                </div>
+
+                {/* 13. Machine Deposits (raw amount) */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">إيداع المكن</span>
+                    <Cpu className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold font-mono text-indigo-700">
+                    {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">أساس حساب عمولة الإيداع</p>
                 </div>
               </div>
 
@@ -633,15 +684,15 @@ export default function ManagerReportsPage() {
                           {archivedReports.map((report: any) => (
                             <tr key={report.id} className="hover:bg-slate-50 font-semibold">
                               <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
-                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
-                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
-                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
+                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
+                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
                               <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(Number(report.service_revenue))}</td>
-                              <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{formatNumber(Number(report.purchases_cost))}</td>
-                              <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.purchases_cost_percent}%</td>
+                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.purchases_cost))}</td>
+                              <td className="px-3 py-3 text-rose-500 whitespace-nowrap">{report.purchases_cost_percent}%</td>
                               <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(Number(report.total_profit))}</td>
-                              <td className="px-3 py-3 text-purple-700 whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
-                              <td className="px-3 py-3 text-amber-700 whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
+                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
+                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
                               <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(Number(report.net_profit))}</td>
                               <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
                             </tr>

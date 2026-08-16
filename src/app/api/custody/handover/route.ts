@@ -144,7 +144,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { action, walletId, actualBalance, discrepancyReason, receiverId, amount } = body;
+    const { action, walletId, actualBalance, discrepancyReason, receiverId, amount, notes } = body;
 
     // --- Action: Deposit Cash from Employee Custody into Cash Drawer (Item 9 & 10: Single Click Deposit + Delivery + Zero Custody) ---
     if (action === 'deposit_to_drawer') {
@@ -455,7 +455,8 @@ export async function POST(req: Request) {
               actual_balance: numActual,
               difference: diff,
               status: 'ACCEPTED',
-              review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم المطابقة التسليم لماسبيرو'
+              review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم مطابقة التسليم لماسبيرو',
+              ...(notes ? { notes } : {})
             }
           });
 
@@ -489,7 +490,8 @@ export async function POST(req: Request) {
           actual_balance: numActual,
           difference: diff,
           status: 'PENDING',
-          review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم المطابقة'
+          review_status: diff !== 0 ? 'الرجاء المراجعة' : 'تم المطابقة',
+          ...(notes ? { notes } : {})
         }
       });
 

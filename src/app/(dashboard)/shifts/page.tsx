@@ -60,6 +60,7 @@ export default function ShiftsPage() {
   // Modal State for Delivering Custody Item
   const [deliverModalItem, setDeliverModalItem] = useState<any | null>(null);
   const [deliverReceiverId, setDeliverReceiverId] = useState<string>('');
+  const [deliverNotes, setDeliverNotes] = useState<string>('');
   const [deliverSubmitting, setDeliverSubmitting] = useState(false);
 
   // Modal State for Deposit to Cash Drawer (إيداع في الدرج)
@@ -246,7 +247,8 @@ export default function ShiftsPage() {
           action: 'deliver',
           walletId: deliverModalItem.id,
           receiverId: deliverReceiverId,
-          actualBalance: actualBalanceInput ? parseFloat(actualBalanceInput) : undefined
+          actualBalance: actualBalanceInput ? parseFloat(actualBalanceInput) : undefined,
+          notes: deliverNotes || undefined
         })
       });
 
@@ -257,6 +259,7 @@ export default function ShiftsPage() {
       setDeliverModalItem(null);
       setDeliverReceiverId('');
       setActualBalanceInput('');
+      setDeliverNotes('');
       fetchShiftsAndCustody();
     } catch (err: any) {
       showToast(err.message, 'error');
@@ -1177,6 +1180,20 @@ export default function ShiftsPage() {
                   onChange={(e) => setActualBalanceInput(e.target.value)}
                   placeholder={Number(deliverModalItem.actual_balance || deliverModalItem.current_balance || 0).toString()}
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-sm font-bold focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  ملاحظات التسليم (اختياري)
+                </label>
+                <textarea
+                  rows={2}
+                  value={deliverNotes}
+                  onChange={(e) => setDeliverNotes(e.target.value)}
+                  placeholder="ملاحظات حول التسليم..."
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 resize-none"
                 />
               </div>
             </div>
