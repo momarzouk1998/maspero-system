@@ -48,8 +48,8 @@ export async function GET(req: Request) {
 
   const skip = (page - 1) * limit;
 
-  const whereCondition: any = user.role === 'manager' 
-    ? (filterEmpId ? { employee_id: filterEmpId } : {}) 
+  const whereCondition: any = user.role === 'manager'
+    ? (filterEmpId ? { employee_id: filterEmpId } : {})
     : { employee_id: user.id };
 
   if (mainType) {

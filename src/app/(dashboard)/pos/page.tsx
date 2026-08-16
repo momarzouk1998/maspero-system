@@ -59,12 +59,12 @@ export default function POSPage() {
   // ─── Refresh invoice items from server ──────────────────
   const [refreshing, setRefreshing] = useState(false);
   const [employeeName, setEmployeeName] = useState('');
-  const [timestamp, setTimestamp]     = useState('');
+  const [timestamp, setTimestamp] = useState('');
 
   const fetchInvoice = async (code: string) => {
     setRefreshing(true);
     try {
-      const res  = await fetch(`/api/invoice?code=${code}`);
+      const res = await fetch(`/api/invoice?code=${code}`);
       const data = await res.json();
       if (res.ok) {
         setOpenInvoices(prev => prev.map(i =>
@@ -150,8 +150,8 @@ export default function POSPage() {
   };
 
   // ─── Services & Custody data ──────────────────────────────
-  const [services,  setServices]  = useState<any[]>([]);
-  const [dbPrices,  setDbPrices]  = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [dbPrices, setDbPrices] = useState<any[]>([]);
   const [custodyData, setCustodyData] = useState<{
     isSalesLocked: boolean;
     lockReason: string;
@@ -180,24 +180,24 @@ export default function POSPage() {
     fetch('/api/wallets').then(r => r.json()).then(d => setExtWallets(d.externalWallets || d.wallets || []));
   }, []);
 
-  const wallets  = extWallets.filter(w => w.wallet_type === 'محفظة');
+  const wallets = extWallets.filter(w => w.wallet_type === 'محفظة');
   const machines = extWallets.filter(w => w.wallet_type === 'ماكينة');
 
   // ─── Active Tab ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'services' | 'tickets' | 'wallets'>('services');
 
   // ─── Service Popup ───────────────────────────────────────
-  const [svcPopup,    setSvcPopup]    = useState<any | null>(null);
+  const [svcPopup, setSvcPopup] = useState<any | null>(null);
   const [printModalData, setPrintModalData] = useState<any | null>(null);
   const [isCashierPrint, setIsCashierPrint] = useState(true);
 
   // Kiosk Print Guide Modal
   const [showKioskGuideModal, setShowKioskGuideModal] = useState(false);
-  const [svcFace,     setSvcFace]     = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
-  const [svcPaper,    setSvcPaper]    = useState(0);
-  const [svcAmt,      setSvcAmt]      = useState(0);
-  const [svcNotes,    setSvcNotes]    = useState('');  // for "أخرى" service
-  const [svcLoading,  setSvcLoading]  = useState(false);
+  const [svcFace, setSvcFace] = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
+  const [svcPaper, setSvcPaper] = useState(0);
+  const [svcAmt, setSvcAmt] = useState(0);
+  const [svcNotes, setSvcNotes] = useState('');  // for "أخرى" service
+  const [svcLoading, setSvcLoading] = useState(false);
 
   useEffect(() => {
     if (!svcPopup) return;
@@ -239,11 +239,11 @@ export default function POSPage() {
   };
 
   // ─── Ticket (inline form, no popup) ─────────────────────
-  const [tktType,    setTktType]    = useState<'قطار' | 'أتوبيس' | null>(null);
-  const [tktCount,   setTktCount]   = useState(1);
-  const [tktPrice,   setTktPrice]   = useState(0);
-  const [tktComm,    setTktComm]    = useState(0);
-  const [tktNotes,   setTktNotes]   = useState('');
+  const [tktType, setTktType] = useState<'قطار' | 'أتوبيس' | null>(null);
+  const [tktCount, setTktCount] = useState(1);
+  const [tktPrice, setTktPrice] = useState(0);
+  const [tktComm, setTktComm] = useState(0);
+  const [tktNotes, setTktNotes] = useState('');
   const [tktLoading, setTktLoading] = useState(false);
 
   const handleAddTicket = async () => {
@@ -266,11 +266,11 @@ export default function POSPage() {
   };
 
   // ─── Wallet Popup ────────────────────────────────────────
-  const [wltPopup,   setWltPopup]   = useState<any | null>(null);
-  const [wltOpType,  setWltOpType]  = useState<'إيداع' | 'سحب'>('إيداع');
-  const [wltAmt,     setWltAmt]     = useState(0);
-  const [wltComm,    setWltComm]    = useState(0);
-  const [wltNotes,   setWltNotes]   = useState('');
+  const [wltPopup, setWltPopup] = useState<any | null>(null);
+  const [wltOpType, setWltOpType] = useState<'إيداع' | 'سحب'>('إيداع');
+  const [wltAmt, setWltAmt] = useState(0);
+  const [wltComm, setWltComm] = useState(0);
+  const [wltNotes, setWltNotes] = useState('');
   const [wltLoading, setWltLoading] = useState(false);
 
   const openWltPopup = (w: any, defaultType: 'إيداع' | 'سحب' = 'إيداع') => {
@@ -315,11 +315,10 @@ export default function POSPage() {
   const TabBtn = ({ id, label, icon: Icon, color }: any) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-        activeTab === id
-          ? `${color} text-white shadow-md`
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-      }`}
+      className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all ${activeTab === id
+        ? `${color} text-white shadow-md`
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+        }`}
     >
       <Icon className="w-4 h-4" /><span>{label}</span>
     </button>
@@ -385,9 +384,9 @@ export default function POSPage() {
 
         {/* Tabs */}
         <div className={`flex gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
-          <TabBtn id="services" label="الخدمات"       icon={Printer} color="bg-blue-600"   />
-          <TabBtn id="tickets"  label="التذاكر"        icon={Train}   color="bg-purple-600" />
-          <TabBtn id="wallets"  label="المحافظ والماكينات" icon={Wallet}  color="bg-emerald-600" />
+          <TabBtn id="services" label="الخدمات" icon={Printer} color="bg-blue-600" />
+          <TabBtn id="tickets" label="التذاكر" icon={Train} color="bg-purple-600" />
+          <TabBtn id="wallets" label="المحافظ والماكينات" icon={Wallet} color="bg-emerald-600" />
         </div>
 
         {/* ── TAB: SERVICES ─────────────────────────────── */}
@@ -406,13 +405,13 @@ export default function POSPage() {
                 const cardColor = svc.service_name?.includes('أسود')
                   ? 'border-slate-300 hover:border-slate-500 hover:bg-slate-50 bg-white'
                   : svc.service_name?.includes('ألوان')
-                  ? 'border-amber-200 hover:border-amber-400 hover:bg-amber-50 bg-white'
-                  : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50 bg-white';
+                    ? 'border-amber-200 hover:border-amber-400 hover:bg-amber-50 bg-white'
+                    : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50 bg-white';
                 const iconColor = svc.service_name?.includes('أسود')
                   ? 'bg-slate-100 group-hover:bg-slate-200 text-slate-700'
                   : svc.service_name?.includes('ألوان')
-                  ? 'bg-amber-100 group-hover:bg-amber-200 text-amber-700'
-                  : 'bg-blue-100 group-hover:bg-blue-200 text-blue-600';
+                    ? 'bg-amber-100 group-hover:bg-amber-200 text-amber-700'
+                    : 'bg-blue-100 group-hover:bg-blue-200 text-blue-600';
                 return (
                   <button key={svc.id} onClick={() => openSvcPopup(svc)}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
@@ -454,22 +453,20 @@ export default function POSPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => { setTktType('قطار'); setTktCount(1); setTktPrice(0); setTktComm(0); }}
-                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${
-                    tktType === 'قطار'
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200'
-                      : 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400'
-                  }`}
+                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${tktType === 'قطار'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-200'
+                    : 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400'
+                    }`}
                 >
                   <Train className="w-5 h-5" />
                   <span>قطار</span>
                 </button>
                 <button
                   onClick={() => { setTktType('أتوبيس'); setTktCount(1); setTktPrice(0); setTktComm(0); }}
-                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${
-                    tktType === 'أتوبيس'
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200'
-                      : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400'
-                  }`}
+                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border-2 font-bold text-sm transition-all ${tktType === 'أتوبيس'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200'
+                    : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400'
+                    }`}
                 >
                   <Bus className="w-5 h-5" />
                   <span>أتوبيس</span>
@@ -479,9 +476,8 @@ export default function POSPage() {
 
             {/* Inline form - shown when type is selected */}
             {tktType && (
-              <div className={`p-4 rounded-2xl border-2 space-y-4 transition-all ${
-                tktType === 'قطار' ? 'border-purple-200 bg-purple-50/50' : 'border-indigo-200 bg-indigo-50/50'
-              }`}>
+              <div className={`p-4 rounded-2xl border-2 space-y-4 transition-all ${tktType === 'قطار' ? 'border-purple-200 bg-purple-50/50' : 'border-indigo-200 bg-indigo-50/50'
+                }`}>
                 <p className="text-xs font-bold text-slate-700">تفاصيل تذكرة {tktType}</p>
 
                 {/* Count + Price + Commission in one row */}
@@ -540,11 +536,10 @@ export default function POSPage() {
                   <button
                     onClick={handleAddTicket}
                     disabled={tktLoading || tktPrice <= 0}
-                    className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${
-                      tktType === 'قطار'
-                        ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
-                        : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
-                    }`}
+                    className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${tktType === 'قطار'
+                      ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
+                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
+                      }`}
                   >
                     {tktLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     إضافة للفاتورة
@@ -701,11 +696,10 @@ export default function POSPage() {
             {openInvoices.map(inv => (
               <div key={inv.code}
                 onClick={() => setActiveInvoiceCode(inv.code)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl cursor-pointer whitespace-nowrap transition-all text-xs font-bold border shrink-0 ${
-                  inv.code === activeInvoiceCode
-                    ? 'bg-blue-600 text-white border-blue-600 shadow'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl cursor-pointer whitespace-nowrap transition-all text-xs font-bold border shrink-0 ${inv.code === activeInvoiceCode
+                  ? 'bg-blue-600 text-white border-blue-600 shadow'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  }`}
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>{inv.label}</span>
@@ -715,9 +709,8 @@ export default function POSPage() {
                 {openInvoices.length > 1 && (
                   <button
                     onClick={(e) => { e.stopPropagation(); closeInvoice(inv.code); }}
-                    className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
-                      inv.code === activeInvoiceCode ? 'hover:bg-blue-500' : 'hover:bg-slate-200'
-                    }`}
+                    className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${inv.code === activeInvoiceCode ? 'hover:bg-blue-500' : 'hover:bg-slate-200'
+                      }`}
                   >
                     <X className="w-2.5 h-2.5" />
                   </button>
@@ -766,14 +759,13 @@ export default function POSPage() {
                 <div key={item.id}
                   className="bg-white border border-slate-200 rounded-2xl p-3 flex gap-3 relative group hover:border-slate-300 transition-colors"
                 >
-                  <div className={`p-2 rounded-xl h-fit shrink-0 ${
-                    item.type === 'service' ? 'bg-blue-100 text-blue-600' :
-                    item.type === 'ticket'  ? 'bg-purple-100 text-purple-600' :
-                    'bg-emerald-100 text-emerald-600'
-                  }`}>
+                  <div className={`p-2 rounded-xl h-fit shrink-0 ${item.type === 'service' ? 'bg-blue-100 text-blue-600' :
+                    item.type === 'ticket' ? 'bg-purple-100 text-purple-600' :
+                      'bg-emerald-100 text-emerald-600'
+                    }`}>
                     {item.type === 'service' ? <Printer className="w-4 h-4" /> :
-                     item.type === 'ticket'  ? <Train   className="w-4 h-4" /> :
-                     <Wallet className="w-4 h-4" />}
+                      item.type === 'ticket' ? <Train className="w-4 h-4" /> :
+                        <Wallet className="w-4 h-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-slate-900 text-sm truncate">{item.name}</h4>
@@ -896,11 +888,10 @@ export default function POSPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {(['وجه واحد', 'وجهين'] as const).map(f => (
                     <button key={f} onClick={() => setSvcFace(f)}
-                      className={`py-3 rounded-xl font-bold text-sm border-2 transition-all ${
-                        svcFace === f
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
-                      }`}
+                      className={`py-3 rounded-xl font-bold text-sm border-2 transition-all ${svcFace === f
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                        }`}
                     >{f}</button>
                   ))}
                 </div>
@@ -999,19 +990,17 @@ export default function POSPage() {
               <label className="block text-xs font-medium text-slate-700 mb-2">نوع العملية</label>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setWltOpType('إيداع')}
-                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${
-                    wltOpType === 'إيداع'
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
-                  }`}>
+                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'إيداع'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                    }`}>
                   <ArrowDownLeft className="w-4 h-4" /> إيداع
                 </button>
                 <button onClick={() => setWltOpType('سحب')}
-                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${
-                    wltOpType === 'سحب'
-                      ? 'bg-red-600 text-white border-red-600 shadow-md'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-red-300'
-                  }`}>
+                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'سحب'
+                    ? 'bg-red-600 text-white border-red-600 shadow-md'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-red-300'
+                    }`}>
                   <ArrowUpRight className="w-4 h-4" /> سحب
                 </button>
               </div>
@@ -1022,11 +1011,10 @@ export default function POSPage() {
                 <label className="block text-xs font-medium text-slate-700 mb-2">المبلغ</label>
                 <input type="number" step="0.25" min="1" value={wltAmt}
                   onChange={e => setWltAmt(parseFloat(e.target.value) || 0)}
-                  className={`w-full p-3 bg-white border rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:ring-2 transition-colors ${
-                    wltOpType === 'إيداع'
-                      ? 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
-                      : 'border-slate-300 focus:border-red-500 focus:ring-red-200'
-                  }`}
+                  className={`w-full p-3 bg-white border rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:ring-2 transition-colors ${wltOpType === 'إيداع'
+                    ? 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
+                    : 'border-slate-300 focus:border-red-500 focus:ring-red-200'
+                    }`}
                 />
               </div>
               <div>
@@ -1047,9 +1035,8 @@ export default function POSPage() {
             </div>
 
             {/* Summary */}
-            <div className={`p-3 rounded-xl border text-xs flex justify-between ${
-              wltOpType === 'إيداع' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
-            }`}>
+            <div className={`p-3 rounded-xl border text-xs flex justify-between ${wltOpType === 'إيداع' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+              }`}>
               <span className="text-slate-600">الإجمالي المحصّل:</span>
               <span className={`font-bold font-mono ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
                 {formatNumber(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm)}
@@ -1058,11 +1045,10 @@ export default function POSPage() {
 
             <div className="flex gap-3">
               <button onClick={handleAddWallet} disabled={wltLoading || wltAmt <= 0}
-                className={`flex-1 py-3 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors ${
-                  wltOpType === 'إيداع'
-                    ? 'bg-emerald-600 hover:bg-emerald-500'
-                    : 'bg-red-600 hover:bg-red-500'
-                }`}>
+                className={`flex-1 py-3 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors ${wltOpType === 'إيداع'
+                  ? 'bg-emerald-600 hover:bg-emerald-500'
+                  : 'bg-red-600 hover:bg-red-500'
+                  }`}>
                 {wltLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 تسجيل {wltOpType}
               </button>
