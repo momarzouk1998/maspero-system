@@ -39,6 +39,17 @@ export default function HRHistoryPage() {
     }
   };
 
+  const [treeData, setTreeData] = useState<any>(null);
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  const fetchTreeData = () => {
+    fetch('/api/hr-history/tree')
+      .then(r => r.json())
+      .then(d => setTreeData(d))
+      .catch(console.error);
+  };
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -51,6 +62,7 @@ export default function HRHistoryPage() {
       .catch(() => {});
 
     fetchHRHistory(1);
+    fetchTreeData();
   }, [statusFilter]);
 
   const handleApproveReject = async (id: string, newApproval: 'موافقة' | 'مرفوض') => {
@@ -192,8 +204,89 @@ export default function HRHistoryPage() {
         </div>
       </div>
 
-      {/* HR Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+      {/* Main Grid: Tree Sidebar + HR Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        {/* Tree Filter Sidebar (AppSheet Style) */}
+        {treeData && treeData.months && (
+          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
+              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-indigo-600" />
+                شجرة التصفية
+              </span>
+              <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">
+                {formatNumber(treeData.totalSum)}
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+              {treeData.months.map((m: any) => {
+                const isMonthExpanded = expandedMonths.includes(m.month);
+
+                return (
+                  <div key={m.month} className="space-y-1">
+                    {/* Month Node */}
+                    <div
+                      onClick={() => {
+                        setExpandedMonths(prev =>
+                          isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
+                        );
+                      }}
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 cursor-pointer flex items-center justify-between transition-all"
+                    >
+                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                      <span className="font-mono font-bold text-indigo-700 text-[11px]">{formatNumber(m.totalSum)}</span>
+                    </div>
+
+                    {/* Days inside Month */}
+                    {isMonthExpanded && m.days && (
+                      <div className="pr-3 space-y-1 border-r-2 border-indigo-200 mr-2">
+                        {m.days.map((d: any) => {
+                          const isDayExpanded = expandedDays.includes(d.day);
+
+                          return (
+                            <div key={d.day} className="space-y-1">
+                              <div
+                                onClick={() => {
+                                  setExpandedDays(prev =>
+                                    isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
+                                  );
+                                }}
+                                className="p-1.5 rounded-lg bg-white hover:bg-indigo-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                              >
+                                <span className="font-bold text-slate-700">📆 {d.day}</span>
+                                <span className="font-mono font-bold text-indigo-600">{formatNumber(d.totalSum)}</span>
+                              </div>
+
+                              {/* Categories inside Day */}
+                              {isDayExpanded && d.categories && (
+                                <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
+                                  {d.categories.map((c: any) => (
+                                    <div
+                                      key={c.category}
+                                      className="p-1 rounded bg-slate-50 hover:bg-indigo-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
+                                    >
+                                      <span>🎁 {c.category}</span>
+                                      <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* HR Table Container */}
+        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
@@ -332,6 +425,7 @@ export default function HRHistoryPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

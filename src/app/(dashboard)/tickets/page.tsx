@@ -27,6 +27,17 @@ export default function TicketsPage() {
   const [editNotes, setEditNotes] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
 
+  const [treeData, setTreeData] = useState<any>(null);
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  const fetchTreeData = () => {
+    fetch('/api/tickets/tree')
+      .then(r => r.json())
+      .then(d => setTreeData(d))
+      .catch(console.error);
+  };
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -37,6 +48,8 @@ export default function TicketsPage() {
       .then(r => r.json())
       .then(d => setUsersList(getActiveUsers(d.users || [])))
       .catch(console.error);
+
+    fetchTreeData();
   }, []);
 
   const fetchBookings = async (page = 1) => {
@@ -163,8 +176,101 @@ export default function TicketsPage() {
         </div>
       </div>
 
-      {/* Bookings Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+      {/* Main Grid: Tree Sidebar + Bookings Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        {/* Tree Filter Sidebar (AppSheet Style) */}
+        {treeData && treeData.months && (
+          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
+              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-purple-600" />
+                شجرة التصفية
+              </span>
+              <span className="text-[11px] font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                {formatNumberLocale(treeData.totalSum, 'en-US')}
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+              {treeData.months.map((m: any) => {
+                const isMonthExpanded = expandedMonths.includes(m.month);
+
+                return (
+                  <div key={m.month} className="space-y-1">
+                    {/* Month Node */}
+                    <div
+                      onClick={() => {
+                        setExpandedMonths(prev =>
+                          isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
+                        );
+                        const [yyyy, mm] = m.month.split(' ');
+                        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+                        setFilterStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
+                        setFilterEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
+                      }}
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 cursor-pointer flex items-center justify-between transition-all"
+                    >
+                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                      <span className="font-mono font-bold text-purple-700 text-[11px]">{formatNumberLocale(m.totalSum, 'en-US')}</span>
+                    </div>
+
+                    {/* Days inside Month */}
+                    {isMonthExpanded && m.days && (
+                      <div className="pr-3 space-y-1 border-r-2 border-purple-200 mr-2">
+                        {m.days.map((d: any) => {
+                          const isDayExpanded = expandedDays.includes(d.day);
+
+                          return (
+                            <div key={d.day} className="space-y-1">
+                              <div
+                                onClick={() => {
+                                  setExpandedDays(prev =>
+                                    isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
+                                  );
+                                  const [dd, mm, yyyy] = d.day.split('/');
+                                  setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                  setFilterEndDate(`${yyyy}-${mm}-${dd}`);
+                                }}
+                                className="p-1.5 rounded-lg bg-white hover:bg-purple-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                              >
+                                <span className="font-bold text-slate-700">📆 {d.day}</span>
+                                <span className="font-mono font-bold text-purple-600">{formatNumberLocale(d.totalSum, 'en-US')}</span>
+                              </div>
+
+                              {/* Categories inside Day */}
+                              {isDayExpanded && d.categories && (
+                                <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
+                                  {d.categories.map((c: any) => (
+                                    <div
+                                      key={c.category}
+                                      onClick={() => {
+                                        const [dd, mm, yyyy] = d.day.split('/');
+                                        setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                        setFilterEndDate(`${yyyy}-${mm}-${dd}`);
+                                      }}
+                                      className="p-1 rounded bg-slate-50 hover:bg-purple-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
+                                    >
+                                      <span>🚆 {c.category}</span>
+                                      <span className="font-mono font-bold">{formatNumberLocale(c.totalSum, 'en-US')}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bookings Table Container */}
+        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Train className="w-5 h-5 text-purple-600" />
@@ -283,6 +389,7 @@ export default function TicketsPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Manager Edit Modal */}

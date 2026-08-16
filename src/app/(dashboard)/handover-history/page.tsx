@@ -23,6 +23,17 @@ export default function HandoverHistoryPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  const [treeData, setTreeData] = useState<any>(null);
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  const fetchTreeData = () => {
+    fetch('/api/handover-history/tree')
+      .then(r => r.json())
+      .then(d => setTreeData(d))
+      .catch(console.error);
+  };
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -33,6 +44,8 @@ export default function HandoverHistoryPage() {
       .then(r => r.json())
       .then(d => setUsersList(getActiveUsers(d.users || [])))
       .catch(console.error);
+
+    fetchTreeData();
   }, []);
 
   const hasActiveFilters = reviewStatus || startDate || endDate || filterEmployeeId;
@@ -170,8 +183,101 @@ export default function HandoverHistoryPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
+      {/* Main Grid: Tree Sidebar + Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        {/* Tree Filter Sidebar (AppSheet Style) */}
+        {treeData && treeData.months && (
+          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
+              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-emerald-600" />
+                شجرة التصفية
+              </span>
+              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                {formatNumber(treeData.totalSum)}
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+              {treeData.months.map((m: any) => {
+                const isMonthExpanded = expandedMonths.includes(m.month);
+
+                return (
+                  <div key={m.month} className="space-y-1">
+                    {/* Month Node */}
+                    <div
+                      onClick={() => {
+                        setExpandedMonths(prev =>
+                          isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
+                        );
+                        const [yyyy, mm] = m.month.split(' ');
+                        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+                        setStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
+                        setEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
+                      }}
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 cursor-pointer flex items-center justify-between transition-all"
+                    >
+                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                      <span className="font-mono font-bold text-emerald-700 text-[11px]">{formatNumber(m.totalSum)}</span>
+                    </div>
+
+                    {/* Days inside Month */}
+                    {isMonthExpanded && m.days && (
+                      <div className="pr-3 space-y-1 border-r-2 border-emerald-200 mr-2">
+                        {m.days.map((d: any) => {
+                          const isDayExpanded = expandedDays.includes(d.day);
+
+                          return (
+                            <div key={d.day} className="space-y-1">
+                              <div
+                                onClick={() => {
+                                  setExpandedDays(prev =>
+                                    isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
+                                  );
+                                  const [dd, mm, yyyy] = d.day.split('/');
+                                  setStartDate(`${yyyy}-${mm}-${dd}`);
+                                  setEndDate(`${yyyy}-${mm}-${dd}`);
+                                }}
+                                className="p-1.5 rounded-lg bg-white hover:bg-emerald-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                              >
+                                <span className="font-bold text-slate-700">📆 {d.day}</span>
+                                <span className="font-mono font-bold text-emerald-600">{formatNumber(d.totalSum)}</span>
+                              </div>
+
+                              {/* Categories inside Day */}
+                              {isDayExpanded && d.categories && (
+                                <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
+                                  {d.categories.map((c: any) => (
+                                    <div
+                                      key={c.category}
+                                      onClick={() => {
+                                        const [dd, mm, yyyy] = d.day.split('/');
+                                        setStartDate(`${yyyy}-${mm}-${dd}`);
+                                        setEndDate(`${yyyy}-${mm}-${dd}`);
+                                      }}
+                                      className="p-1 rounded bg-slate-50 hover:bg-emerald-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
+                                    >
+                                      <span>💼 {c.category}</span>
+                                      <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Table Container */}
+        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
@@ -320,6 +426,7 @@ export default function HandoverHistoryPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Filter Modal */}
