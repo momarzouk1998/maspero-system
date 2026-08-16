@@ -336,16 +336,30 @@ export default function POSPage() {
     } finally { setWltLoading(false); }
   };
 
-  const handleFinishInvoiceWithoutPrint = () => {
-    fetch('/api/pos/new-invoice', { method: 'POST' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.code) {
-          setActiveInvoiceCode(d.code);
-          fetchInvoice(d.code);
-        }
-      })
-      .catch(console.error);
+  const handleFinishCurrentInvoice = () => {
+    const currentCode = activeInvoiceCode;
+    const nextCode = generateCode();
+    const nextNum = invoiceCounter;
+    setInvoiceCounter(n => n + 1);
+
+    const newInv: OpenInvoice = {
+      code: nextCode,
+      label: `فاتورة ${nextNum}`,
+      items: [],
+      total: 0
+    };
+
+    setOpenInvoices(prev => {
+      const remaining = prev.filter(i => i.code !== currentCode);
+      return [...remaining, newInv];
+    });
+
+    setActiveInvoiceCode(nextCode);
+  };
+
+  const handleFinishAndPrint = () => {
+    handlePrint('cashier');
+    handleFinishCurrentInvoice();
   };
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -863,9 +877,7 @@ export default function POSPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
-                onClick={() => {
-                  handleFinishInvoiceWithoutPrint();
-                }}
+                onClick={handleFinishCurrentInvoice}
                 className="py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -873,7 +885,7 @@ export default function POSPage() {
               </button>
               <button
                 disabled={!activeInvoice || activeInvoice.items.length === 0}
-                onClick={() => handlePrint('cashier')}
+                onClick={handleFinishAndPrint}
                 className="py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition-colors cursor-pointer shadow-md shadow-emerald-600/20"
               >
                 <Printer className="w-4 h-4" />
