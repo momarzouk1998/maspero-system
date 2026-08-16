@@ -841,20 +841,18 @@ export default function ShiftsPage() {
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
-                        {/* Deliver Cash Custody to Drawer Action Button */}
-                        {myCustodyBalance > 0 && (
-                          <button
-                            onClick={() => {
-                              setDrawerDepositItem(item);
-                              setDepositAmountInput(String(myCustodyBalance));
-                            }}
-                            className="py-1.5 px-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm cursor-pointer"
-                            title="تسليم عهدة الكاش بالدرج للموظف التالي"
-                          >
-                            <ArrowLeftRight className="w-3.5 h-3.5" />
-                            <span>تسليم للدرج</span>
-                          </button>
-                        )}
+                        {/* Deliver Cash Custody to Drawer Action Button (Always Visible) */}
+                        <button
+                          onClick={() => {
+                            setDrawerDepositItem(item);
+                            setDepositAmountInput(myCustodyBalance > 0 ? String(myCustodyBalance) : '');
+                          }}
+                          className="py-1.5 px-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm cursor-pointer"
+                          title="تسليم عهدة الكاش بالدرج للموظف التالي"
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                          <span>تسليم للدرج</span>
+                        </button>
 
                         {/* Receive Buttons (when drawer has money) */}
                         {drawerBal > 0 && (
