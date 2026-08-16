@@ -158,6 +158,21 @@ export default function POSPage() {
   // ─── Services & Custody data ──────────────────────────────
   const [services, setServices] = useState<any[]>([]);
   const [dbPrices, setDbPrices] = useState<any[]>([]);
+
+  // Automatically recalculate print total price when faceType or count changes in edit modal
+  useEffect(() => {
+    if (!editItem) return;
+    const sName = editItem.rawServiceName || editItem.name || '';
+    if (editItem.type === 'service' && isPrint(sName)) {
+      const count = parseInt(editCount) || 0;
+      if (count > 0 && dbPrices.length > 0) {
+        const result = calculatePrintPrice(sName, editFaceType, count, dbPrices);
+        if (result && result.totalAmount > 0) {
+          setEditAmount(String(result.totalAmount));
+        }
+      }
+    }
+  }, [editItem?.id, editFaceType, editCount, dbPrices]);
   const [custodyData, setCustodyData] = useState<{
     isSalesLocked: boolean;
     lockReason: string;
