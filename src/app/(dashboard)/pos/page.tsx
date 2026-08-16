@@ -312,10 +312,10 @@ export default function POSPage() {
     if (!wltPopup || wltAmt <= 0 || !activeInvoiceCode) return;
     setWltLoading(true);
     const isKomanda = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
-    const isFawryWithdrawal = (wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2') && wltOpType === 'سحب';
+    const isFawryMachine = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
     const finalDescription = isKomanda
       ? `[${komandaProvider}] ${wltNotes}`.trim()
-      : isFawryWithdrawal
+      : isFawryMachine
       ? `[${fawryWithdrawalType}] ${wltNotes}`.trim()
       : wltNotes;
 
@@ -327,6 +327,8 @@ export default function POSPage() {
           walletId: wltPopup.id, transactionType: wltOpType,
           amount: wltAmt, commission: wltComm,
           description: finalDescription, invoice_code: activeInvoiceCode,
+          comanda_type: isKomanda ? komandaProvider : undefined,
+          fawry_type: isFawryMachine ? fawryWithdrawalType : undefined,
         }),
       });
       setWltPopup(null);
@@ -1066,10 +1068,10 @@ export default function POSPage() {
               </div>
             )}
 
-            {/* Fawry Withdrawal Sub-Type Buttons (سحب فوري1 / سحب فوري2 + سحب only) */}
-            {(wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2') && wltOpType === 'سحب' && (
+            {/* Fawry Sub-Type Buttons (سحب فوري1 / سحب فوري2 for both deposit & withdrawal) */}
+            {(wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2') && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">نوع السحب *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">نوع المعاملة (عادية / مشتريات) *</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['عادية', 'مشتريات'] as const).map(type => (
                     <button
