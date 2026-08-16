@@ -112,6 +112,7 @@ export default function POSPage() {
   // ─── Edit item ───────────────────────────────────────────
   const [editItem, setEditItem] = useState<any | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [editCommission, setEditCommission] = useState('');
   const [editCount, setEditCount] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editFaceType, setEditFaceType] = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
@@ -119,9 +120,10 @@ export default function POSPage() {
 
   const openEditItem = (item: any) => {
     setEditItem(item);
-    setEditAmount(String(item.total ?? item.price ?? 0));
+    setEditAmount(String(item.type === 'wallet' ? (item.amount ?? item.price ?? 0) : (item.total ?? item.price ?? 0)));
+    setEditCommission(String(item.commission ?? 0));
     setEditCount(String(item.count ?? 1));
-    setEditNotes(item.notes ?? '');
+    setEditNotes(item.type === 'wallet' ? (item.description ?? '') : (item.notes ?? ''));
     setEditFaceType(item.faceType === 'وجهين' ? 'وجهين' : 'وجه واحد');
   };
 
@@ -136,6 +138,7 @@ export default function POSPage() {
           id: editItem.id,
           type: editItem.type,
           newAmount: parseFloat(editAmount) || 0,
+          newCommission: editItem.type === 'wallet' ? (parseFloat(editCommission) || 0) : undefined,
           newCount: editItem.type !== 'wallet' ? (parseInt(editCount) || 1) : undefined,
           newNotes: editNotes || undefined,
           newFaceType: editItem.type === 'service' ? editFaceType : undefined,
@@ -791,16 +794,14 @@ export default function POSPage() {
                     </div>
                   </div>
                   <div className="shrink-0 font-bold text-slate-900 font-mono text-sm">{item.total} ج</div>
-                  {/* زرار تعديل — خدمات وتذاكر فقط */}
-                  {item.type !== 'wallet' && (
-                    <button
-                      onClick={() => openEditItem(item)}
-                      className="absolute -top-1.5 left-5 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex"
-                      title="تعديل البند"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
-                  )}
+                  {/* زرار تعديل */}
+                  <button
+                    onClick={() => openEditItem(item)}
+                    className="absolute -top-1.5 left-5 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex cursor-pointer"
+                    title="تعديل البند"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
                   {/* زرار حذف */}
                   <button
                     onClick={() => handleDeleteItem(item.id, item.type)}
@@ -1185,9 +1186,11 @@ export default function POSPage() {
                 </div>
               )}
 
-              {/* المبلغ الإجمالي */}
+              {/* المبلغ الإجمالي / الأساسي */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">المبلغ الإجمالي *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  {editItem.type === 'wallet' ? 'المبلغ الأساسي للعملية *' : 'المبلغ الإجمالي *'}
+                </label>
                 <input
                   type="number"
                   step="0.25"
@@ -1198,6 +1201,21 @@ export default function POSPage() {
                   autoFocus
                 />
               </div>
+
+              {/* العمولة — عمليات المحافظ فقط */}
+              {editItem.type === 'wallet' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">عمولتنا *</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={editCommission}
+                    onChange={e => setEditCommission(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              )}
 
               {/* العدد — خدمات فقط */}
               {editItem.type === 'service' && (

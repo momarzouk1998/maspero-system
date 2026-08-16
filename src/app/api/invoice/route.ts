@@ -29,6 +29,9 @@ export async function GET(req: Request) {
       rawServiceName?: string;
       faceType?: string | null;
       notes?: string | null;
+      amount?: number;
+      commission?: number;
+      description?: string | null;
       price: number;
       count: number;
       total: number;
@@ -70,6 +73,9 @@ export async function GET(req: Request) {
         id: w.id,
         type: 'wallet',
         name: `${w.transaction_type} ${w.wallet_name} - ${w.description || ''}`,
+        amount: Number(w.amount),
+        commission: Number(w.wallet_commission || 0),
+        description: w.description,
         price: Number(w.amount), // for wallet, price is the amount itself
         count: 1,
         total: Number(w.amount) + Number(w.wallet_commission), // Total collected from customer

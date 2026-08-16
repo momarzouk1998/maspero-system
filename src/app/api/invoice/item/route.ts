@@ -9,7 +9,7 @@ export async function PUT(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { id, type, newAmount, newCount, newNotes, newFaceType } = await req.json();
+    const { id, type, newAmount, newCount, newNotes, newFaceType, newCommission } = await req.json();
 
     if (!id || !type || newAmount === undefined) {
       return NextResponse.json({ error: 'معرف العنصر ونوعه والمبلغ الجديد مطلوبان' }, { status: 400 });
@@ -62,8 +62,57 @@ export async function PUT(req: Request) {
           }
         });
       }
+      else if (type === 'wallet') {
+        const txItem = await tx.wallet_transactions.findUnique({ where: { id } });
+        if (!txItem) throw new Error('العنصر غير موجود');
+        if (txItem.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
+
+        const oldAmount = Number(txItem.amount || 0);
+        const oldCommission = Number(txItem.wallet_commission || 0);
+        const numNewCommission = newCommission !== undefined ? Number(newCommission) : oldCommission;
+
+        const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
+
+        const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
+        const newBalanceChange = txItem.transaction_type === 'إيداع' ? -numNewAmount : numNewAmount;
+        const diffExternal = newBalanceChange - oldBalanceChange;
+
+        const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
+        const oldEmployeeCash = isDrawer
+          ? (txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount)
+          : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
+
+        const newEmployeeCash = isDrawer
+          ? (txItem.transaction_type === 'إيداع' ? -numNewAmount : numNewAmount)
+          : (txItem.transaction_type === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
+
+        const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
+
+        if (diffExternal !== 0 && txItem.wallet_id) {
+          await tx.external_wallets.update({
+            where: { id: txItem.wallet_id },
+            data: {
+              current_balance: { increment: diffExternal },
+              actual_balance: { increment: diffExternal }
+            }
+          });
+        }
+
+        if (diffEmployeeCash !== 0 && txItem.employee_id) {
+          await WalletService.adjustEmployeeWallet(txItem.employee_id, diffEmployeeCash, tx);
+        }
+
+        await tx.wallet_transactions.update({
+          where: { id },
+          data: {
+            amount: numNewAmount,
+            wallet_commission: numNewCommission,
+            ...(newNotes !== undefined ? { description: newNotes } : {})
+          }
+        });
+      }
       else {
-        throw new Error('تعديل عمليات المحافظ غير مدعوم — يرجى الحذف وإعادة الإدخال');
+        throw new Error('نوع العنصر غير معروف');
       }
     });
 
