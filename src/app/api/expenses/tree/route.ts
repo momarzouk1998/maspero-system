@@ -61,8 +61,15 @@ export async function GET(req: Request) {
       const monthStr = String(mm).padStart(2, '0');
       const dayKey = `${day}/${monthStr}/${yyyy}`;
 
-      const rawCat = exp.main_type || exp.expense_type || 'أخرى';
-      const catKey = rawCat === 'إيرادات' ? 'مسحوبات' : rawCat;
+      let rawCat = (exp.expense_type || exp.main_type || 'أخرى').trim();
+      rawCat = rawCat.replace(/[\uFFFD\u0000-\u001F]/g, '');
+      if (rawCat.startsWith('مصروفا') && rawCat !== 'مصروفات') {
+        rawCat = 'مصروفات';
+      }
+      if (rawCat === 'إيرادات') {
+        rawCat = 'مسحوبات';
+      }
+      const catKey = rawCat;
 
       // Monthly tree grouping
       if (!monthsMap[monthKey]) {

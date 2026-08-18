@@ -104,11 +104,22 @@ export async function GET(req: Request) {
     db.expenses.count({ where: whereCondition })
   ]);
 
-  const cleanedExpenses = expenses.map(exp => ({
-    ...exp,
-    main_type: exp.main_type === 'إيرادات' ? 'مسحوبات' : exp.main_type,
-    expense_type: exp.expense_type === 'إيرادات' ? 'مسحوبات' : exp.expense_type
-  }));
+  const cleanedExpenses = expenses.map(exp => {
+    let mType = (exp.main_type || 'مصروفات').trim().replace(/[\uFFFD\u0000-\u001F]/g, '');
+    let eType = (exp.expense_type || exp.main_type || 'مصروفات').trim().replace(/[\uFFFD\u0000-\u001F]/g, '');
+    
+    if (mType.startsWith('مصروفا') && mType !== 'مصروفات') mType = 'مصروفات';
+    if (eType.startsWith('مصروفا') && eType !== 'مصروفات') eType = 'مصروفات';
+
+    if (mType === 'إيرادات') mType = 'مسحوبات';
+    if (eType === 'إيرادات') eType = 'مسحوبات';
+
+    return {
+      ...exp,
+      main_type: mType,
+      expense_type: eType
+    };
+  });
 
   return NextResponse.json({ expenses: cleanedExpenses, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
 }
