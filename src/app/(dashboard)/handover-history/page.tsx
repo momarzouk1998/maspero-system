@@ -25,6 +25,7 @@ export default function HandoverHistoryPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [walletsList, setWalletsList] = useState<any[]>([]);
 
   const [treeData, setTreeData] = useState<any>(null);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
@@ -50,6 +51,11 @@ export default function HandoverHistoryPage() {
     fetch('/api/users')
       .then(r => r.json())
       .then(d => setUsersList(getActiveUsers(d.users || [])))
+      .catch(console.error);
+
+    fetch('/api/wallets')
+      .then(r => r.json())
+      .then(d => setWalletsList(d.externalWallets || []))
       .catch(console.error);
 
     fetchTreeData();
@@ -641,13 +647,18 @@ export default function HandoverHistoryPage() {
                     <Wallet className="w-3.5 h-3.5 text-emerald-600" />
                     <span>العهدة / المحفظة</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={filterWalletName}
                     onChange={(e) => setFilterWalletName(e.target.value)}
-                    placeholder="اسم العهدة..."
                     className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                  />
+                  >
+                    <option value="">جميع العهد والمحافظ</option>
+                    {walletsList.map((w: any) => (
+                      <option key={w.id} value={w.wallet_name}>
+                        {w.wallet_name} ({w.wallet_type})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

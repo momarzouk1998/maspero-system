@@ -43,10 +43,15 @@ export async function GET(req: Request) {
     if (walletName) where.wallet_name = { contains: walletName, mode: 'insensitive' };
 
     if (reviewStatus === 'NEEDS_REVIEW' || reviewStatus === 'الرجاء المراجعة') {
-      where.OR = [
-        { review_status: 'الرجاء المراجعة' },
-        { review_status: 'NEEDS_REVIEW' },
-        { NOT: { difference: 0 } }
+      where.AND = [
+        { review_status: { not: 'تم المراجعة بواسطة المدير' } },
+        {
+          OR: [
+            { review_status: 'الرجاء المراجعة' },
+            { review_status: 'NEEDS_REVIEW' },
+            { NOT: { difference: 0 } }
+          ]
+        }
       ];
     } else if (reviewStatus) {
       where.review_status = reviewStatus;
