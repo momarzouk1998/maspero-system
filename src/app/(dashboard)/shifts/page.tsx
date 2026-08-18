@@ -447,11 +447,11 @@ export default function ShiftsPage() {
           </button>
 
           <Link
-            href="/shifts-history"
+            href="/rules"
             className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-blue-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-2 transition-all shadow-sm"
           >
-            <History className="w-4 h-4" />
-            <span>سجل الشفتات بالكامل</span>
+            <Info className="w-4 h-4" />
+            <span>شرح القيود والصلاحيات</span>
           </Link>
         </div>
       </div>
