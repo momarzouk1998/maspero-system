@@ -53,17 +53,18 @@ export async function GET(req: Request) {
     : { employee_id: user.id };
 
   if (mainType) {
+    const targetType = mainType === 'مسحوبات' ? ['مسحوبات', 'إيرادات'] : [mainType];
     if (['قبض', 'سلفة'].includes(mainType)) {
       whereCondition.OR = [
         { main_type: mainType },
         { expense_type: mainType }
       ];
     } else {
-      whereCondition.OR = [
-        { main_type: { contains: mainType, mode: 'insensitive' } },
-        { expense_type: { contains: mainType, mode: 'insensitive' } },
-        { items: { contains: mainType, mode: 'insensitive' } }
-      ];
+      whereCondition.OR = targetType.flatMap(t => [
+        { main_type: { contains: t, mode: 'insensitive' } },
+        { expense_type: { contains: t, mode: 'insensitive' } },
+        { items: { contains: t, mode: 'insensitive' } }
+      ]);
     }
   }
 
@@ -103,7 +104,13 @@ export async function GET(req: Request) {
     db.expenses.count({ where: whereCondition })
   ]);
 
-  return NextResponse.json({ expenses, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  const cleanedExpenses = expenses.map(exp => ({
+    ...exp,
+    main_type: exp.main_type === 'إيرادات' ? 'مسحوبات' : exp.main_type,
+    expense_type: exp.expense_type === 'إيرادات' ? 'مسحوبات' : exp.expense_type
+  }));
+
+  return NextResponse.json({ expenses: cleanedExpenses, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
 }
 
 export async function POST(req: Request) {

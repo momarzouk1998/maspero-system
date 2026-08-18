@@ -28,9 +28,17 @@ export default function ExpensesHistoryPage() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [treeData, setTreeData] = useState<any>(null);
+  const [treeMode, setTreeMode] = useState<'month' | 'category'>('month');
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
+
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
 
   const fetchTreeData = () => {
     fetch('/api/expenses/tree')
@@ -330,127 +338,272 @@ export default function ExpensesHistoryPage() {
           </div>
 
           {!isTreeCollapsed && (
-            <div className="space-y-1 text-slate-800 text-xs max-h-[600px] overflow-y-auto no-scrollbar">
-            {/* Grand Total "الكل" node */}
-            <div
-              onClick={handleSelectAllNode}
-              className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
-                !selectedMonth && !selectedDay && !mainTypeFilter
-                  ? 'bg-blue-50 text-blue-700 font-bold shadow-sm'
-                  : 'hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
-                <span>الكل</span>
+            <div className="space-y-2 text-slate-800 text-xs max-h-[600px] overflow-y-auto no-scrollbar">
+              {/* Tree View Mode Switcher: بالشهر | بالتصنيف */}
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setTreeMode('month')}
+                  className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    treeMode === 'month'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  📅 بالشهر
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTreeMode('category')}
+                  className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    treeMode === 'category'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  🏷️ بالتصنيف
+                </button>
               </div>
-              <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                {formatNumberLocale(treeData?.totalSum || 0)}
-              </span>
-            </div>
 
-            {/* Months level */}
-            <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
-              {treeData?.months?.map((m: any) => {
-                const isMonthExpanded = expandedMonths.includes(m.month);
-                const isMonthSelected = selectedMonth === m.month && !selectedDay;
+              {/* Grand Total "الكل" node */}
+              <div
+                onClick={handleSelectAllNode}
+                className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                  !selectedMonth && !selectedDay && !mainTypeFilter
+                    ? 'bg-blue-50 text-blue-700 font-bold shadow-sm'
+                    : 'hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
+                  <span>الكل</span>
+                </div>
+                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                  {formatNumberLocale(treeData?.totalSum || 0)}
+                </span>
+              </div>
 
-                return (
-                  <div key={m.month} className="space-y-1">
-                    {/* Month header */}
-                    <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMonth(m.month);
-                          }}
-                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
-                        >
-                          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
-                        </button>
-                        <span
-                          onClick={() => handleSelectMonth(m.month)}
-                          className={`cursor-pointer truncate ${isMonthSelected ? 'text-blue-700 font-bold' : ''}`}
-                        >
-                          {m.month}
-                        </span>
-                      </div>
-                      <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                        {formatNumberLocale(m.totalSum)}
-                      </span>
-                    </div>
+              {/* MODE 1: BY MONTH (بالشهر) */}
+              {treeMode === 'month' && (
+                <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+                  {treeData?.months?.map((m: any) => {
+                    const isMonthExpanded = expandedMonths.includes(m.month);
+                    const isMonthSelected = selectedMonth === m.month && !selectedDay;
 
-                    {/* Days level */}
-                    {isMonthExpanded && (
-                      <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
-                        {m.days?.map((d: any) => {
-                          const isDayExpanded = expandedDays.includes(d.day);
-                          const isDaySelected = selectedDay === d.day && !mainTypeFilter;
+                    return (
+                      <div key={m.month} className="space-y-1">
+                        {/* Month header */}
+                        <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                          <div className="flex items-center gap-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMonth(m.month);
+                              }}
+                              className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                            >
+                              <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
+                            </button>
+                            <span
+                              onClick={() => handleSelectMonth(m.month)}
+                              className={`cursor-pointer truncate ${isMonthSelected ? 'text-blue-700 font-bold' : ''}`}
+                            >
+                              {m.month}
+                            </span>
+                          </div>
+                          <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                            {formatNumberLocale(m.totalSum)}
+                          </span>
+                        </div>
 
-                          return (
-                            <div key={d.day} className="space-y-1">
-                              {/* Day header */}
-                              <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-1 min-w-0">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleDay(d.day);
-                                    }}
-                                    className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
-                                  >
-                                    <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isDayExpanded ? '-rotate-90' : ''}`} />
-                                  </button>
-                                  <span
-                                    onClick={() => handleSelectDay(d.day, m.month)}
-                                    className={`cursor-pointer truncate ${isDaySelected ? 'text-blue-700 font-bold' : ''}`}
-                                  >
-                                    {d.day}
-                                  </span>
-                                </div>
-                                <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1 py-0.5 rounded">
-                                  {formatNumberLocale(d.totalSum)}
-                                </span>
-                              </div>
+                        {/* Days level */}
+                        {isMonthExpanded && (
+                          <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                            {m.days?.map((d: any) => {
+                              const isDayExpanded = expandedDays.includes(d.day);
+                              const isDaySelected = selectedDay === d.day && !mainTypeFilter;
 
-                              {/* Categories level */}
-                              {isDayExpanded && (
-                                <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
-                                  {d.categories?.map((c: any) => {
-                                    const isCatSelected = selectedDay === d.day && mainTypeFilter === c.category;
-
-                                    return (
-                                      <div
-                                        key={c.category}
-                                        onClick={() => handleSelectCategory(c.category, d.day, m.month)}
-                                        className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-blue-50/50 transition-colors ${
-                                          isCatSelected ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
-                                        }`}
+                              return (
+                                <div key={d.day} className="space-y-1">
+                                  {/* Day header */}
+                                  <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleDay(d.day);
+                                        }}
+                                        className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
                                       >
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                          <span>{c.category}</span>
-                                        </div>
-                                        <span className="text-[9px] text-slate-500 font-mono">
-                                          {formatNumberLocale(c.totalSum)}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                        <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isDayExpanded ? '-rotate-90' : ''}`} />
+                                      </button>
+                                      <span
+                                        onClick={() => handleSelectDay(d.day, m.month)}
+                                        className={`cursor-pointer truncate ${isDaySelected ? 'text-blue-700 font-bold' : ''}`}
+                                      >
+                                        {d.day}
+                                      </span>
+                                    </div>
+                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1 py-0.5 rounded">
+                                      {formatNumberLocale(d.totalSum)}
+                                    </span>
+                                  </div>
+
+                                  {/* Categories level */}
+                                  {isDayExpanded && (
+                                    <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                                      {d.categories?.map((c: any) => {
+                                        const isCatSelected = selectedDay === d.day && mainTypeFilter === c.category;
+
+                                        return (
+                                          <div
+                                            key={c.category}
+                                            onClick={() => handleSelectCategory(c.category, d.day, m.month)}
+                                            className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-blue-50/50 transition-colors ${
+                                              isCatSelected ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                              <span>{c.category}</span>
+                                            </div>
+                                            <span className="text-[9px] text-slate-500 font-mono">
+                                              {formatNumberLocale(c.totalSum)}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* MODE 2: BY CATEGORY (بالتصنيف) */}
+              {treeMode === 'category' && (
+                <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+                  {treeData?.categories?.map((cat: any) => {
+                    const isCatExpanded = expandedCategories.includes(cat.category);
+                    const isCatSelected = mainTypeFilter === cat.category && !selectedMonth;
+
+                    return (
+                      <div key={cat.category} className="space-y-1">
+                        {/* Category Header */}
+                        <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                          <div className="flex items-center gap-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCategory(cat.category);
+                              }}
+                              className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                            >
+                              <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isCatExpanded ? '-rotate-90' : ''}`} />
+                            </button>
+                            <span
+                              onClick={() => {
+                                setMainTypeFilter(cat.category);
+                                setStartDate('');
+                                setEndDate('');
+                                setSelectedMonth('');
+                                setSelectedDay('');
+                              }}
+                              className={`cursor-pointer truncate font-bold ${isCatSelected ? 'text-blue-700 font-bold' : 'text-slate-900'}`}
+                            >
+                              {cat.category}
+                            </span>
+                          </div>
+                          <span className="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                            {formatNumberLocale(cat.totalSum)}
+                          </span>
+                        </div>
+
+                        {/* Months under Category */}
+                        {isCatExpanded && (
+                          <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                            {cat.months?.map((m: any) => {
+                              const isMonthExpanded = expandedMonths.includes(`${cat.category}-${m.month}`);
+                              const isMonthSelected = mainTypeFilter === cat.category && selectedMonth === m.month && !selectedDay;
+
+                              return (
+                                <div key={m.month} className="space-y-1">
+                                  {/* Month header */}
+                                  <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleMonth(`${cat.category}-${m.month}`);
+                                        }}
+                                        className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
+                                      >
+                                        <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
+                                      </button>
+                                      <span
+                                        onClick={() => {
+                                          setMainTypeFilter(cat.category);
+                                          handleSelectMonth(m.month);
+                                        }}
+                                        className={`cursor-pointer truncate ${isMonthSelected ? 'text-blue-700 font-bold' : 'text-slate-700'}`}
+                                      >
+                                        📅 {m.month}
+                                      </span>
+                                    </div>
+                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                                      {formatNumberLocale(m.totalSum)}
+                                    </span>
+                                  </div>
+
+                                  {/* Days under Month */}
+                                  {isMonthExpanded && (
+                                    <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                                      {m.days?.map((d: any) => {
+                                        const isDaySelected = mainTypeFilter === cat.category && selectedDay === d.day;
+
+                                        return (
+                                          <div
+                                            key={d.day}
+                                            onClick={() => {
+                                              setMainTypeFilter(cat.category);
+                                              handleSelectDay(d.day, m.month);
+                                            }}
+                                            className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-blue-50/50 transition-colors ${
+                                              isDaySelected ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                              <span>{d.day}</span>
+                                            </div>
+                                            <span className="text-[9px] text-slate-500 font-mono">
+                                              {formatNumberLocale(d.totalSum)}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
           </div>
         )}
       </div>

@@ -12,6 +12,7 @@ export async function GET(req: Request) {
         id: true,
         amount: true,
         main_type: true,
+        expense_type: true,
         date: true,
       },
       orderBy: {
@@ -34,6 +35,19 @@ export async function GET(req: Request) {
 
     let grandTotal = 0;
 
+    const byCategoryMap: Record<string, {
+      category: string;
+      totalSum: number;
+      monthsMap: Record<string, {
+        month: string;
+        totalSum: number;
+        daysMap: Record<string, {
+          day: string;
+          totalSum: number;
+        }>
+      }>
+    }> = {};
+
     expenses.forEach(exp => {
       const amt = Number(exp.amount || 0);
       grandTotal += amt;
@@ -47,8 +61,10 @@ export async function GET(req: Request) {
       const monthStr = String(mm).padStart(2, '0');
       const dayKey = `${day}/${monthStr}/${yyyy}`;
 
-      const catKey = exp.main_type || 'أخرى';
+      const rawCat = exp.main_type || exp.expense_type || 'أخرى';
+      const catKey = rawCat === 'إيرادات' ? 'مسحوبات' : rawCat;
 
+      // Monthly tree grouping
       if (!monthsMap[monthKey]) {
         monthsMap[monthKey] = { month: monthKey, totalSum: 0, daysMap: {} };
       }
@@ -63,6 +79,22 @@ export async function GET(req: Request) {
         monthsMap[monthKey].daysMap[dayKey].categoriesMap[catKey] = { category: catKey, totalSum: 0 };
       }
       monthsMap[monthKey].daysMap[dayKey].categoriesMap[catKey].totalSum += amt;
+
+      // Category tree grouping
+      if (!byCategoryMap[catKey]) {
+        byCategoryMap[catKey] = { category: catKey, totalSum: 0, monthsMap: {} };
+      }
+      byCategoryMap[catKey].totalSum += amt;
+
+      if (!byCategoryMap[catKey].monthsMap[monthKey]) {
+        byCategoryMap[catKey].monthsMap[monthKey] = { month: monthKey, totalSum: 0, daysMap: {} };
+      }
+      byCategoryMap[catKey].monthsMap[monthKey].totalSum += amt;
+
+      if (!byCategoryMap[catKey].monthsMap[monthKey].daysMap[dayKey]) {
+        byCategoryMap[catKey].monthsMap[monthKey].daysMap[dayKey] = { day: dayKey, totalSum: 0 };
+      }
+      byCategoryMap[catKey].monthsMap[monthKey].daysMap[dayKey].totalSum += amt;
     });
 
     const months = Object.values(monthsMap).map(m => ({
@@ -78,9 +110,23 @@ export async function GET(req: Request) {
       }))
     }));
 
+    const categories = Object.values(byCategoryMap).map(c => ({
+      category: c.category,
+      totalSum: c.totalSum,
+      months: Object.values(c.monthsMap).map(m => ({
+        month: m.month,
+        totalSum: m.totalSum,
+        days: Object.values(m.daysMap).map(d => ({
+          day: d.day,
+          totalSum: d.totalSum
+        }))
+      }))
+    }));
+
     return NextResponse.json({
       totalSum: grandTotal,
-      months
+      months,
+      categories
     });
   } catch (e: any) {
     console.error(e);
