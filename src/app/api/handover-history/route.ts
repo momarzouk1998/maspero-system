@@ -14,6 +14,9 @@ export async function GET(req: Request) {
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
   const employeeId = searchParams.get('employeeId') || '';
+  const senderId = searchParams.get('senderId') || '';
+  const receiverId = searchParams.get('receiverId') || '';
+  const walletName = searchParams.get('walletName') || '';
 
   const skip = (page - 1) * limit;
 
@@ -34,6 +37,10 @@ export async function GET(req: Request) {
         { receiver_id: employeeId }
       ];
     }
+
+    if (senderId) where.sender_id = senderId;
+    if (receiverId) where.receiver_id = receiverId;
+    if (walletName) where.wallet_name = { contains: walletName, mode: 'insensitive' };
 
     if (reviewStatus === 'NEEDS_REVIEW' || reviewStatus === 'الرجاء المراجعة') {
       where.OR = [

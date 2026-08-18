@@ -19,6 +19,9 @@ export default function HandoverHistoryPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
+  const [filterSenderId, setFilterSenderId] = useState('');
+  const [filterReceiverId, setFilterReceiverId] = useState('');
+  const [filterWalletName, setFilterWalletName] = useState('');
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -52,7 +55,7 @@ export default function HandoverHistoryPage() {
     fetchTreeData();
   }, []);
 
-  const hasActiveFilters = reviewStatus || startDate || endDate || filterEmployeeId;
+  const hasActiveFilters = reviewStatus || startDate || endDate || filterEmployeeId || filterSenderId || filterReceiverId || filterWalletName;
 
   const fetchHandovers = async (page = 1) => {
     setLoading(true);
@@ -65,7 +68,10 @@ export default function HandoverHistoryPage() {
         reviewStatus,
         startDate,
         endDate,
-        employeeId: filterEmployeeId
+        employeeId: filterEmployeeId,
+        senderId: filterSenderId,
+        receiverId: filterReceiverId,
+        walletName: filterWalletName
       });
 
       const res = await fetch(`/api/handover-history?${params.toString()}`);
@@ -84,13 +90,16 @@ export default function HandoverHistoryPage() {
   useEffect(() => {
     const timer = setTimeout(() => fetchHandovers(1), 300);
     return () => clearTimeout(timer);
-  }, [search, reviewStatus, startDate, endDate, filterEmployeeId]);
+  }, [search, reviewStatus, startDate, endDate, filterEmployeeId, filterSenderId, filterReceiverId, filterWalletName]);
 
   const resetFilters = () => {
     setReviewStatus('');
     setStartDate('');
     setEndDate('');
     setFilterEmployeeId('');
+    setFilterSenderId('');
+    setFilterReceiverId('');
+    setFilterWalletName('');
     setIsFilterOpen(false);
   };
 
@@ -577,61 +586,128 @@ export default function HandoverHistoryPage() {
 
       {/* Filter Modal */}
       {isFilterOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-200 shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b pb-3 border-slate-200">
-              <h3 className="font-bold text-slate-900 text-base">تصفية سجل التسليم والتسلم</h3>
-              <button onClick={() => setIsFilterOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Filter className="w-5 h-5 text-emerald-600" />
+                <span>خيارات تصفية سجل التسليم والتسلم</span>
+              </h3>
+              <button onClick={() => setIsFilterOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">الموظف</label>
-                <select
-                  value={filterEmployeeId}
-                  onChange={(e) => setFilterEmployeeId(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900"
-                >
-                  <option value="">جميع الموظفين</option>
-                  {usersList.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
+            <div className="space-y-4 text-xs">
+              {/* Sender & Receiver Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span>📤 الموظف المسلّم</span>
+                  </label>
+                  <select
+                    value={filterSenderId}
+                    onChange={(e) => setFilterSenderId(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="">جميع المسلّمين</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span>📥 الموظف المستلم</span>
+                  </label>
+                  <select
+                    value={filterReceiverId}
+                    onChange={(e) => setFilterReceiverId(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="">جميع المستلمين</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">من تاريخ</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono"
-                />
+              {/* Wallet & Review Status Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>العهدة / المحفظة</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={filterWalletName}
+                    onChange={(e) => setFilterWalletName(e.target.value)}
+                    placeholder="اسم العهدة..."
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <span>حالة المراجعة والتقييم</span>
+                  </label>
+                  <select
+                    value={reviewStatus}
+                    onChange={(e) => setReviewStatus(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="">جميع الحالات</option>
+                    <option value="NEEDS_REVIEW">يحتاج مراجعة ⚠️</option>
+                    <option value="تم المطابقة">تم المطابقة ✅</option>
+                    <option value="تم المراجعة بواسطة المدير">تم المراجعة بواسطة المدير 👍</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">إلى تاريخ</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono"
-                />
+              {/* Date Range Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <span>من تاريخ</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <span>إلى تاريخ</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
-                onClick={() => setIsFilterOpen(false)}
-                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-colors"
+                onClick={() => { fetchHandovers(1); setIsFilterOpen(false); }}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
               >
                 تطبيق التصفية
               </button>
               <button
                 onClick={resetFilters}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-colors"
+                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-colors cursor-pointer"
               >
                 إعادة ضبط
               </button>
