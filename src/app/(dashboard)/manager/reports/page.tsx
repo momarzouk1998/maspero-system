@@ -235,7 +235,7 @@ export default function ManagerReportsPage() {
                   </span>
                   <h2 className="text-xl font-bold mt-2 text-slate-900">صافي الربح</h2>
                   <p className="text-slate-500 text-xs mt-1">
-                    الإيرادات - المشتريات + العمولات - المصروفات - الرواتب
+                    المسحوبات - المشتريات + العمولات - المصروفات - الرواتب
                   </p>
                 </div>
                 <div className="text-left">
@@ -261,25 +261,25 @@ export default function ManagerReportsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Revenue */}
+                {/* 1. Revenue / Withdrawals */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">الإيرادات</span>
+                    <span className="text-xs font-bold text-slate-700">المسحوبات</span>
                     <TrendingUp className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-emerald-600">
                     {formatNumberLocale(Number(metrics.totalRevenue || 0), 'en-US')}
                   </h3>
-                  <p className="text-[11px] text-slate-500">المبيعات</p>
+                  <p className="text-[11px] text-slate-500">المبيعات والمسحوبات</p>
                 </div>
 
                 {/* 2. Total Commissions */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">العمولات</span>
-                    <Coins className="w-5 h-5 text-indigo-600" />
+                    <Coins className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-emerald-600">
                     {formatNumberLocale(Number(metrics.totalCommissions || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">محافظ + ماكينات + تذاكر</p>
@@ -291,7 +291,7 @@ export default function ManagerReportsPage() {
                     <span className="text-xs font-bold text-slate-700">المصروفات</span>
                     <Receipt className="w-5 h-5 text-rose-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-rose-600">
                     {formatNumberLocale(Number(metrics.otherExpenses || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الإدارة والمحل</p>
@@ -300,10 +300,10 @@ export default function ManagerReportsPage() {
                 {/* 4. Salaries & Advances */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">الرواتب</span>
-                    <DollarSign className="w-5 h-5 text-amber-600" />
+                    <span className="text-xs font-bold text-slate-700">الرواتب والسلف</span>
+                    <DollarSign className="w-5 h-5 text-rose-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-rose-600">
                     {formatNumberLocale(Number(metrics.salaries || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الموظفين</p>
@@ -313,21 +313,21 @@ export default function ManagerReportsPage() {
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">المشتريات</span>
-                    <ShoppingBag className="w-5 h-5 text-slate-600" />
+                    <ShoppingBag className="w-5 h-5 text-rose-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-rose-600">
                     {formatNumberLocale(Number(metrics.purchasesCost || 0), 'en-US')}
                   </h3>
-                  <p className="text-[11px] text-slate-500">{metrics.purchasesCostPercent || 0}%</p>
+                  <p className="text-[11px] text-rose-500 font-bold">{metrics.purchasesCostPercent || 0}%</p>
                 </div>
 
                 {/* 6. Manager Withdrawals */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">مسحوبات المدير</span>
-                    <ArrowUpRight className="w-5 h-5 text-slate-600" />
+                    <ArrowUpRight className="w-5 h-5 text-amber-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-amber-600">
                     {formatNumberLocale(Number(metrics.withdrawnRevenue || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">الأرباح الشخصية</p>
@@ -337,9 +337,9 @@ export default function ManagerReportsPage() {
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">الورق</span>
-                    <Printer className="w-5 h-5 text-slate-600" />
+                    <Printer className="w-5 h-5 text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-blue-600">
                     {formatNumberLocale(Number(metrics.paperCount || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">ورقة</p>
@@ -349,9 +349,9 @@ export default function ManagerReportsPage() {
                 <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">التذاكر</span>
-                    <Train className="w-5 h-5 text-slate-600" />
+                    <Train className="w-5 h-5 text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-slate-900">
+                  <h3 className="text-2xl font-bold font-mono text-blue-600">
                     {formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')}
                   </h3>
                   <p className="text-[11px] text-slate-500">تذكرة</p>
@@ -639,9 +639,8 @@ export default function ManagerReportsPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-base flex items-center gap-2">
-                        <span>سجل التقارير والأرشيف الشهري الموحد (ربحية كل شهر)</span>
+                        <span>سجل تقرير الماليات</span>
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">مطابق لهيكل وتنسيق التقرير التاريخي CSV للعودة بنقرة واحدة</p>
                     </div>
                   </div>
 
@@ -667,15 +666,17 @@ export default function ManagerReportsPage() {
                         <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
                           <tr>
                             <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
-                            <th className="px-3 py-3 whitespace-nowrap">عمولة المحافظ</th>
-                            <th className="px-3 py-3 whitespace-nowrap">عمولة التذاكر</th>
-                            <th className="px-3 py-3 whitespace-nowrap">عمولة إيداع المكن</th>
-                            <th className="px-3 py-3 whitespace-nowrap">إيراد الخدمات والطباعة</th>
-                            <th className="px-3 py-3 whitespace-nowrap">المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap">نسبة المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap">إجمالي الربح</th>
-                            <th className="px-3 py-3 whitespace-nowrap">الرواتب والسلف</th>
-                            <th className="px-3 py-3 whitespace-nowrap">المصروفات الأخرى</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-600">نسبة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">الرواتب والسلف</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">المصروفات الأخرى</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
                             <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
                           </tr>
@@ -684,6 +685,8 @@ export default function ManagerReportsPage() {
                           {archivedReports.map((report: any) => (
                             <tr key={report.id} className="hover:bg-slate-50 font-semibold">
                               <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
+                              <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.opening_balance || 0))}</td>
+                              <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.closing_balance || 0))}</td>
                               <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
                               <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
                               <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
