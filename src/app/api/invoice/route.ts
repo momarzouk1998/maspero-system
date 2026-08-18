@@ -56,13 +56,16 @@ export async function GET(req: Request) {
     });
 
     tickets.forEach(t => {
+      const cnt = t.item_count || 1;
+      const tot = Number(t.amount);
+      const unitPrice = cnt > 0 ? (tot / cnt) : tot;
       items.push({
         id: t.id,
         type: 'ticket',
-        name: 'تذكرة قطار',
-        price: Number(t.ticket_price) + Number(t.ticket_commission), // per ticket? Actually totalAmount = price + commission.
-        count: t.item_count || 1,
-        total: Number(t.amount),
+        name: `تذكرة ${t.service_name || 'قطار'}`,
+        price: unitPrice,
+        count: cnt,
+        total: tot,
         timestamp: t.timestamp,
         employeeName: t.employee_name
       });
@@ -95,14 +98,16 @@ export async function GET(req: Request) {
       return a.timestamp.getTime() - b.timestamp.getTime();
     });
 
-    const totalAmount = items.reduce((sum, item) => sum + item.total, 0);
+    const rawTotal = items.reduce((sum, item) => sum + item.total, 0);
+    const roundedTotal = rawTotal > 0 ? Math.ceil(rawTotal) : -Math.ceil(Math.abs(rawTotal));
     const employeeName = items.length > 0 ? items[0].employeeName : user.name;
     const timestamp = items.length > 0 ? items[items.length - 1].timestamp : new Date();
 
     return NextResponse.json({
       invoice_code: code,
       items,
-      total: totalAmount,
+      total: roundedTotal,
+      rawTotal,
       employeeName,
       timestamp
     });

@@ -893,7 +893,7 @@ export default function POSPage() {
             <div className="flex justify-between items-center">
               <span className="text-slate-600 font-bold text-sm">الإجمالي الكلي</span>
               <span className={`text-2xl font-bold font-mono ${(activeInvoice?.total ?? 0) < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                {(activeInvoice?.total ?? 0) < 0 ? `-${formatNumber(Math.abs(activeInvoice?.total ?? 0))}` : formatNumber(activeInvoice?.total ?? 0)}
+                {(activeInvoice?.total ?? 0) < 0 ? `-${formatNumber(Math.ceil(Math.abs(activeInvoice?.total ?? 0)))}` : formatNumber(Math.ceil(activeInvoice?.total ?? 0))}
               </span>
             </div>
 
@@ -1394,7 +1394,7 @@ export default function POSPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-sm font-bold text-emerald-400">
-                {(activeInvoice.total ?? 0) < 0 ? `-${formatNumber(Math.abs(activeInvoice.total))}` : formatNumber(activeInvoice.total)} ج
+                {(activeInvoice?.total ?? 0) < 0 ? `-${formatNumber(Math.ceil(Math.abs(activeInvoice?.total ?? 0)))}` : formatNumber(Math.ceil(activeInvoice?.total ?? 0))} ج
               </span>
               <span className="bg-blue-600 text-white text-[11px] px-2.5 py-1 rounded-xl flex items-center gap-1 font-bold">
                 عرض 🛒

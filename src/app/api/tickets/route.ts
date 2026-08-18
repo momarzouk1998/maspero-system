@@ -68,9 +68,10 @@ export async function POST(req: Request) {
   try {
     const { itemCount, ticketPrice, ticketCommission, notes, invoice_code, serviceName } = await req.json();
 
+    const count = parseInt(itemCount) || 1;
     const price = Number(ticketPrice || 0);
     const commission = Number(ticketCommission || 0);
-    const totalAmount = price + commission;
+    const totalAmount = count * (price + commission);
     const today = new Date();
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
           service_name: serviceName || 'قطار',
-          item_count: parseInt(itemCount) || 1,
+          item_count: count,
           amount: totalAmount,
           ticket_price: price,
           ticket_commission: commission,

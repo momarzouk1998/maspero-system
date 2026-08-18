@@ -391,7 +391,7 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
             <div className="total-section">
               <h3>الإجمالي الكلي</h3>
               <div className="total-amount" style={{ color: total < 0 ? '#c62828' : '#2e7d32' }}>
-                <span>{total < 0 ? `-${formatNumber(Math.abs(total))}` : formatNumber(total)}</span>
+                <span>{total < 0 ? `-${formatNumber(Math.ceil(Math.abs(total)))}` : formatNumber(Math.ceil(total))}</span>
               </div>
             </div>
           </div>
