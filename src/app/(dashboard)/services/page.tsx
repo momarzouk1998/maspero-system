@@ -32,6 +32,7 @@ export default function ServicesPage() {
   const [treeData, setTreeData] = useState<any>(null);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
   const fetchTreeData = () => {
     fetch('/api/services/tree')
@@ -182,23 +183,55 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* Main Grid: Tree Sidebar + Entries Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-        {/* Tree Filter Sidebar (AppSheet Style) */}
+      {/* Main Container: Collapsible Tree Sidebar + Entries Table */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Tree Filter Sidebar (AppSheet Style - Narrower & Collapsible) */}
         {treeData && treeData.months && (
-          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
-            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
-              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                <Filter className="w-4 h-4 text-blue-600" />
-                شجرة التصفية
-              </span>
-              <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                {formatNumberLocale(treeData.totalSum, 'en-US')}
-              </span>
+          <div className={`w-full ${isTreeCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72'} shrink-0 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit transition-all duration-300`}>
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200 gap-2">
+              {!isTreeCollapsed && (
+                <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Filter className="w-4 h-4 text-blue-600" />
+                  <span>شجرة التصفية</span>
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 mr-auto">
+                {!isTreeCollapsed && (
+                  <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                    {formatNumberLocale(treeData.totalSum, 'en-US')}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors cursor-pointer border border-slate-200"
+                  title={isTreeCollapsed ? 'توسيع الشجرة 📂' : 'طي الشجرة 📂'}
+                >
+                  {isTreeCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+            {!isTreeCollapsed && (
+              <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs no-scrollbar">
+                {/* Top-level "الكل 🌐" Item */}
+                <div
+                  onClick={() => {
+                    setFilterStartDate('');
+                    setFilterEndDate('');
+                    setFilterServiceName('');
+                  }}
+                  className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                    !filterStartDate && !filterEndDate && !filterServiceName
+                      ? 'bg-blue-600 text-white font-bold border-blue-600 shadow-sm'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                  }`}
+                >
+                  <span className="font-bold flex items-center gap-1">🌐 الكل</span>
+                  <span className={`font-mono font-bold text-[11px] ${!filterStartDate && !filterEndDate && !filterServiceName ? 'text-blue-100' : 'text-blue-700'}`}>
+                    {formatNumberLocale(treeData.totalSum, 'en-US')}
+                  </span>
+                </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
 
@@ -273,11 +306,12 @@ export default function ServicesPage() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* Entries Table Container */}
-        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
+      {/* Entries Table Container */}
+      <div className="flex-1 space-y-4 min-w-0">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />

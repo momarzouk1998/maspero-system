@@ -29,6 +29,7 @@ export default function InvoicesHistoryPage() {
   const [selectedDay, setSelectedDay] = useState('');
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
   const fetchTreeData = () => {
     fetch('/api/invoices/tree')
@@ -312,23 +313,39 @@ export default function InvoicesHistoryPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        {/* Hierarchical Sidebar Tree View */}
-        <div className="lg:col-span-1 glass-panel p-5 rounded-3xl border border-slate-200 bg-white max-h-[800px] overflow-y-auto space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <Filter className="w-4 h-4 text-emerald-600" />
-              <span>التصفية الهرمية</span>
-            </h3>
-            <button
-              onClick={handleSelectAllNode}
-              className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold"
-            >
-              إعادة تعيين
-            </button>
+      {/* Main Container: Collapsible Tree Sidebar + Invoices Table */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Hierarchical Sidebar Tree View (AppSheet Style - Narrower & Collapsible) */}
+        <div className={`w-full ${isTreeCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72'} shrink-0 glass-panel p-4 rounded-3xl border border-slate-200 bg-white space-y-3 h-fit transition-all duration-300`}>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+            {!isTreeCollapsed && (
+              <h3 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-emerald-600" />
+                <span>شجرة التصفية</span>
+              </h3>
+            )}
+            <div className="flex items-center gap-1.5 mr-auto">
+              {!isTreeCollapsed && (
+                <button
+                  onClick={handleSelectAllNode}
+                  className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold"
+                >
+                  إعادة تعيين
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
+                className="p-1 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors cursor-pointer border border-slate-200"
+                title={isTreeCollapsed ? 'توسيع الشجرة 📂' : 'طي الشجرة 📂'}
+              >
+                {isTreeCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-1 text-slate-800 text-xs">
+          {!isTreeCollapsed && (
+            <div className="space-y-1 text-slate-800 text-xs max-h-[600px] overflow-y-auto no-scrollbar">
             {/* Grand Total "الكل" node */}
             <div
               onClick={handleSelectAllNode}
@@ -412,10 +429,11 @@ export default function InvoicesHistoryPage() {
               })}
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Invoices Table & Pagination */}
-        <div className="lg:col-span-3 space-y-4">
+      {/* Invoices Table & Pagination */}
+      <div className="flex-1 space-y-4 min-w-0">
           <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm text-slate-700 table-auto">

@@ -35,7 +35,13 @@ export async function GET(req: Request) {
       ];
     }
 
-    if (reviewStatus) {
+    if (reviewStatus === 'NEEDS_REVIEW' || reviewStatus === 'الرجاء المراجعة') {
+      where.OR = [
+        { review_status: 'الرجاء المراجعة' },
+        { review_status: 'NEEDS_REVIEW' },
+        { NOT: { difference: 0 } }
+      ];
+    } else if (reviewStatus) {
       where.review_status = reviewStatus;
     }
 
@@ -88,5 +94,52 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error('Handover history error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء جلب سجل التسليم والتسلم' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح للمدير فقط' }, { status: 403 });
+  }
+
+  try {
+    const { ids, review_status } = await req.json();
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'برجاء تحديد عناصر للمراجعة' }, { status: 400 });
+    }
+
+    await db.wallet_custody_handovers.updateMany({
+      where: { id: { in: ids } },
+      data: { review_status: review_status || 'REVIEWED' }
+    });
+
+    return NextResponse.json({ success: true, message: `تم اعتماد مراجعة ${ids.length} عنصر بنجاح` });
+  } catch (error: any) {
+    console.error('Handover PUT error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل مراجعة التسليمات' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح للمدير فقط' }, { status: 403 });
+  }
+
+  try {
+    const { ids } = await req.json();
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'برجاء تحديد عناصر للحذف' }, { status: 400 });
+    }
+
+    await db.wallet_custody_handovers.deleteMany({
+      where: { id: { in: ids } }
+    });
+
+    return NextResponse.json({ success: true, message: `تم حذف ${ids.length} عنصر بنجاح` });
+  } catch (error: any) {
+    console.error('Handover DELETE error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف التسليمات' }, { status: 500 });
   }
 }

@@ -35,6 +35,7 @@ export default function ChargeHistoryPage() {
   const [treeData, setTreeData] = useState<any>(null);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
   const fetchTreeData = () => {
     fetch('/api/charge-history/tree')
@@ -188,23 +189,55 @@ export default function ChargeHistoryPage() {
         </div>
       </div>
 
-      {/* Main Grid: Tree Sidebar + Transactions Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-        {/* Tree Filter Sidebar (AppSheet Style) */}
+      {/* Main Container: Collapsible Tree Sidebar + Transactions Table */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Tree Filter Sidebar (AppSheet Style - Narrower & Collapsible) */}
         {treeData && treeData.months && (
-          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
-            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
-              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                <Filter className="w-4 h-4 text-amber-600" />
-                شجرة التصفية
-              </span>
-              <span className="text-[11px] font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                {formatNumber(treeData.totalSum)}
-              </span>
+          <div className={`w-full ${isTreeCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72'} shrink-0 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit transition-all duration-300`}>
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200 gap-2">
+              {!isTreeCollapsed && (
+                <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Filter className="w-4 h-4 text-amber-600" />
+                  <span>شجرة التصفية</span>
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 mr-auto">
+                {!isTreeCollapsed && (
+                  <span className="text-[11px] font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                    {formatNumber(treeData.totalSum)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors cursor-pointer border border-slate-200"
+                  title={isTreeCollapsed ? 'توسيع الشجرة 📂' : 'طي الشجرة 📂'}
+                >
+                  {isTreeCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+            {!isTreeCollapsed && (
+              <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs no-scrollbar">
+                {/* Top-level "الكل 🌐" Item */}
+                <div
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setTransactionType('');
+                  }}
+                  className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                    !startDate && !endDate && !transactionType
+                      ? 'bg-amber-600 text-white font-bold border-amber-600 shadow-sm'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                  }`}
+                >
+                  <span className="font-bold flex items-center gap-1">🌐 الكل</span>
+                  <span className={`font-mono font-bold text-[11px] ${!startDate && !endDate && !transactionType ? 'text-amber-100' : 'text-amber-700'}`}>
+                    {formatNumber(treeData.totalSum)}
+                  </span>
+                </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
 
@@ -280,11 +313,12 @@ export default function ChargeHistoryPage() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* Transactions Table Container */}
-        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
+      {/* Transactions Table Container */}
+      <div className="flex-1 space-y-4 min-w-0">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">

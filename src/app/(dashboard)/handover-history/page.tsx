@@ -27,6 +27,10 @@ export default function HandoverHistoryPage() {
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
+
   const fetchTreeData = () => {
     fetch('/api/handover-history/tree')
       .then(r => r.json())
@@ -53,9 +57,10 @@ export default function HandoverHistoryPage() {
   const fetchHandovers = async (page = 1) => {
     setLoading(true);
     try {
+      const isNeedsReview = reviewStatus === 'NEEDS_REVIEW' || reviewStatus === 'الرجاء المراجعة';
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '25',
+        limit: isNeedsReview ? '1000' : '25',
         search,
         reviewStatus,
         startDate,
@@ -89,17 +94,65 @@ export default function HandoverHistoryPage() {
     setIsFilterOpen(false);
   };
 
-  // Quick Date Helpers for "اليوم" and "أمس"
-  const setTodayFilter = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setStartDate(today);
-    setEndDate(today);
+  const toggleSelectAll = () => {
+    if (selectedIds.length === handovers.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(handovers.map(h => h.id));
+    }
   };
 
-  const setYesterdayFilter = () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    setStartDate(yesterday);
-    setEndDate(yesterday);
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBatchReview = async () => {
+    if (selectedIds.length === 0) return;
+    setBatchLoading(true);
+    try {
+      const res = await fetch('/api/handover-history', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds, review_status: 'تم المراجعة بواسطة المدير' })
+      });
+      if (res.ok) {
+        setHandovers(prev =>
+          prev.map(item =>
+            selectedIds.includes(item.id)
+              ? { ...item, review_status: 'تم المراجعة بواسطة المدير' }
+              : item
+          )
+        );
+        setSelectedIds([]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت تأكد من حذف ${selectedIds.length} عنصر محدد؟`)) return;
+    setBatchLoading(true);
+    try {
+      const res = await fetch('/api/handover-history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      if (res.ok) {
+        setHandovers(prev => prev.filter(item => !selectedIds.includes(item.id)));
+        setSelectedIds([]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBatchLoading(false);
+    }
   };
 
   const handleApproveReview = async (id: string) => {
@@ -142,21 +195,30 @@ export default function HandoverHistoryPage() {
           </div>
         </div>
 
-        {/* Filters & Quick Date Buttons */}
+        {/* Filters & Quick Needs Review Button */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick Date Buttons: اليوم and أمس */}
-          <button
-            onClick={setTodayFilter}
-            className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
-          >
-            اليوم
-          </button>
-          <button
-            onClick={setYesterdayFilter}
-            className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
-          >
-            أمس
-          </button>
+          {/* Manager Quick "Needs Review ⚠️" Button */}
+          {currentUser?.role === 'manager' && (
+            <button
+              onClick={() => {
+                if (reviewStatus === 'NEEDS_REVIEW') {
+                  setReviewStatus('');
+                } else {
+                  setReviewStatus('NEEDS_REVIEW');
+                  setStartDate('');
+                  setEndDate('');
+                }
+              }}
+              className={`py-2.5 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+                reviewStatus === 'NEEDS_REVIEW'
+                  ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-600/20'
+                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span>يحتاج مراجعة ⚠️</span>
+            </button>
+          )}
 
           <div className="relative">
             <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
@@ -183,161 +245,245 @@ export default function HandoverHistoryPage() {
         </div>
       </div>
 
-      {/* Main Grid: Tree Sidebar + Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Main Container: Collapsible Tree Sidebar + Table */}
+      <div className="flex flex-col lg:flex-row gap-6">
 
-        {/* Tree Filter Sidebar (AppSheet Style) */}
+        {/* Tree Filter Sidebar (Narrower & Collapsible) */}
         {treeData && treeData.months && (
-          <div className="lg:col-span-1 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit">
-            <div className="flex items-center justify-between border-b pb-2 border-slate-200">
-              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                <Filter className="w-4 h-4 text-emerald-600" />
-                شجرة التصفية
-              </span>
-              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                {formatNumber(treeData.totalSum)}
-              </span>
+          <div className={`w-full ${isTreeCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72'} shrink-0 glass-panel p-4 rounded-3xl border border-slate-200 space-y-3 h-fit transition-all duration-300`}>
+            <div className="flex items-center justify-between border-b pb-2 border-slate-200 gap-2">
+              {!isTreeCollapsed && (
+                <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Filter className="w-4 h-4 text-emerald-600" />
+                  <span>شجرة التصفية</span>
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 mr-auto">
+                {!isTreeCollapsed && (
+                  <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                    {formatNumber(treeData.totalSum)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
+                  className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors cursor-pointer border border-slate-200"
+                  title={isTreeCollapsed ? 'توسيع الشجرة 📂' : 'طي الشجرة 📂'}
+                >
+                  {isTreeCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs">
-              {treeData.months.map((m: any) => {
-                const isMonthExpanded = expandedMonths.includes(m.month);
+            {!isTreeCollapsed && (
+              <div className="space-y-2 max-h-[500px] overflow-y-auto text-xs no-scrollbar">
+                {/* Top-level "الكل 🌐" Item */}
+                <div
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setReviewStatus('');
+                  }}
+                  className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                    !startDate && !endDate && !reviewStatus
+                      ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-sm'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                  }`}
+                >
+                  <span className="font-bold flex items-center gap-1">🌐 الكل</span>
+                  <span className={`font-mono font-bold text-[11px] ${!startDate && !endDate && !reviewStatus ? 'text-emerald-100' : 'text-emerald-700'}`}>
+                    {formatNumber(treeData.totalSum)}
+                  </span>
+                </div>
 
-                return (
-                  <div key={m.month} className="space-y-1">
-                    {/* Month Node */}
-                    <div
-                      onClick={() => {
-                        setExpandedMonths(prev =>
-                          isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
-                        );
-                        const [yyyy, mm] = m.month.split(' ');
-                        const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
-                        setStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
-                        setEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
-                      }}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 cursor-pointer flex items-center justify-between transition-all"
-                    >
-                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
-                      <span className="font-mono font-bold text-emerald-700 text-[11px]">{formatNumber(m.totalSum)}</span>
-                    </div>
+                {treeData.months.map((m: any) => {
+                  const isMonthExpanded = expandedMonths.includes(m.month);
 
-                    {/* Days inside Month */}
-                    {isMonthExpanded && m.days && (
-                      <div className="pr-3 space-y-1 border-r-2 border-emerald-200 mr-2">
-                        {m.days.map((d: any) => {
-                          const isDayExpanded = expandedDays.includes(d.day);
-
-                          return (
-                            <div key={d.day} className="space-y-1">
-                              <div
-                                onClick={() => {
-                                  setExpandedDays(prev =>
-                                    isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
-                                  );
-                                  const [dd, mm, yyyy] = d.day.split('/');
-                                  setStartDate(`${yyyy}-${mm}-${dd}`);
-                                  setEndDate(`${yyyy}-${mm}-${dd}`);
-                                }}
-                                className="p-1.5 rounded-lg bg-white hover:bg-emerald-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
-                              >
-                                <span className="font-bold text-slate-700">📆 {d.day}</span>
-                                <span className="font-mono font-bold text-emerald-600">{formatNumber(d.totalSum)}</span>
-                              </div>
-
-                              {/* Categories inside Day */}
-                              {isDayExpanded && d.categories && (
-                                <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
-                                  {d.categories.map((c: any) => (
-                                    <div
-                                      key={c.category}
-                                      onClick={() => {
-                                        const [dd, mm, yyyy] = d.day.split('/');
-                                        setStartDate(`${yyyy}-${mm}-${dd}`);
-                                        setEndDate(`${yyyy}-${mm}-${dd}`);
-                                      }}
-                                      className="p-1 rounded bg-slate-50 hover:bg-emerald-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
-                                    >
-                                      <span>💼 {c.category}</span>
-                                      <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                  return (
+                    <div key={m.month} className="space-y-1">
+                      {/* Month Node */}
+                      <div
+                        onClick={() => {
+                          setExpandedMonths(prev =>
+                            isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
                           );
-                        })}
+                          const [yyyy, mm] = m.month.split(' ');
+                          const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
+                          setStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
+                          setEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
+                        }}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 cursor-pointer flex items-center justify-between transition-all"
+                      >
+                        <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                        <span className="font-mono font-bold text-emerald-700 text-[11px]">{formatNumber(m.totalSum)}</span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+
+                      {/* Days inside Month */}
+                      {isMonthExpanded && m.days && (
+                        <div className="pr-3 space-y-1 border-r-2 border-emerald-200 mr-2">
+                          {m.days.map((d: any) => {
+                            const isDayExpanded = expandedDays.includes(d.day);
+
+                            return (
+                              <div key={d.day} className="space-y-1">
+                                <div
+                                  onClick={() => {
+                                    setExpandedDays(prev =>
+                                      isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
+                                    );
+                                    const [dd, mm, yyyy] = d.day.split('/');
+                                    setStartDate(`${yyyy}-${mm}-${dd}`);
+                                    setEndDate(`${yyyy}-${mm}-${dd}`);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-white hover:bg-emerald-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                                >
+                                  <span className="font-bold text-slate-700">📆 {d.day}</span>
+                                  <span className="font-mono font-bold text-emerald-600">{formatNumber(d.totalSum)}</span>
+                                </div>
+
+                                {/* Categories inside Day */}
+                                {isDayExpanded && d.categories && (
+                                  <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
+                                    {d.categories.map((c: any) => (
+                                      <div
+                                        key={c.category}
+                                        onClick={() => {
+                                          const [dd, mm, yyyy] = d.day.split('/');
+                                          setStartDate(`${yyyy}-${mm}-${dd}`);
+                                          setEndDate(`${yyyy}-${mm}-${dd}`);
+                                        }}
+                                        className="p-1 rounded bg-slate-50 hover:bg-emerald-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
+                                      >
+                                        <span>💼 {c.category}</span>
+                                        <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {/* Table Container */}
-        <div className={treeData?.months ? 'lg:col-span-3 space-y-4' : 'lg:col-span-4 space-y-4'}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700 table-auto">
-            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 whitespace-nowrap">العهدة</th>
-                <th className="px-4 py-3 whitespace-nowrap">المسلّم</th>
-                <th className="px-4 py-3 whitespace-nowrap">المستلم</th>
-                <th className="px-4 py-3 whitespace-nowrap">المتوقع</th>
-                <th className="px-4 py-3 whitespace-nowrap">الفعلي</th>
-                <th className="px-4 py-3 whitespace-nowrap">الفارق</th>
-                <th className="px-4 py-3 whitespace-nowrap">الحالة والتقييم</th>
-                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
-                <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
-                    <span>جاري تحميل سجل التسليم والتسلم...</span>
-                  </td>
-                </tr>
-              ) : handovers.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-500">
-                    لا توجد حركات تسليم مسجلة
-                  </td>
-                </tr>
-              ) : (
-                handovers.map((item) => {
-                  const exp = Number(item.expected_balance || item.balance_at_time || 0);
-                  const act = Number(item.actual_balance || 0);
-                  const diff = item.difference !== undefined && item.difference !== null ? Number(item.difference) : act - exp;
+        <div className="flex-1 space-y-4 min-w-0">
 
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
-                        <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>{item.wallet_name || '-'}</span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">{item.sender_name || '-'}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-blue-700 whitespace-nowrap">{item.receiver_name || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{formatNumber(exp)}</td>
-                      <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span>{formatNumber(act)}</span>
-                          {/* Item 5: Like 👍 button ONLY for operations with discrepancy (diff !== 0 or requiring review) */}
-                          {currentUser?.role === 'manager' && item.review_status !== 'تم المراجعة بواسطة المدير' && (diff !== 0 || item.review_status === 'الرجاء المراجعة') && (
-                            <button
-                              onClick={() => handleApproveReview(item.id)}
-                              className="p-1 hover:bg-emerald-100 rounded-md text-emerald-700 transition-colors cursor-pointer"
-                              title="اعتماد المراجعة 👍"
-                            >
-                              👍
-                            </button>
-                          )}
-                        </div>
-                      </td>
+          {/* Manager Batch Actions Bar */}
+          {currentUser?.role === 'manager' && selectedIds.length > 0 && (
+            <div className="p-3.5 bg-slate-900 text-white rounded-2xl flex items-center justify-between gap-3 shadow-xl animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>تم تحديد ({selectedIds.length}) عنصر من أصل ({handovers.length})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBatchReview}
+                  disabled={batchLoading}
+                  className="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                  <span>تم المراجعة ✅</span>
+                </button>
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={batchLoading}
+                  className="py-2 px-3.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>حذف المحدد 🗑️</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-x-auto glass-panel rounded-3xl border border-slate-200">
+            <table className="w-full text-right text-sm text-slate-700 table-auto">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+                <tr>
+                  {currentUser?.role === 'manager' && (
+                    <th className="px-3 py-3 w-10 text-center whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === handovers.length && handovers.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </th>
+                  )}
+                  <th className="px-4 py-3 whitespace-nowrap">العهدة</th>
+                  <th className="px-4 py-3 whitespace-nowrap">المسلّم</th>
+                  <th className="px-4 py-3 whitespace-nowrap">المستلم</th>
+                  <th className="px-4 py-3 whitespace-nowrap">المتوقع</th>
+                  <th className="px-4 py-3 whitespace-nowrap">الفعلي</th>
+                  <th className="px-4 py-3 whitespace-nowrap">الفارق</th>
+                  <th className="px-4 py-3 whitespace-nowrap">الحالة والتقييم</th>
+                  <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
+                  <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
+                  {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={currentUser?.role === 'manager' ? 11 : 10} className="text-center py-12 text-slate-500">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                      <span>جاري تحميل سجل التسليم والتسلم...</span>
+                    </td>
+                  </tr>
+                ) : handovers.length === 0 ? (
+                  <tr>
+                    <td colSpan={currentUser?.role === 'manager' ? 11 : 10} className="text-center py-12 text-slate-500">
+                      لا توجد حركات تسليم مسجلة
+                    </td>
+                  </tr>
+                ) : (
+                  handovers.map((item) => {
+                    const exp = Number(item.expected_balance || item.balance_at_time || 0);
+                    const act = Number(item.actual_balance || 0);
+                    const diff = item.difference !== undefined && item.difference !== null ? Number(item.difference) : act - exp;
+                    const isSelected = selectedIds.includes(item.id);
+
+                    return (
+                      <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-emerald-50/50' : ''}`}>
+                        {currentUser?.role === 'manager' && (
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelect(item.id)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
+                        <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
+                          <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>{item.wallet_name || '-'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">{item.sender_name || '-'}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-blue-700 whitespace-nowrap">{item.receiver_name || '-'}</td>
+                        <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{formatNumber(exp)}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span>{formatNumber(act)}</span>
+                            {currentUser?.role === 'manager' && item.review_status !== 'تم المراجعة بواسطة المدير' && (diff !== 0 || item.review_status === 'الرجاء المراجعة') && (
+                              <button
+                                onClick={() => handleApproveReview(item.id)}
+                                className="p-1 hover:bg-emerald-100 rounded-md text-emerald-700 transition-colors cursor-pointer"
+                                title="اعتماد المراجعة 👍"
+                              >
+                                👍
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       <td className={`px-4 py-3 font-mono font-bold text-xs whitespace-nowrap ${diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-emerald-600'
                         }`}>
                         {diff > 0 ? `+${formatNumber(diff)}` : formatNumber(diff)}

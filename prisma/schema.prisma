@@ -319,7 +319,7 @@ model expenses {
   shift_id      String?   @db.Text
   shift_name    String?   @db.Text
   shift_cashier String?   @db.Text
-  main_type     String    @db.Text // "مصروفات" | "إيرادات"
+  main_type     String    @db.Text // "مصروفات" | "مسحوبات"
   expense_type  String?   @db.Text // "مصروفات" | "سلفة" | "قبض" | "دعم"
   items         String?   @db.Text
   notes         String?   @db.Text

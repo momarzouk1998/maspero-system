@@ -30,6 +30,7 @@ export default function ExpensesHistoryPage() {
   const [treeData, setTreeData] = useState<any>(null);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
   const fetchTreeData = () => {
     fetch('/api/expenses/tree')
@@ -297,23 +298,39 @@ export default function ExpensesHistoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        {/* Hierarchical Sidebar Tree View (AppSheet Style) */}
-        <div className="lg:col-span-1 glass-panel p-5 rounded-3xl border border-slate-200 bg-white max-h-[800px] overflow-y-auto space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <Filter className="w-4 h-4 text-rose-600" />
-              <span>التصفية الهرمية</span>
-            </h3>
-            <button
-              onClick={handleSelectAllNode}
-              className="text-[11px] text-blue-600 hover:text-blue-700 font-bold"
-            >
-              إعادة تعيين
-            </button>
+      {/* Main Container: Collapsible Tree Sidebar + Table */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Hierarchical Sidebar Tree View (AppSheet Style - Narrower & Collapsible) */}
+        <div className={`w-full ${isTreeCollapsed ? 'lg:w-16' : 'lg:w-64 xl:w-72'} shrink-0 glass-panel p-4 rounded-3xl border border-slate-200 bg-white space-y-3 h-fit transition-all duration-300`}>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+            {!isTreeCollapsed && (
+              <h3 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-rose-600" />
+                <span>شجرة التصفية</span>
+              </h3>
+            )}
+            <div className="flex items-center gap-1.5 mr-auto">
+              {!isTreeCollapsed && (
+                <button
+                  onClick={handleSelectAllNode}
+                  className="text-[11px] text-blue-600 hover:text-blue-700 font-bold"
+                >
+                  إعادة تعيين
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsTreeCollapsed(!isTreeCollapsed)}
+                className="p-1 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors cursor-pointer border border-slate-200"
+                title={isTreeCollapsed ? 'توسيع الشجرة 📂' : 'طي الشجرة 📂'}
+              >
+                {isTreeCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-1 text-slate-800 text-xs">
+          {!isTreeCollapsed && (
+            <div className="space-y-1 text-slate-800 text-xs max-h-[600px] overflow-y-auto no-scrollbar">
             {/* Grand Total "الكل" node */}
             <div
               onClick={handleSelectAllNode}
@@ -435,10 +452,11 @@ export default function ExpensesHistoryPage() {
               })}
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Table & Pagination (3/4 width) */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* Table & Pagination (Flex-1) */}
+        <div className="flex-1 space-y-4 min-w-0">
           {/* Bulk Action Bar */}
           {selectedIds.length > 0 && currentUser?.role === 'manager' && (
             <div className="flex items-center justify-between bg-rose-50 border border-rose-200 p-4 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-200">
@@ -523,7 +541,7 @@ export default function ExpensesHistoryPage() {
                         <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${item.main_type === 'سلفة' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
                             item.main_type === 'قبض' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                              item.main_type === 'إيرادات' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
+                              item.main_type === 'مسحوبات' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
                                 'bg-red-100 text-red-800 border border-red-300'
                             }`}>
                             {item.main_type}
@@ -715,7 +733,7 @@ export default function ExpensesHistoryPage() {
                   <option value="قبض">قبض 💵</option>
                   <option value="دعم مالي">دعم مالي 💸</option>
                   <option value="مشتريات">مشتريات 🛒</option>
-                  <option value="إيرادات">إيرادات 📈</option>
+                  <option value="مسحوبات">مسحوبات 💸</option>
                 </select>
               </div>
 

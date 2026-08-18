@@ -225,13 +225,12 @@ export async function GET(req: Request) {
   const monthlyMap: Record<string, { month: string; totalSum: number; count: number; items: any[] }> = {};
   // Category Grouped Calculation
   const categoryMap: Record<string, { category: string; totalSum: number; count: number; items: any[] }> = {
-    'إيرادات': { category: 'إيرادات', totalSum: 0, count: 0, items: [] },
+    'مسحوبات': { category: 'مسحوبات', totalSum: 0, count: 0, items: [] },
     'سلفة': { category: 'سلفة', totalSum: 0, count: 0, items: [] },
     'قبض': { category: 'قبض', totalSum: 0, count: 0, items: [] },
     'مصروفات': { category: 'مصروفات', totalSum: 0, count: 0, items: [] },
     'دعم مالي': { category: 'دعم مالي', totalSum: 0, count: 0, items: [] },
     'مشتريات': { category: 'مشتريات', totalSum: 0, count: 0, items: [] },
-    'مسحوبات': { category: 'مسحوبات', totalSum: 0, count: 0, items: [] },
   };
 
   allExpensesList.forEach((exp: any) => {

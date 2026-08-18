@@ -22,7 +22,7 @@ export default function ManagerReportsPage() {
   // Hidden tabs state (kept in code as requested, but default is 'financial')
   const [activeTab, setActiveTab] = useState<'financial' | 'monthly' | 'category'>('financial');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('إيرادات');
+  const [selectedCategory, setSelectedCategory] = useState<string>('مسحوبات');
 
   // Archival Monthly Profit Reports State (CSV Matching)
   const [archivedReports, setArchivedReports] = useState<any[]>([]);
