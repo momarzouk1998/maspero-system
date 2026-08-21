@@ -19,13 +19,14 @@ export async function GET() {
     const isMorningOrSoloShift = activeColleaguesCount === 0;
 
     // 2. Ensure the 3 exact cash drawers exist and are active
-    const targetDrawerNames = ['درج كاش 1', 'درج كاش 2', 'درج كاش 3'];
+    const targetDrawerNames = ['درج كاشير 1', 'درج كاشير 2', 'درج كاشير 3'];
     for (let idx = 0; idx < 3; idx++) {
       const name = targetDrawerNames[idx];
       const existing = await db.external_wallets.findFirst({
         where: {
           OR: [
             { wallet_name: name },
+            { wallet_name: `درج كاش ${idx + 1}` },
             { wallet_name: `درج كاشير ${idx + 1}` }
           ]
         }

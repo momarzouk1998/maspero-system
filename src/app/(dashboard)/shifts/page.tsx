@@ -18,7 +18,7 @@ export default function ShiftsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [shiftType, setShiftType] = useState('صباحي');
+  const [shiftType, setShiftType] = useState('');
   const [shiftNote, setShiftNote] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -132,6 +132,10 @@ export default function ShiftsPage() {
   };
 
   const handleStartShift = async () => {
+    if (!shiftType) {
+      showToast('برجاء اختيار نوع الشفت (صباحي أو مسائي) أولاً', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/shifts', {
@@ -547,15 +551,29 @@ export default function ShiftsPage() {
             <div className="flex-1 flex flex-col justify-between space-y-4 pt-2">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الشفت</label>
-                  <select
-                    value={shiftType}
-                    onChange={(e) => setShiftType(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="صباحي">صباحي (Morning)</option>
-                    <option value="مسائي">مسائي (Evening)</option>
-                  </select>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الشفت <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['صباحي', 'مسائي'] as const).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setShiftType(type)}
+                        className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          shiftType === type
+                            ? type === 'صباحي'
+                              ? 'bg-amber-500 text-white border-amber-500 shadow-md'
+                              : 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                        }`}
+                      >
+                        <span>{type === 'صباحي' ? '☀️' : '🌙'}</span>
+                        <span>{type}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {!shiftType && (
+                    <p className="text-[11px] text-red-500 font-semibold mt-1.5">⚠️ اختيار نوع الشفت إجباري</p>
+                  )}
                 </div>
 
                 <div>

@@ -210,7 +210,7 @@ export default function POSPage() {
   const machines = extWallets.filter(w => w.wallet_type === 'ماكينة');
 
   // ─── Active Tab ──────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'services' | 'tickets' | 'wallets'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'tickets' | 'wallets' | 'machines'>('services');
 
   // ─── Service Popup ───────────────────────────────────────
   const [svcPopup, setSvcPopup] = useState<any | null>(null);
@@ -300,19 +300,29 @@ export default function POSPage() {
   const [wltComm, setWltComm] = useState(0);
   const [wltNotes, setWltNotes] = useState('');
   const [wltLoading, setWltLoading] = useState(false);
-  const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا'>('011');
-  const [fawryWithdrawalType, setFawryWithdrawalType] = useState<'عادية' | 'مشتريات'>('عادية');
+  const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا' | ''>('');
+  const [fawryWithdrawalType, setFawryWithdrawalType] = useState<'عادية' | 'مشتريات' | ''>('');
 
   const openWltPopup = (w: any, defaultType: 'إيداع' | 'سحب' = 'إيداع') => {
     setWltPopup(w);
     setWltOpType(defaultType);
     setWltAmt(0); setWltComm(0); setWltNotes('');
-    setKomandaProvider('011');
-    setFawryWithdrawalType('عادية');
+    setKomandaProvider('');
+    setFawryWithdrawalType('');
   };
 
   const handleAddWallet = async () => {
     if (!wltPopup || wltAmt <= 0 || !activeInvoiceCode) return;
+    const isKomandaCheck = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
+    const isFawryCheck = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
+    if (isKomandaCheck && !komandaProvider) {
+      alert('برجاء اختيار نوع الكوماندا (011 / 010 / انستا) أولاً');
+      return;
+    }
+    if (isFawryCheck && !fawryWithdrawalType) {
+      alert('برجاء اختيار نوع المعاملة (عادية / مشتريات) أولاً');
+      return;
+    }
     setWltLoading(true);
     const isKomanda = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
     const isFawryMachine = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
@@ -473,10 +483,11 @@ export default function POSPage() {
         )}
 
         {/* Tabs */}
-        <div className={`flex gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
+        <div className={`flex gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
           <TabBtn id="services" label="الخدمات" icon={Printer} color="bg-blue-600" />
           <TabBtn id="tickets" label="التذاكر" icon={Train} color="bg-purple-600" />
-          <TabBtn id="wallets" label="المحافظ والماكينات" icon={Wallet} color="bg-emerald-600" />
+          <TabBtn id="wallets" label="المحافظ" icon={Wallet} color="bg-emerald-600" />
+          <TabBtn id="machines" label="الماكينات" icon={Cpu} color="bg-amber-600" />
         </div>
 
         {/* ── TAB: SERVICES ─────────────────────────────── */}
@@ -598,184 +609,132 @@ export default function POSPage() {
                     <input type="number" step="0.25" min="0" value={tktComm || ''}
                       onChange={e => setTktComm(parseFloat(e.target.value) || 0)}
                       placeholder="0"
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Notes Input Field */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">ملاحظات التذكرة (اختياري)</label>
-                  <input
-                    type="text"
-                    value={tktNotes}
-                    onChange={(e) => setTktNotes(e.target.value)}
-                    placeholder="رقم القطار / اسم الراكب / المحطة..."
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-400"
-                  />
-                </div>
-
-                {/* Summary row + Add button */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs text-slate-600 bg-white rounded-xl px-3 py-2 border border-slate-200">
-                    <span>الإجمالي:</span>
-                    <span className="font-bold font-mono text-emerald-700 text-sm">
-                      {formatNumber((tktPrice + tktComm) * tktCount)}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleAddTicket}
-                    disabled={tktLoading || tktPrice <= 0}
-                    className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${tktType === 'قطار'
-                      ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
-                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
-                      }`}
-                  >
-                    {tktLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    إضافة للفاتورة
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!tktType && (
-              <div className="py-8 text-center text-slate-400 text-sm">
-                اختر نوع التذكرة أعلاه لعرض التفاصيل
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── TAB: WALLETS & MACHINES ───────────────────── */}
+                      className="w-full p-2 bg-white border border-slate-        {/* ── TAB: WALLETS ──────────────────────────── */}
         {activeTab === 'wallets' && (
           <div className="glass-panel p-4 rounded-3xl border border-slate-200 space-y-5 flex-1 overflow-y-auto">
-
-            {/* Wallets section */}
-            {wallets.length > 0 && (
-              <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-emerald-600" />
-                  المحافظ الإلكترونية
-                </h3>
-                <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                  <table className="w-full text-right text-sm table-auto">
-                    <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-2.5 whitespace-nowrap">المحفظة</th>
-                        <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
-                        <th className="px-4 py-2.5 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <span>إيداع الشهر</span>
-                            <div className="relative group cursor-pointer">
-                              <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
-                              <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
-                                إجمالي مبالغ الإيداع المنفذة على هذه المحفظة خلال الشهر الحالي لمنع تجاوز ليمت المحافظ وتجميد الحساب.
-                              </div>
+            <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-emerald-600" />
+              المحافظ الإلكترونية
+            </h3>
+            {wallets.length > 0 ? (
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-right text-sm table-auto">
+                  <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2.5 whitespace-nowrap">المحفظة</th>
+                      <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
+                      <th className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <span>إيداع الشهر</span>
+                          <div className="relative group cursor-pointer">
+                            <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
+                            <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
+                              إجمالي مبالغ الإيداع المنفذة على هذه المحفظة خلال الشهر الحالي.
                             </div>
                           </div>
-                        </th>
-                        <th className="px-4 py-2.5 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <span>سحب الشهر</span>
-                            <div className="relative group cursor-pointer">
-                              <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
-                              <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
-                                إجمالي مبالغ السحب المنفذة على هذه المحفظة خلال الشهر الحالي لتتبع حدود السحب الشهرية.
-                              </div>
+                        </div>
+                      </th>
+                      <th className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <span>سحب الشهر</span>
+                          <div className="relative group cursor-pointer">
+                            <HelpCircle className="w-3.5 h-3.5 text-blue-500 hover:text-blue-700 transition-colors" />
+                            <div className="absolute right-0 top-5 hidden group-hover:block bg-slate-900 text-white text-[11px] font-normal p-2.5 rounded-xl shadow-xl w-56 z-50 leading-relaxed normal-case">
+                              إجمالي مبالغ السحب المنفذة على هذه المحفظة خلال الشهر الحالي.
                             </div>
                           </div>
-                        </th>
-                        <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
-                        <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
+                        </div>
+                      </th>
+                      <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
+                      <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {wallets.map(w => (
+                      <tr key={w.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}
+                          {w.wallet_number && <span className="text-xs text-slate-400 mr-1 font-mono">({w.wallet_number})</span>}
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                          {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap text-xs">
+                          {formatNumber(Number(w.monthly_deposit || 0))}
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold text-red-700 whitespace-nowrap text-xs">
+                          {formatNumber(Number(w.monthly_withdrawal || 0))}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <button onClick={() => openWltPopup(w, 'إيداع')}
+                            className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                            <ArrowDownLeft className="w-3 h-3" /> إيداع
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <button onClick={() => openWltPopup(w, 'سحب')}
+                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                            <ArrowUpRight className="w-3 h-3" /> سحب
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                      {wallets.map(w => (
-                        <tr key={w.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}
-                            {w.wallet_number && <span className="text-xs text-slate-400 mr-1 font-mono">({w.wallet_number})</span>}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                            {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap text-xs">
-                            {formatNumber(Number(w.monthly_deposit || 0))}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-bold text-red-700 whitespace-nowrap text-xs">
-                            {formatNumber(Number(w.monthly_withdrawal || 0))}
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <button onClick={() => openWltPopup(w, 'إيداع')}
-                              className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                              <ArrowDownLeft className="w-3 h-3" /> إيداع
-                            </button>
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <button onClick={() => openWltPopup(w, 'سحب')}
-                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                              <ArrowUpRight className="w-3 h-3" /> سحب
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-
-            {/* Machines section */}
-            {machines.length > 0 && (
-              <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-amber-600" />
-                  الماكينات (فوري / بسطة / أمان)
-                </h3>
-                <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                  <table className="w-full text-right text-sm table-auto">
-                    <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-2.5 whitespace-nowrap">الماكينة</th>
-                        <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
-                        <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
-                        <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                      {machines.map(w => (
-                        <tr key={w.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
-                          <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                            {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <button onClick={() => openWltPopup(w, 'إيداع')}
-                              className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                              <ArrowDownLeft className="w-3 h-3" /> إيداع
-                            </button>
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <button onClick={() => openWltPopup(w, 'سحب')}
-                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                              <ArrowUpRight className="w-3 h-3" /> سحب
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {extWallets.length === 0 && (
-              <div className="py-10 text-center text-slate-400 text-sm">
-                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />جاري التحميل...
-              </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-sm">لا توجد محافظ مضافة</div>
             )}
           </div>
         )}
-      </div>
+
+        {/* ── TAB: MACHINES ─────────────────────────── */}
+        {activeTab === 'machines' && (
+          <div className="glass-panel p-4 rounded-3xl border border-slate-200 space-y-5 flex-1 overflow-y-auto">
+            <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-amber-600" />
+              الماكينات (فوري / بسطة / أمان)
+            </h3>
+            {machines.length > 0 ? (
+              <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-right text-sm table-auto">
+                  <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2.5 whitespace-nowrap">الماكينة</th>
+                      <th className="px-4 py-2.5 whitespace-nowrap">الرصيد الحالي</th>
+                      <th className="px-4 py-2.5 text-center whitespace-nowrap">إيداع</th>
+                      <th className="px-4 py-2.5 text-center whitespace-nowrap">سحب</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {machines.map(w => (
+                      <tr key={w.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                          {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <button onClick={() => openWltPopup(w, 'إيداع')}
+                            className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                            <ArrowDownLeft className="w-3 h-3" /> إيداع
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <button onClick={() => openWltPopup(w, 'سحب')}
+                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                            <ArrowUpRight className="w-3 h-3" /> سحب
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-sm">لا توجد ماكينات مضافة</div>
+            )}
+          </div>
+        )}
+
 
       {/* ── RIGHT PANEL: INVOICE ──────────────────────────── */}
       <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden`}>
