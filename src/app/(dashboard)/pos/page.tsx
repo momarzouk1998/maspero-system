@@ -336,9 +336,34 @@ export default function POSPage() {
   const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا' | ''>('');
   const [fawryWithdrawalType, setFawryWithdrawalType] = useState<'عادية' | 'مشتريات' | ''>('');
 
+  const isWithdrawalDisabledForMachine = (name: string) => {
+    const n = (name || '').trim();
+    if (n.includes('سحب فوري') || n.includes('سحب فوري1') || n.includes('سحب فوري2')) {
+      return false;
+    }
+    if (n.includes('فوري1') || n.includes('فوري 1') || n.includes('فوري2') || n.includes('فوري 2') || n.includes('بساطة') || n.includes('بسطة')) {
+      return true;
+    }
+    return false;
+  };
+
+  const isDepositDisabledForMachine = (name: string) => {
+    const n = (name || '').trim();
+    if (n.includes('سحب فوري') || n.includes('سحب فوري1') || n.includes('سحب فوري 1') || n.includes('سحب فوري2') || n.includes('سحب فوري 2')) {
+      return true;
+    }
+    return false;
+  };
+
   const openWltPopup = (w: any, defaultType: 'إيداع' | 'سحب' = 'إيداع') => {
+    let targetType = defaultType;
+    if (isDepositDisabledForMachine(w.wallet_name)) {
+      targetType = 'سحب';
+    } else if (isWithdrawalDisabledForMachine(w.wallet_name)) {
+      targetType = 'إيداع';
+    }
     setWltPopup(w);
-    setWltOpType(defaultType);
+    setWltOpType(targetType);
     setWltAmt(0); setWltComm(0); setWltNotes('');
     setKomandaProvider('');
     setFawryWithdrawalType('');
@@ -806,26 +831,38 @@ export default function POSPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
-                    {machines.map(w => (
-                      <tr key={w.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
-                          {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <button onClick={() => openWltPopup(w, 'إيداع')}
-                            className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                            <ArrowDownLeft className="w-3 h-3" /> إيداع
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <button onClick={() => openWltPopup(w, 'سحب')}
-                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
-                            <ArrowUpRight className="w-3 h-3" /> سحب
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {machines.map(w => {
+                      const hideWithdrawal = isWithdrawalDisabledForMachine(w.wallet_name);
+                      const hideDeposit = isDepositDisabledForMachine(w.wallet_name);
+                      return (
+                        <tr key={w.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{w.wallet_name}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                            {formatNumber(Number(w.actual_balance || w.current_balance || 0))}
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            {!hideDeposit ? (
+                              <button onClick={() => openWltPopup(w, 'إيداع')}
+                                className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                                <ArrowDownLeft className="w-3.5 h-3.5" /> إيداع
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            {!hideWithdrawal ? (
+                              <button onClick={() => openWltPopup(w, 'سحب')}
+                                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto">
+                                <ArrowUpRight className="w-3.5 h-3.5" /> سحب
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1133,25 +1170,34 @@ export default function POSPage() {
             </div>
 
             {/* Operation type toggle - Radio buttons style */}
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-2">نوع العملية</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setWltOpType('إيداع')}
-                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'إيداع'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
-                    }`}>
-                  <ArrowDownLeft className="w-4 h-4" /> إيداع
-                </button>
-                <button onClick={() => setWltOpType('سحب')}
-                  className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'سحب'
-                    ? 'bg-red-600 text-white border-red-600 shadow-md'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-red-300'
-                    }`}>
-                  <ArrowUpRight className="w-4 h-4" /> سحب
-                </button>
+            {!isDepositDisabledForMachine(wltPopup.wallet_name) && !isWithdrawalDisabledForMachine(wltPopup.wallet_name) ? (
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-2">نوع العملية</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setWltOpType('إيداع')}
+                    className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'إيداع'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                      }`}>
+                    <ArrowDownLeft className="w-4 h-4" /> إيداع
+                  </button>
+                  <button onClick={() => setWltOpType('سحب')}
+                    className={`py-3 rounded-xl font-bold text-sm border-2 transition-all flex items-center justify-center gap-2 ${wltOpType === 'سحب'
+                      ? 'bg-red-600 text-white border-red-600 shadow-md'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-red-300'
+                      }`}>
+                    <ArrowUpRight className="w-4 h-4" /> سحب
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-3 bg-slate-100 border border-slate-200 rounded-xl text-center">
+                <span className="text-xs text-slate-600">نوع المعاملة المتاحة للماكينة: </span>
+                <span className={`text-xs font-bold ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {wltOpType}
+                </span>
+              </div>
+            )}
 
             {/* Komanda Provider Buttons */}
             {(wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا')) && (
