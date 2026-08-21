@@ -648,7 +648,6 @@ export default function ExpensesHistoryPage() {
                         />
                       </th>
                     )}
-                    <th className="px-4 py-3 whitespace-nowrap">التصنيف الرئيسي</th>
                     <th className="px-4 py-3 whitespace-nowrap">طريقة الصرف</th>
                     <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
                     <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
@@ -661,14 +660,14 @@ export default function ExpensesHistoryPage() {
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={currentUser?.role === 'manager' ? 9 : 8} className="text-center py-12 text-slate-500">
+                      <td colSpan={currentUser?.role === 'manager' ? 8 : 7} className="text-center py-12 text-slate-500">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
                         <span>جاري تحميل سجل المصروفات...</span>
                       </td>
                     </tr>
                   ) : expenses.length === 0 ? (
                     <tr>
-                      <td colSpan={currentUser?.role === 'manager' ? 9 : 8} className="text-center py-12 text-slate-500">
+                      <td colSpan={currentUser?.role === 'manager' ? 8 : 7} className="text-center py-12 text-slate-500">
                         لا توجد مصروفات مسجلة تطابق التصفية
                       </td>
                     </tr>
@@ -692,15 +691,10 @@ export default function ExpensesHistoryPage() {
                           </td>
                         )}
                         <td className="px-4 py-3 font-bold text-slate-900 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${item.main_type === 'سلفة' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                            item.main_type === 'قبض' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                              item.main_type === 'مسحوبات' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
-                                'bg-red-100 text-red-800 border border-red-300'
-                            }`}>
-                            {item.main_type}
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                            {item.expense_type || 'نقدي'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.expense_type || 'نقدي'}</td>
                         <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
                           {formatNumberLocale(Number(item.amount), 'en-US')}
                         </td>
