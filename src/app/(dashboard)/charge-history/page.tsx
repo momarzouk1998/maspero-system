@@ -26,6 +26,7 @@ export default function ChargeHistoryPage() {
   // Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [walletsList, setWalletsList] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'type' | 'date'>('type');
 
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -75,7 +76,8 @@ export default function ChargeHistoryPage() {
         startDate,
         endDate,
         walletName: filterWalletName,
-        employeeId: filterEmployeeId
+        employeeId: filterEmployeeId,
+        sortBy
       });
 
       const res = await fetch(`/api/charge-history?${params.toString()}`);
@@ -98,7 +100,7 @@ export default function ChargeHistoryPage() {
   useEffect(() => {
     const timer = setTimeout(() => fetchTransactions(1), 300);
     return () => clearTimeout(timer);
-  }, [search, transactionType, startDate, endDate, filterWalletName, filterEmployeeId]);
+  }, [search, transactionType, startDate, endDate, filterWalletName, filterEmployeeId, sortBy]);
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
@@ -202,6 +204,34 @@ export default function ChargeHistoryPage() {
               placeholder="بحث بالماكينة، الموظف، رقم الفاتورة..."
               className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 w-64"
             />
+          </div>
+
+          {/* Sorting Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setSortBy('type')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                sortBy === 'type'
+                  ? 'bg-amber-600 text-white shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 font-semibold'
+              }`}
+              title="تجميع الإيداع معاً والسحب معاً تحت بعضهما"
+            >
+              🏷️ حسب النوع (إيداع/سحب)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy('date')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                sortBy === 'date'
+                  ? 'bg-amber-600 text-white shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 font-semibold'
+              }`}
+              title="ترتيب المعاملات حسب الوقت والتاريخ"
+            >
+              📅 حسب التاريخ
+            </button>
           </div>
 
           <button

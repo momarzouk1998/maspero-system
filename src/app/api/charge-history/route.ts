@@ -44,10 +44,16 @@ export async function GET(req: Request) {
       ];
     }
 
+    const sortBy = searchParams.get('sortBy') || (search || searchParams.get('walletName') ? 'type' : 'date');
+
+    const orderBy: any = sortBy === 'type'
+      ? [{ transaction_type: 'asc' }, { timestamp: 'desc' }]
+      : { timestamp: 'desc' };
+
     const [transactions, total] = await Promise.all([
       db.wallet_transactions.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
