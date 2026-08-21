@@ -134,8 +134,8 @@ export default function ManagerReportsPage() {
   const activeMonthReport = monthlyReports.find((m: any) => m.month === selectedMonth) || { items: [], totalSum: 0 };
   const activeCategoryReport = categoryReports.find((c: any) => c.category === selectedCategory) || { items: [], totalSum: 0 };
 
-  // Main 2 Tabs state: 'report' for Financial Report & Live Balances, 'archive' for Monthly Archive Table
-  const [activeMainTab, setActiveMainTab] = useState<'report' | 'archive'>('report');
+  // Main 2 Tabs state: 'report' for Financial Report & Monthly Archive, 'balances' for Live Balances Tables
+  const [activeMainTab, setActiveMainTab] = useState<'report' | 'balances'>('report');
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -169,18 +169,18 @@ export default function ManagerReportsPage() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>📊 التقرير المالي والأرباح الحالية</span>
+            <span>📊 التقرير المالي والأرشيف الشهري</span>
           </button>
           <button
-            onClick={() => setActiveMainTab('archive')}
+            onClick={() => setActiveMainTab('balances')}
             className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeMainTab === 'archive'
+              activeMainTab === 'balances'
                 ? 'bg-slate-900 text-white shadow-md font-bold'
                 : 'text-slate-600 hover:text-slate-900 font-semibold'
             }`}
           >
-            <Archive className="w-4 h-4" />
-            <span>🏛️ سجل التقارير الأرشيفية (الأشهر)</span>
+            <Banknote className="w-4 h-4" />
+            <span>🏛️ الأرصدة الحالية اللحظية</span>
           </button>
         </div>
       </div>
@@ -457,184 +457,151 @@ export default function ManagerReportsPage() {
                 </div>
               </div>
 
-              {/* ── Section B: الأرصدة الحالية — جداول موحدة ومندمجة ── */}
-              <div className="flex items-center gap-3 pt-2">
-                <div className="h-px flex-1 bg-slate-200" />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200">
-                  <Banknote className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="text-[11px] font-bold text-slate-600">الأرصدة الحالية اللحظية (جداول تفصيلية)</span>
-                  <span className="text-[10px] text-slate-500 font-medium">لا تتأثر بالتصفية</span>
-                </div>
-                <div className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              {/* 1. جدول رصيد المحافظ والماكينات المدمج */}
-              <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-0 bg-white shadow-sm">
-                <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white shadow">
-                      <Wallet className="w-4 h-4" />
+              {/* 📊 ARCHIVAL MONTHLY PROFIT REPORT (سجل تقرير الماليات والأرشيف الشهري) */}
+              <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">
+                <div className="p-5 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                      <Archive className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm">جدول أرصدة المحافظ الإلكترونية والماكينات</h3>
-                      <p className="text-[11px] text-slate-300">أرصدة المحافظ والماكينات المسجلة والعهد الحالية</p>
+                      <h3 className="font-bold text-base flex items-center gap-2">
+                        <span>سجل تقرير الماليات والأرشيف الشهري</span>
+                      </h3>
+                      <p className="text-xs text-slate-400">سجل تراكمي تاريخي لجميع أشهر التعاملات</p>
                     </div>
                   </div>
-                  <div className="text-left">
-                    <span className="text-[11px] text-slate-300 font-semibold block">إجمالي المحافظ والماكينات</span>
-                    <span className="text-base font-extrabold font-mono text-emerald-400">
-                      {formatNumberLocale(Number(walletsTotals.محافظ + walletsTotals.ماكينات), 'en-US')} ج
-                    </span>
+
+                  <button
+                    onClick={handleSaveMonthArchive}
+                    disabled={savingArchive}
+                    className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
+                  >
+                    {savingArchive ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+                    <span>حفظ / أرشفة تقرير الشهر الحالي 💾</span>
+                  </button>
+                </div>
+
+                {/* Formula Explanation Bar */}
+                <div className="px-5 py-3 bg-amber-50 border-y border-amber-200 text-xs text-amber-900 font-medium flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="font-bold text-amber-950">📐 معادلة تكلفة المشتريات: </span>
+                    <span>رصيد أول المدة + قيمة المشتريات - رصيد آخر المدة</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-amber-950">📐 معادلة صافي الربح: </span>
+                    <span>إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات</span>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs text-slate-700 table-auto border-t border-slate-200">
-                    <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">البيان / الاسم</th>
-                        <th className="px-4 py-3 whitespace-nowrap">نوع الحساب</th>
-                        <th className="px-4 py-3 whitespace-nowrap">المسؤول / العهدة الحالية</th>
-                        <th className="px-4 py-3 whitespace-nowrap text-left dir-ltr">الرصيد الحالي</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 font-semibold">
-                      {/* Row 1: Section Header for Wallets */}
-                      <tr className="bg-indigo-50/80 font-bold text-indigo-950 border-y border-indigo-200">
-                        <td colSpan={3} className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
-                          <Wallet className="w-4 h-4 text-indigo-600" />
-                          <span>إجمالي المحافظ الإلكترونية ({walletsByType.محافظ.length} محفظة)</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-indigo-900 text-left dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')} ج
-                        </td>
-                      </tr>
-                      {/* Wallet Items */}
-                      {walletsByType.محافظ.map((w: any) => (
-                        <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                            <span>{w.wallet_name}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">محفظة إلكترونية</td>
-                          <td className="px-4 py-3 text-slate-600">{w.custodian_name || '-'}</td>
-                          <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
-                          </td>
-                        </tr>
-                      ))}
-
-                      {/* Row 2: Section Header for Machines */}
-                      <tr className="bg-slate-100 font-bold text-slate-900 border-y border-slate-300">
-                        <td colSpan={3} className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-slate-700" />
-                          <span>إجمالي ماكينات الدفع ({walletsByType.ماكينات.length} ماكينة)</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-slate-900 text-left dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')} ج
-                        </td>
-                      </tr>
-                      {/* Machine Items */}
-                      {walletsByType.ماكينات.map((w: any) => (
-                        <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-slate-500" />
-                            <span>{w.wallet_name}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">ماكينة دفع (فوري/أمان)</td>
-                          <td className="px-4 py-3 text-slate-600">{w.custodian_name || '-'}</td>
-                          <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* 2. جدول عهدة الكاش وأدراج الكاشير المدمج */}
-              <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-0 bg-white shadow-sm">
-                <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center font-bold text-white shadow">
-                      <Banknote className="w-4 h-4" />
+                {/* Archived Monthly Snapshots Table */}
+                <div className="p-5 space-y-4">
+                  {archivedReports.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-xs">
+                      لا توجد أرشفات شهرية مسجلة بعد. اضغط زر "أرشفة تقرير الشهر" أعلاه لتقييد أول شهر.
                     </div>
-                    <div>
-                      <h3 className="font-bold text-sm">جدول النقدية (عهد الموظفين وأدراج الكاشير)</h3>
-                      <p className="text-[11px] text-slate-300">أرصدة الكاش الفعلية المسلمة للموظفين والأدراج</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-right text-xs text-slate-700 table-auto border border-slate-200 rounded-2xl overflow-hidden">
+                        <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
+                          <tr>
+                            <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-700 bg-amber-50/50">قيمة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-800 bg-amber-100/50">تكلفة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">القبض والسلف</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">باقي المصروفات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عدد التذاكر</th>
+                            <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                          {archivedReports.map((report: any) => {
+                            const opening = Number(report.opening_balance || 0);
+                            const closing = Number(report.closing_balance || 0);
+                            const purchasesVal = Number(report.purchases_cost || 0);
+                            const calculatedPurchasesCost = opening + purchasesVal - closing;
+
+                            const serviceRev = Number(report.service_revenue || 0);
+                            const totalProfit = Number(report.total_profit || 0) || (serviceRev - calculatedPurchasesCost);
+
+                            const totalComm = Number(report.total_commissions || 0) || (
+                              Number(report.wallet_commission || 0) +
+                              Number(report.tickets_commission || 0) +
+                              Number(report.machine_deposit_commission || 0) +
+                              Number(report.machine_withdrawal_commission || 0)
+                            );
+                            const salaries = Number(report.salaries || 0);
+                            const otherExpenses = Number(report.other_expenses || 0);
+                            const calculatedNetProfit = totalProfit + totalComm - salaries - otherExpenses;
+
+                            return (
+                              <tr key={report.id || report.month} className="hover:bg-slate-50 font-semibold">
+                                <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
+                                <td className="px-3 py-3 text-amber-700 font-bold whitespace-nowrap bg-amber-50/30">{formatNumber(purchasesVal)}</td>
+                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(opening)}</td>
+                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(closing)}</td>
+                                <td className="px-3 py-3 text-amber-900 font-extrabold whitespace-nowrap bg-amber-100/50">{formatNumber(calculatedPurchasesCost)}</td>
+                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                                <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(serviceRev)}</td>
+                                <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(totalProfit)}</td>
+                                <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
+                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(salaries)}</td>
+                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(otherExpenses)}</td>
+                                <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(calculatedNetProfit)}</td>
+                                <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
+                                <td className="px-3 py-3 text-purple-700 font-bold whitespace-nowrap">{report.ticket_count || 0} تذكرة</td>
+                                <td className="px-3 py-3 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      onClick={() => {
+                                        setEditArchItem(report);
+                                        setEditArchOpening(String(report.opening_balance || 0));
+                                        setEditArchClosing(String(report.closing_balance || 0));
+                                        setEditArchPurchases(String(report.purchases_cost || 0));
+                                        setEditArchSalaries(String(report.salaries || 0));
+                                        setEditArchExpenses(String(report.other_expenses || 0));
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                      title="تعديل التقرير الأرشيفي"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`هل أنت تأكد من حذف تقرير شهر (${report.month}) من الأرشيف؟`)) return;
+                                        try {
+                                          const res = await fetch(`/api/reports/monthly-archive?month=${encodeURIComponent(report.month)}`, { method: 'DELETE' });
+                                          if (res.ok) fetchReports();
+                                        } catch (e) { console.error(e); }
+                                      }}
+                                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                      title="حذف التقرير"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[11px] text-slate-300 font-semibold block">إجمالي النقدية</span>
-                    <span className="text-base font-extrabold font-mono text-emerald-400">
-                      {formatNumberLocale(Number(totalEmployeeCustody + walletsTotals.أدراج), 'en-US')} ج
-                    </span>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs text-slate-700 table-auto border-t border-slate-200">
-                    <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">البيان / اسم الحساب</th>
-                        <th className="px-4 py-3 whitespace-nowrap">نوع الحساب</th>
-                        <th className="px-4 py-3 whitespace-nowrap">المسمى / المسؤول الحالي</th>
-                        <th className="px-4 py-3 whitespace-nowrap text-left dir-ltr">الرصيد الحالي</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 font-semibold">
-                      {/* Row 1: Section Header for Employee Custody */}
-                      <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
-                        <td colSpan={3} className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
-                          <Users className="w-4 h-4 text-emerald-700" />
-                          <span>إجمالي عهدة الكاش للموظفين ({employeeCustody.length} موظف)</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-emerald-900 text-left dir-ltr">
-                          {formatNumberLocale(Number(totalEmployeeCustody), 'en-US')} ج
-                        </td>
-                      </tr>
-                      {/* Employee Items */}
-                      {employeeCustody.map((emp: any) => (
-                        <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span>{emp.name}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">عهدة كاش موظف</td>
-                          <td className="px-4 py-3 text-slate-600">{emp.jobTitle || '-'}</td>
-                          <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${emp.walletBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {formatNumberLocale(Number(emp.walletBalance), 'en-US')} ج
-                          </td>
-                        </tr>
-                      ))}
-
-                      {/* Row 2: Section Header for Cashier Drawers */}
-                      <tr className="bg-amber-50/80 font-bold text-amber-950 border-y border-amber-200">
-                        <td colSpan={3} className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
-                          <Archive className="w-4 h-4 text-amber-700" />
-                          <span>إجمالي أدراج الكاشير ({walletsByType.أدراج.length} درج)</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-amber-900 text-left dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')} ج
-                        </td>
-                      </tr>
-                      {/* Drawer Items */}
-                      {walletsByType.أدراج.map((w: any) => (
-                        <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-amber-500" />
-                            <span>{w.wallet_name}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">درج كاشير</td>
-                          <td className="px-4 py-3 text-slate-600">{w.custodian_name || '-'}</td>
-                          <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                            {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  )}
                 </div>
               </div>
             </div>
@@ -642,155 +609,184 @@ export default function ManagerReportsPage() {
         </>
       )}
 
-      {/* TAB 2: ARCHIVAL MONTHLY PROFIT REPORTS (سجل تقرير الماليات والأرشيف) */}
-      {activeMainTab === 'archive' && (
-        <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">
-          <div className="p-5 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                <Archive className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base flex items-center gap-2">
-                  <span>سجل تقرير الماليات والأرشيف الشهري</span>
-                </h3>
-                <p className="text-xs text-slate-400">سجل تراكمي تاريخي لجميع أشهر التعاملات</p>
-              </div>
+      {/* TAB 2: LIVE BALANCES TABLES (الأرصدة الحالية اللحظية) */}
+      {activeMainTab === 'balances' && (
+        <div className="space-y-6">
+          {/* Header Bar */}
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200">
+              <Banknote className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold text-slate-800">الأرصدة الحالية اللحظية (لا تتأثر بالتصفية)</span>
             </div>
-
-            <button
-              onClick={handleSaveMonthArchive}
-              disabled={savingArchive}
-              className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
-            >
-              {savingArchive ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-              <span>حفظ / أرشفة تقرير الشهر الحالي 💾</span>
-            </button>
+            <div className="h-px flex-1 bg-slate-200" />
           </div>
 
-          {/* Formula Explanation Bar */}
-          <div className="px-5 py-3 bg-amber-50 border-y border-amber-200 text-xs text-amber-900 font-medium flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <span className="font-bold text-amber-950">📐 معادلة تكلفة المشتريات: </span>
-              <span>رصيد أول المدة + قيمة المشتريات - رصيد آخر المدة</span>
-            </div>
-            <div>
-              <span className="font-bold text-amber-950">📐 معادلة صافي الربح: </span>
-              <span>إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات</span>
-            </div>
-          </div>
+          {/* Grid Container for Side-by-side Tables on Desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Archived Monthly Snapshots Table */}
-          <div className="p-5 space-y-4">
-            {archivedReports.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-xs">
-                لا توجد أرشفات شهرية مسجلة بعد. اضغط زر "أرشفة تقرير الشهر" أعلاه لتقييد أول شهر.
+            {/* Table 1: Wallets & Machines Table */}
+            <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-0 bg-white shadow-sm flex flex-col">
+              <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white shadow">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">جدول أرصدة المحافظ والماكينات</h3>
+                    <p className="text-[11px] text-slate-300">أرصدة المحافظ والماكينات والعهد المسندة</p>
+                  </div>
+                </div>
+                <div className="text-left">
+                  <span className="text-[11px] text-slate-300 font-semibold block">إجمالي المحافظ والماكينات</span>
+                  <span className="text-base font-extrabold font-mono text-emerald-400">
+                    {formatNumberLocale(Number(walletsTotals.محافظ + walletsTotals.ماكينات), 'en-US')} ج
+                  </span>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs text-slate-700 table-auto border border-slate-200 rounded-2xl overflow-hidden">
+
+              <div className="overflow-x-auto flex-1">
+                <table className="w-full text-right text-xs text-slate-700 table-auto border-t border-slate-200">
                   <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
                     <tr>
-                      <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-amber-700 bg-amber-50/50">قيمة المشتريات</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-amber-800 bg-amber-100/50">تكلفة المشتريات</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-rose-700">القبض والسلف</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-rose-700">باقي المصروفات</th>
-                      <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
-                      <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
-                      <th className="px-3 py-3 whitespace-nowrap">عدد التذاكر</th>
-                      <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
+                      <th className="px-4 py-3 whitespace-nowrap">المحفظة / الماكينة (والعهد المسندة)</th>
+                      <th className="px-4 py-3 whitespace-nowrap text-left dir-ltr">الرصيد الحالي</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white font-mono">
-                    {archivedReports.map((report: any) => {
-                      const opening = Number(report.opening_balance || 0);
-                      const closing = Number(report.closing_balance || 0);
-                      const purchasesVal = Number(report.purchases_cost || 0);
-                      // معادلة تكلفة المشتريات = رصيد اول المدة + قيمة المشتريات - رصيد اخر المدة
-                      const calculatedPurchasesCost = opening + purchasesVal - closing;
+                  <tbody className="divide-y divide-slate-200 font-semibold">
+                    {/* Sub-total 1: Wallets */}
+                    <tr className="bg-indigo-50/80 font-bold text-indigo-950 border-y border-indigo-200">
+                      <td className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-indigo-600" />
+                        <span>إجمالي المحافظ الإلكترونية ({walletsByType.محافظ.length} محفظة)</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-indigo-900 text-left dir-ltr">
+                        {formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')} ج
+                      </td>
+                    </tr>
+                    {walletsByType.محافظ.map((w: any) => (
+                      <tr key={w.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+                          <span>
+                            {w.wallet_name} {w.custodian_name ? <span className="text-slate-500 font-normal">({w.custodian_name})</span> : ''}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
+                        </td>
+                      </tr>
+                    ))}
 
-                      const serviceRev = Number(report.service_revenue || 0);
-                      const totalProfit = Number(report.total_profit || 0) || (serviceRev - calculatedPurchasesCost);
-
-                      const totalComm = Number(report.total_commissions || 0) || (
-                        Number(report.wallet_commission || 0) +
-                        Number(report.tickets_commission || 0) +
-                        Number(report.machine_deposit_commission || 0) +
-                        Number(report.machine_withdrawal_commission || 0)
-                      );
-                      const salaries = Number(report.salaries || 0);
-                      const otherExpenses = Number(report.other_expenses || 0);
-
-                      // معادلة صافي الربح = إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات
-                      const calculatedNetProfit = totalProfit + totalComm - salaries - otherExpenses;
-
-                      return (
-                        <tr key={report.id || report.month} className="hover:bg-slate-50 font-semibold">
-                          <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
-                          <td className="px-3 py-3 text-amber-700 font-bold whitespace-nowrap bg-amber-50/30">{formatNumber(purchasesVal)}</td>
-                          <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(opening)}</td>
-                          <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(closing)}</td>
-                          <td className="px-3 py-3 text-amber-900 font-extrabold whitespace-nowrap bg-amber-100/50">{formatNumber(calculatedPurchasesCost)}</td>
-                          <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
-                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
-                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
-                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
-                          <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(serviceRev)}</td>
-                          <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(totalProfit)}</td>
-                          <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
-                          <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(salaries)}</td>
-                          <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(otherExpenses)}</td>
-                          <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(calculatedNetProfit)}</td>
-                          <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
-                          <td className="px-3 py-3 text-purple-700 font-bold whitespace-nowrap">{report.ticket_count || 0} تذكرة</td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setEditArchItem(report);
-                                  setEditArchOpening(String(report.opening_balance || 0));
-                                  setEditArchClosing(String(report.closing_balance || 0));
-                                  setEditArchPurchases(String(report.purchases_cost || 0));
-                                  setEditArchSalaries(String(report.salaries || 0));
-                                  setEditArchExpenses(String(report.other_expenses || 0));
-                                }}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="تعديل التقرير الأرشيفي"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  if (!confirm(`هل أنت تأكد من حذف تقرير شهر (${report.month}) من الأرشيف؟`)) return;
-                                  try {
-                                    const res = await fetch(`/api/reports/monthly-archive?month=${encodeURIComponent(report.month)}`, { method: 'DELETE' });
-                                    if (res.ok) fetchReports();
-                                  } catch (e) { console.error(e); }
-                                }}
-                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title="حذف التقرير"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {/* Sub-total 2: Machines */}
+                    <tr className="bg-slate-100 font-bold text-slate-900 border-y border-slate-300">
+                      <td className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-slate-700" />
+                        <span>إجمالي ماكينات الدفع ({walletsByType.ماكينات.length} ماكينة)</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-slate-900 text-left dir-ltr">
+                        {formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')} ج
+                      </td>
+                    </tr>
+                    {walletsByType.ماكينات.map((w: any) => (
+                      <tr key={w.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+                          <span>
+                            {w.wallet_name} {w.custodian_name ? <span className="text-slate-500 font-normal">({w.custodian_name})</span> : ''}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
+
+            {/* Table 2: Employee Cash Custody & Drawers Table */}
+            <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-0 bg-white shadow-sm flex flex-col">
+              <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center font-bold text-white shadow">
+                    <Banknote className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">جدول النقدية (عهد الموظفين والأدراج)</h3>
+                    <p className="text-[11px] text-slate-300">أرصدة النقدية المسلمة للموظفين وفي أدراج الكاشير</p>
+                  </div>
+                </div>
+                <div className="text-left">
+                  <span className="text-[11px] text-slate-300 font-semibold block">إجمالي النقدية</span>
+                  <span className="text-base font-extrabold font-mono text-emerald-400">
+                    {formatNumberLocale(Number(totalEmployeeCustody + walletsTotals.أدراج), 'en-US')} ج
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto flex-1">
+                <table className="w-full text-right text-xs text-slate-700 table-auto border-t border-slate-200">
+                  <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">اسم الحساب / الموظف (المسمى الوظيفي)</th>
+                      <th className="px-4 py-3 whitespace-nowrap text-left dir-ltr">الرصيد الحالي</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 font-semibold">
+                    {/* Sub-total 1: Employee Cash Custody */}
+                    <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
+                      <td className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-700" />
+                        <span>إجمالي عهدة الكاش للموظفين ({employeeCustody.length} موظف)</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-emerald-900 text-left dir-ltr">
+                        {formatNumberLocale(Number(totalEmployeeCustody), 'en-US')} ج
+                      </td>
+                    </tr>
+                    {employeeCustody.map((emp: any) => (
+                      <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                          <span>
+                            {emp.name} {emp.jobTitle ? <span className="text-slate-500 font-normal">({emp.jobTitle})</span> : ''}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${emp.walletBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                          {formatNumberLocale(Number(emp.walletBalance), 'en-US')} ج
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Sub-total 2: Cashier Drawers */}
+                    <tr className="bg-amber-50/80 font-bold text-amber-950 border-y border-amber-200">
+                      <td className="px-4 py-2.5 text-xs font-extrabold flex items-center gap-2">
+                        <Archive className="w-4 h-4 text-amber-700" />
+                        <span>إجمالي أدراج الكاشير ({walletsByType.أدراج.length} درج)</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs font-extrabold font-mono text-amber-900 text-left dir-ltr">
+                        {formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')} ج
+                      </td>
+                    </tr>
+                    {walletsByType.أدراج.map((w: any) => (
+                      <tr key={w.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <span>
+                            {w.wallet_name} {w.custodian_name ? <span className="text-slate-500 font-normal">({w.custodian_name})</span> : ''}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')} ج
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
