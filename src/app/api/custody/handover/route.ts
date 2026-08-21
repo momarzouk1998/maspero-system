@@ -238,16 +238,29 @@ export async function POST(req: Request) {
 
     // --- Deliver All Items directly to Maspero Center (Single Click Day Closing) ---
     if (action === 'deliver_all') {
+      const { drawerId } = body;
+
+      const dbUser = await db.users.findUnique({ where: { id: user.id } });
+      const empCustodyBal = Number(dbUser?.wallet_balance || 0);
+
+      if (empCustodyBal > 0 && !drawerId) {
+        return NextResponse.json({ error: 'برجاء تحديد درج الكاشير لتسليم العهدة النقدية به' }, { status: 400 });
+      }
+
       const userItems = await db.external_wallets.findMany({
         where: { is_active: true, custodian_id: user.id }
       });
 
-      if (userItems.length === 0) {
-        return NextResponse.json({ success: true, message: 'لا توجد عهد مسجلة في عهدتك حالياً' });
-      }
+      const walletsAndMachines = userItems.filter(
+        (i: any) => i.wallet_type !== 'درج كاشير' && !i.wallet_name.includes('درج')
+      );
+
+      const today = new Date();
+      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
 
       await db.$transaction(async (tx: any) => {
-        for (const item of userItems) {
+        // 1. Handover held wallets & machines to Maspero Center
+        for (const item of walletsAndMachines) {
           const bal = Number(item.actual_balance || item.current_balance || 0);
           await tx.wallet_custody_handovers.create({
             data: {
@@ -263,7 +276,7 @@ export async function POST(req: Request) {
               difference: 0,
               status: 'ACCEPTED',
               review_status: 'تم تسليم العهدة لماسبيرو',
-              responded_at: new Date()
+              responded_at: today
             }
           });
 
@@ -275,11 +288,48 @@ export async function POST(req: Request) {
             }
           });
         }
+
+        // 2. Deliver cash custody to selected cashier drawer if balance > 0
+        if (empCustodyBal > 0 && drawerId) {
+          const drawer = await tx.external_wallets.findUnique({ where: { id: drawerId } });
+          if (drawer) {
+            await tx.external_wallets.update({
+              where: { id: drawerId },
+              data: {
+                current_balance: { increment: empCustodyBal },
+                actual_balance: { increment: empCustodyBal },
+                custodian_id: user.id,
+                custodian_name: `${user.name} (سلم بالدرج)`
+              }
+            });
+
+            await tx.users.update({
+              where: { id: user.id },
+              data: { wallet_balance: 0 }
+            });
+
+            await tx.wallet_transactions.create({
+              data: {
+                date: today,
+                transaction_month: monthStr,
+                time_str: today.toLocaleTimeString('en-US'),
+                wallet_id: drawerId,
+                wallet_name: drawer.wallet_name,
+                transaction_type: 'تسليم للدرج',
+                amount: empCustodyBal,
+                wallet_commission: 0,
+                employee_id: user.id,
+                employee_name: user.name,
+                description: `تسليم مجمع لعهدة الكاش بالدرج (${drawer.wallet_name})`
+              }
+            });
+          }
+        }
       });
 
       return NextResponse.json({
         success: true,
-        message: 'تم تسليم جميع المحافظ والماكينات بنجاح إلى (ماسـبيرو - المركز الرئيسي) 🏛️'
+        message: 'تم تسليم عهدة الكاش للدرج وتسليم المحافظ والماكينات لـ (ماسـبيرو - المركز) بنجاح 🏛️'
       });
     }
 

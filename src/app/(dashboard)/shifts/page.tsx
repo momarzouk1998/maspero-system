@@ -69,7 +69,12 @@ export default function ShiftsPage() {
   // Modal State for Deposit to Cash Drawer (إيداع في الدرج)
   const [drawerDepositItem, setDrawerDepositItem] = useState<any | null>(null);
   const [depositAmountInput, setDepositAmountInput] = useState<string>('');
+  const [depositNotesInput, setDepositNotesInput] = useState('');
   const [depositSubmitting, setDepositSubmitting] = useState(false);
+
+  // Deliver All Modal state
+  const [deliverAllModalOpen, setDeliverAllModalOpen] = useState(false);
+  const [deliverAllDrawerId, setDeliverAllDrawerId] = useState('');
 
   // Peer Cash Transfers Form State
   const [users, setUsers] = useState<any[]>([]);
@@ -276,19 +281,33 @@ export default function ShiftsPage() {
     }
   };
 
-  // Submit Bulk Deliver All Items to Maspero Center (Single-Click Day Closing)
-  const handleDeliverAllToMaspero = async () => {
-    if (!confirm('تسليم كافة المحافظ والماكينات المسجلة في عهدتك مباشرة لـ (ماسـبيرو - المركز الرئيسي)؟')) return;
+  const openDeliverAllModal = () => {
+    const firstDrawer = custodyData?.drawers?.[0]?.id || '';
+    setDeliverAllDrawerId(firstDrawer);
+    setDeliverAllModalOpen(true);
+  };
+
+  const handleConfirmDeliverAll = async () => {
+    const cashBal = Number(custodyData?.myCustodyBalance || 0);
+    if (cashBal > 0 && !deliverAllDrawerId) {
+      showToast('برجاء تحديد درج الكاشير لتسليم النقدية به', 'error');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/custody/handover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deliver_all' })
+        body: JSON.stringify({
+          action: 'deliver_all',
+          drawerId: cashBal > 0 ? deliverAllDrawerId : undefined
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل تسليم العهدة');
       showToast(data.message || 'تم تسليم كافة العهد إلى المركز الرئيسي بنجاح 🏛️');
+      setDeliverAllModalOpen(false);
       fetchShiftsAndCustody();
     } catch (err: any) {
       showToast(err.message, 'error');
@@ -443,7 +462,7 @@ export default function ShiftsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Item 9: Single-Click Bulk Handover to Maspero Center */}
           <button
-            onClick={handleDeliverAllToMaspero}
+            onClick={openDeliverAllModal}
             disabled={submitting}
             className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
@@ -1232,6 +1251,89 @@ export default function ShiftsPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* DELIVER ALL TO MASPERO & DRAWER MODAL */}
+      {deliverAllModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  🏛️
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">تسليم العهد المجمّع وتصفية الشفت</h3>
+                  <p className="text-xs text-slate-500">تسليم الكاش للدرج والمحافظ لـ ماسـبيرو</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeliverAllModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Notice Banner 1: External Wallets & Machines to Maspero */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900 leading-relaxed font-medium">
+              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>سيتم تسليم كافة المحافظ والماكينات المسجلة في عهدتك تلقائياً لـ (ماسـبيرو - المركز الرئيسي) 🏛️</span>
+            </div>
+
+            {/* Cash Custody Handover Section */}
+            {(custodyData?.myCustodyBalance || 0) > 0 ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                  <span>عهدتك النقدية الحالية:</span>
+                  <span className="font-mono text-sm text-emerald-700 font-bold bg-white px-2.5 py-1 rounded-lg border border-amber-300">
+                    {formatNumber(custodyData?.myCustodyBalance || 0)} ج
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">
+                    اختر درج الكاشير لتسليم العهدة النقدية به *
+                  </label>
+                  <select
+                    value={deliverAllDrawerId}
+                    onChange={(e) => setDeliverAllDrawerId(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-bold text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  >
+                    <option value="">-- اختر الدرج --</option>
+                    {custodyData.drawers.map((d: any) => (
+                      <option key={d.id} value={d.id}>
+                        {d.wallet_name} (الرصيد الحالي: {formatNumber(d.actual_balance)} ج)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center justify-between">
+                <span>عهدتك النقدية الحالية:</span>
+                <span className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">0 ج (مصفّرة)</span>
+              </div>
+            )}
+
+            <div className="pt-2 flex gap-3">
+              <button
+                onClick={handleConfirmDeliverAll}
+                disabled={submitting}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
+                <span>تأكيد وتسليم كافة العهد 🚀</span>
+              </button>
+              <button
+                onClick={() => setDeliverAllModalOpen(false)}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
