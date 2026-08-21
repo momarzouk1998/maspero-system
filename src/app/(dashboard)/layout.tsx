@@ -86,12 +86,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     try {
-      // Check if user has active shift (Item 5)
-      const shiftRes = await fetch('/api/shifts');
-      if (shiftRes.ok) {
-        const shiftData = await shiftRes.json();
-        const activeShift = (shiftData.shifts || []).find((s: any) => !s.end_time && s.employee_id === user?.id);
-        if (activeShift) {
+      // Rule 7: Block logout ONLY if user has cash custody balance > 0
+      const cRes = await fetch('/api/custody/handover');
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        const cashBal = Number(cData.myCustodyBalance || cData.userCashBalance || user?.wallet_balance || 0);
+        if (cashBal > 0) {
           setLogoutBlocked(true);
           return;
         }
@@ -323,7 +323,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <h3 className="font-bold text-slate-900 text-lg">لا يمكن تسجيل الخروج الآن ⚠️</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-semibold">
-              لديك شفت عمل نشط حالياً. يشترط النظام إنهاء الشفت وتصفية وتسليم كافة العهد أولاً قبل السماح بتسجيل الخروج الحساب.
+              يمنع تسجيل الخروج في حالة وجود رصيد في عهدة الكاش لديك. برجاء تسليم العهدة النقدية لـ ماسـبيرو (المركز) أولاً لتصل إلى صفر لتتمكن من تسجيل الخروج وتبديل المكتب مع زميلك.
             </p>
 
             <div className="pt-3 flex gap-3">

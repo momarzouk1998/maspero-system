@@ -232,8 +232,9 @@ export default function POSPage() {
     fetch('/api/wallets').then(r => r.json()).then(d => setExtWallets(d.externalWallets || d.wallets || []));
   }, []);
 
-  const wallets = extWallets.filter(w => w.wallet_type === 'محفظة');
-  const machines = extWallets.filter(w => w.wallet_type === 'ماكينة');
+  const assignedIds: string[] = (custodyData as any)?.assignedWalletIds || [];
+  const wallets = extWallets.filter(w => w.wallet_type === 'محفظة' && assignedIds.includes(w.id));
+  const machines = extWallets.filter(w => w.wallet_type === 'ماكينة' && assignedIds.includes(w.id));
 
   // ─── Active Tab ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'services' | 'tickets' | 'wallets' | 'machines'>('services');

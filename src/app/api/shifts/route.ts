@@ -118,32 +118,27 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 });
       }
 
-      // 1. Check active colleague shifts
-      const activeColleaguesCount = await db.shifts.count({
-        where: { end_time: null, NOT: { employee_id: user.id } }
+      // Rule 6: Cannot end shift if user has cash custody balance > 0 OR holds any wallets/machines
+      const empUser = await db.users.findUnique({
+        where: { id: user.id },
+        select: { wallet_balance: true }
       });
-      const isLastEmployee = activeColleaguesCount === 0;
+      const userCashBal = Number(empUser?.wallet_balance || 0);
 
-      // 2. Fetch custody items held by user
+      if (userCashBal > 0) {
+        return NextResponse.json({
+          error: `عفواً، يمنع إنهاء الشفت في حالة وجود رصيد بعهدة الكاش (الرصيد الحالي: ${userCashBal}). برجاء تسليم العهدة النقدية لـ ماسـبيرو (المركز) أولاً.`
+        }, { status: 400 });
+      }
+
       const custodyItems = await db.external_wallets.findMany({
         where: { is_active: true, custodian_id: user.id }
       });
 
-      const userDrawers = custodyItems.filter((i: any) => i.wallet_type === 'درج كاشير' || i.wallet_name.includes('درج'));
-      const userWallets = custodyItems.filter((i: any) => i.wallet_type === 'محفظة' && !i.wallet_name.includes('درج'));
-      const userMachines = custodyItems.filter((i: any) => i.wallet_type === 'ماكينة' && !i.wallet_name.includes('درج'));
-
-      // Requirement: User cannot end shift without handing over their Cash Drawer
-      if (userDrawers.length > 0) {
-        return NextResponse.json({ 
-          error: 'عفواً، يجب تسليم عهدة درج الكاشير الخاص بك أولاً قبل إنهاء الشفت.' 
-        }, { status: 400 });
-      }
-
-      // Requirement: Last employee closing day must hand over ALL wallets & machines
-      if (isLastEmployee && (userWallets.length > 0 || userMachines.length > 0)) {
-        return NextResponse.json({ 
-          error: 'عفواً، أنت آخر موظف في اليوم (إغلاق اليوم). يجب تسليم وتأكيد أرصدة جميع المحافظ والماكينات لضمان دقة الأرصدة للشفت الصباحي التالي.' 
+      if (custodyItems.length > 0) {
+        const itemNames = custodyItems.map((i: any) => i.wallet_name).join('، ');
+        return NextResponse.json({
+          error: `عفواً، يمنع إنهاء الشفت لوجود عناصر مستلمة في عهدتك (${itemNames}). برجاء تسليم عهدة المحافظ والماكينات أولاً.`
         }, { status: 400 });
       }
 

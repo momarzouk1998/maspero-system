@@ -11,6 +11,16 @@ export class WalletService {
     tx?: Prisma.TransactionClient
   ) {
     const client = tx || db;
+    if (amount < 0) {
+      const currentUser = await client.users.findUnique({
+        where: { id: userId },
+        select: { wallet_balance: true }
+      });
+      const currentBal = Number(currentUser?.wallet_balance || 0);
+      if (currentBal + amount < 0) {
+        throw new Error(`عذراً، يمنع أن يصبح رصيد عهدة الكاش بالسالب! (العهد الحالية: ${currentBal} ، والمبلغ المطلوب تخصيمه: ${Math.abs(amount)})`);
+      }
+    }
     return await client.users.update({
       where: { id: userId },
       data: {

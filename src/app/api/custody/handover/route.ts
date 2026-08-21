@@ -107,13 +107,19 @@ export async function GET() {
       orderBy: { created_at: 'desc' }
     });
 
-    // 7. Check if sales are locked
+    // 7. Check if sales are locked (Rules 1 & 2)
     let isSalesLocked = false;
     let lockReason = '';
 
+    const currentUserRecord = userRecords.find(u => u.id === user.id);
+    const userCashBalance = Number(currentUserRecord?.wallet_balance || 0);
+
     if (!isUserShiftActive) {
       isSalesLocked = true;
-      lockReason = 'برجاء بدء الشفت أولاً من صفحة إدارة الشفتات قبل البدء في المبيعات.';
+      lockReason = 'صفحة البيع مغلقة لحين بدء الشفت. برجاء بدء الشفت أولاً من صفحة الشفتات والعهدة.';
+    } else if (userCashBalance <= 0) {
+      isSalesLocked = true;
+      lockReason = 'صفحة البيع مغلقة لأن رصيد عهدة الكاش يساوي صفر. برجاء استلام عهدة كاش للبدء في البيع.';
     }
 
     const formattedDrawers = drawers.map((d: any) => ({
@@ -122,7 +128,7 @@ export async function GET() {
       current_balance: Number(d.actual_balance || d.current_balance || 0)
     }));
 
-    const currentUserRecord = userRecords.find(u => u.id === user.id);
+    const assignedWalletIds = itemsInUserCustody.map((i: any) => i.id);
 
     return NextResponse.json({
       isUserShiftActive,
@@ -130,13 +136,15 @@ export async function GET() {
       activeColleaguesCount,
       isSalesLocked,
       lockReason,
+      userCashBalance,
+      assignedWalletIds,
       wallets,
       machines,
       drawers: formattedDrawers,
       itemsInUserCustody,
       onlineCashiers,
       pendingHandovers,
-      myCustodyBalance: Number(currentUserRecord?.wallet_balance || 0)
+      myCustodyBalance: userCashBalance
     });
 
   } catch (error: any) {
