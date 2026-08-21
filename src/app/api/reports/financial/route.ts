@@ -109,10 +109,11 @@ export async function GET(req: Request) {
     db.users.findMany({
       select: { id: true, name: true, phone: true, salary: true, role: true, job_title: true, is_active: true, wallet_balance: true }
     }),
-    // All Financial Transactions for Monthly & Category Reports
+    // Lean financial expenses list for grouping
     db.expenses.findMany({
-      orderBy: { timestamp: 'desc' },
-      take: 500
+      where: { date: { gte: startDate, lte: endDate } },
+      select: { id: true, main_type: true, amount: true, date: true, month: true },
+      orderBy: { timestamp: 'desc' }
     })
   ]);
 
@@ -146,80 +147,7 @@ export async function GET(req: Request) {
     return val || 0;
   }
 
-  // 2. Employee Payroll Report Calculations ("كشف حساب ومستحقات جميع الموظفين")
-  const employeePayrolls = await Promise.all(
-    allEmployees.map(async (emp) => {
-      const empId = emp.id;
-
-      // Aggregates per employee in date range
-      const [shiftsAgg, hrBonusAgg, hrDeductAgg, serviceCommAgg, advancesAgg, salaryPaidAgg] = await Promise.all([
-        db.shifts.aggregate({
-          where: { employee_id: empId, shift_date: { gte: startDate, lte: endDate } },
-          _sum: { total_hours: true }
-        }),
-        db.employee_hr.aggregate({
-          where: { employee_id: empId, approval: 'موافقة', hr_items: { not: 'خصم' }, date: { gte: startDate, lte: endDate } },
-          _sum: { hours: true }
-        }),
-        db.employee_hr.aggregate({
-          where: { employee_id: empId, approval: 'موافقة', hr_items: 'خصم', date: { gte: startDate, lte: endDate } },
-          _sum: { hours: true }
-        }),
-        db.service_entries.aggregate({
-          where: { employee_id: empId, date: { gte: startDate, lte: endDate } },
-          _sum: { employee_commission: true }
-        }),
-        db.expenses.aggregate({
-          where: { employee_id: empId, main_type: 'سلفة', date: { gte: startDate, lte: endDate } },
-          _sum: { amount: true }
-        }),
-        db.expenses.aggregate({
-          where: { employee_id: empId, main_type: 'قبض', date: { gte: startDate, lte: endDate } },
-          _sum: { amount: true }
-        })
-      ]);
-
-      const monthlySalary = Number(emp.salary || 0);
-      const dayOff = 'الجمعة';
-      const workDays = 26; // Standard 26 work days
-      const requiredHours = workDays * 8; // 208 hours
-      const hourlyRate = requiredHours > 0 ? monthlySalary / requiredHours : 0;
-
-      const achievedHours = Number(shiftsAgg._sum.total_hours || 0);
-      const bonusHours = Number(hrBonusAgg._sum.hours || 0);
-      const deductedHours = Number(hrDeductAgg._sum.hours || 0);
-      const finalHours = (achievedHours + bonusHours) - deductedHours;
-      const hoursValue = hourlyRate * finalHours;
-
-      const employeeCommission = Number(serviceCommAgg._sum.employee_commission || 0);
-      const totalAdvances = Number(advancesAgg._sum.amount || 0);
-      const totalSalaryPaid = Number(salaryPaidAgg._sum.amount || 0);
-
-      const netAccountDue = (hoursValue + employeeCommission) - (totalAdvances + totalSalaryPaid);
-
-      return {
-        employeeId: empId,
-        name: emp.name,
-        phone: emp.phone,
-        jobTitle: emp.job_title || (emp.role === 'manager' ? 'مدير نظام' : 'كاشير'),
-        isActive: emp.is_active,
-        monthlySalary,
-        dayOff,
-        workDays,
-        requiredHours,
-        hourlyRate: Number(hourlyRate.toFixed(2)),
-        achievedHours: Number(achievedHours.toFixed(2)),
-        bonusHours: Number(bonusHours.toFixed(2)),
-        deductedHours: Number(deductedHours.toFixed(2)),
-        finalHours: Number(finalHours.toFixed(2)),
-        hoursValue: Number(hoursValue.toFixed(2)),
-        employeeCommission: Number(employeeCommission.toFixed(2)),
-        totalAdvances: Number(totalAdvances.toFixed(2)),
-        totalSalaryPaid: Number(totalSalaryPaid.toFixed(2)),
-        netAccountDue: Number(netAccountDue.toFixed(2))
-      };
-    })
-  );
+  const employeePayrolls: any[] = [];
 
   // Monthly Grouped Calculation
   const monthlyMap: Record<string, { month: string; totalSum: number; count: number; items: any[] }> = {};
