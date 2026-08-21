@@ -135,8 +135,13 @@ export async function POST(req: Request) {
         where: { is_active: true, custodian_id: user.id }
       });
 
-      if (custodyItems.length > 0) {
-        const itemNames = custodyItems.map((i: any) => i.wallet_name).join('، ');
+      // Filter out cash drawers ('درج كاشير') - Drawers are shared stations, only Wallets & Machines block shift end
+      const heldWalletsAndMachines = custodyItems.filter(
+        (i: any) => i.wallet_type !== 'درج كاشير' && !i.wallet_name.includes('درج')
+      );
+
+      if (heldWalletsAndMachines.length > 0) {
+        const itemNames = heldWalletsAndMachines.map((i: any) => i.wallet_name).join('، ');
         return NextResponse.json({
           error: `عفواً، يمنع إنهاء الشفت لوجود عناصر مستلمة في عهدتك (${itemNames}). برجاء تسليم عهدة المحافظ والماكينات أولاً.`
         }, { status: 400 });

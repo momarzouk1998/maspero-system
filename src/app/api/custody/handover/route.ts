@@ -128,7 +128,9 @@ export async function GET() {
       current_balance: Number(d.actual_balance || d.current_balance || 0)
     }));
 
-    const assignedWalletIds = itemsInUserCustody.map((i: any) => i.id);
+    const assignedWalletIds = itemsInUserCustody
+      .filter((i: any) => i.wallet_type !== 'درج كاشير' && !i.wallet_name.includes('درج'))
+      .map((i: any) => i.id);
 
     return NextResponse.json({
       isUserShiftActive,
