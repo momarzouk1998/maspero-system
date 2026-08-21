@@ -32,6 +32,8 @@ export default function ChargeHistoryPage() {
   const [editAmount, setEditAmount] = useState('');
   const [editCommission, setEditCommission] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editKomandaProvider, setEditKomandaProvider] = useState<'011' | '010' | 'انستا' | ''>('');
+  const [editFawryType, setEditFawryType] = useState<'عادية' | 'مشتريات' | ''>('');
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   const [treeData, setTreeData] = useState<any>(null);
@@ -132,6 +134,8 @@ export default function ChargeHistoryPage() {
     setEditAmount(item.amount.toString());
     setEditCommission((item.wallet_commission || 0).toString());
     setEditDescription(item.description || '');
+    setEditKomandaProvider(item.comanda_type || (item.wallet_name?.includes('كوماندا') ? (item.description?.includes('انستا') ? 'انستا' : item.description?.includes('010') ? '010' : '011') : ''));
+    setEditFawryType(item.fawry_type || (item.wallet_name?.includes('فوري') ? (item.description?.includes('مشتريات') ? 'مشتريات' : 'عادية') : ''));
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -148,6 +152,8 @@ export default function ChargeHistoryPage() {
           type: 'wallet',
           newAmount: parseFloat(editAmount || '0'),
           newCommission: parseFloat(editCommission || '0'),
+          newKomandaProvider: editKomandaProvider || undefined,
+          newFawryType: editFawryType || undefined,
           newNotes: editDescription
         })
       });
@@ -547,6 +553,52 @@ export default function ChargeHistoryPage() {
                   className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold"
                 />
               </div>
+
+              {/* اختيار مزود الخدمة لعمليات شحن الكوماندا */}
+              {(editingItem.wallet_name?.includes('كوماندا') || editKomandaProvider) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">مزود خدمة الكوماندا *</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['011', '010', 'انستا'] as const).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setEditKomandaProvider(p)}
+                        className={`py-2 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer ${
+                          editKomandaProvider === p
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* اختيار نوع المعاملة لعمليات سحب فوري */}
+              {(editingItem.wallet_name?.includes('فوري') || editFawryType) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع المعاملة *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['عادية', 'مشتريات'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setEditFawryType(t)}
+                        className={`py-2 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer ${
+                          editFawryType === t
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-amber-300'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

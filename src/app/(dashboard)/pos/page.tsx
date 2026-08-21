@@ -143,6 +143,8 @@ export default function POSPage() {
   const [editNotes, setEditNotes] = useState('');
   const [editFaceType, setEditFaceType] = useState<'وجه واحد' | 'وجهين'>('وجه واحد');
   const [editTransactionType, setEditTransactionType] = useState<'إيداع' | 'سحب'>('إيداع');
+  const [editKomandaProvider, setEditKomandaProvider] = useState<'011' | '010' | 'انستا' | ''>('');
+  const [editFawryType, setEditFawryType] = useState<'عادية' | 'مشتريات' | ''>('');
   const [editLoading, setEditLoading] = useState(false);
 
   const openEditItem = (item: any) => {
@@ -154,6 +156,8 @@ export default function POSPage() {
     setEditFaceType(item.faceType === 'وجهين' ? 'وجهين' : 'وجه واحد');
     const initialTxType = item.transaction_type || (item.name?.includes('سحب') ? 'سحب' : 'إيداع');
     setEditTransactionType(initialTxType === 'سحب' ? 'سحب' : 'إيداع');
+    setEditKomandaProvider(item.comanda_type || item.komanda_type || (item.name?.includes('انستا') ? 'انستا' : item.name?.includes('010') ? '010' : item.name?.includes('011') ? '011' : ''));
+    setEditFawryType(item.fawry_type || (item.name?.includes('مشتريات') ? 'مشتريات' : item.name?.includes('عادية') ? 'عادية' : ''));
   };
 
   const handleEditItem = async () => {
@@ -172,6 +176,8 @@ export default function POSPage() {
           newNotes: editNotes || undefined,
           newFaceType: editItem.type === 'service' ? editFaceType : undefined,
           newTransactionType: editItem.type === 'wallet' ? editTransactionType : undefined,
+          newKomandaProvider: editKomandaProvider || undefined,
+          newFawryType: editFawryType || undefined,
         }),
       });
       const data = await res.json();
@@ -1315,6 +1321,52 @@ export default function POSPage() {
                     >
                       <ArrowUpRight className="w-4 h-4" /> سحب
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* اختيار مزود الخدمة لعمليات شحن الكوماندا */}
+              {(editItem.name?.includes('كوماندا') || editItem.description?.includes('كوماندا') || editKomandaProvider) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">مزود خدمة الكوماندا *</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['011', '010', 'انستا'] as const).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setEditKomandaProvider(p)}
+                        className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer ${
+                          editKomandaProvider === p
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* اختيار نوع المعاملة لعمليات سحب فوري */}
+              {(editItem.name?.includes('فوري') || editItem.description?.includes('فوري') || editFawryType) && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">نوع المعاملة *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['عادية', 'مشتريات'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setEditFawryType(t)}
+                        className={`py-2.5 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer ${
+                          editFawryType === t
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-md'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-amber-300'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
