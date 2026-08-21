@@ -142,6 +142,17 @@ export async function POST(req: Request) {
         }, { status: 400 });
       }
 
+      // Check open invoices ("قيد التنفيذ")
+      const openInvoicesCount = await db.invoices.count({
+        where: { employee_id: user.id, status: 'قيد التنفيذ' }
+      });
+
+      if (openInvoicesCount > 0) {
+        return NextResponse.json({
+          error: `عفواً، يمنع إنهاء الشفت لوجود عدد (${openInvoicesCount}) فواتير قيد التنفيذ لم تنتهِ بعد. برجاء إنهاء الفواتير المفتوحة أولاً.`
+        }, { status: 400 });
+      }
+
       const startTime = shift.start_time || today;
       const hours = Math.max(0.1, (today.getTime() - new Date(startTime).getTime()) / (1000 * 60 * 60));
 
