@@ -6,7 +6,8 @@ import {
   BarChart3, TrendingUp, DollarSign, Printer, Train, Cpu, Receipt, 
   Calendar, RefreshCw, ArrowRight, Coins, ShoppingBag, Layers, 
   FileText, ArrowDownLeft, ArrowUpRight, Zap, Wallet, Building2,
-  Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle
+  Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle,
+  Edit3, Trash2, X
 } from 'lucide-react';
 import { formatNumber, formatNumberLocale } from '@/lib/user-utils';
 
@@ -27,6 +28,15 @@ export default function ManagerReportsPage() {
   // Archival Monthly Profit Reports State (CSV Matching)
   const [archivedReports, setArchivedReports] = useState<any[]>([]);
   const [savingArchive, setSavingArchive] = useState(false);
+
+  // Edit Modal State for Manager Archival Reports
+  const [editArchItem, setEditArchItem] = useState<any>(null);
+  const [editArchOpening, setEditArchOpening] = useState('');
+  const [editArchClosing, setEditArchClosing] = useState('');
+  const [editArchPurchases, setEditArchPurchases] = useState('');
+  const [editArchSalaries, setEditArchSalaries] = useState('');
+  const [editArchExpenses, setEditArchExpenses] = useState('');
+  const [editArchSubmitting, setEditArchSubmitting] = useState(false);
 
   // نسبة عمولة إيداع المكن — قابلة للتعديل (default: 7 لكل 1000)
   const [machineCommissionRate, setMachineCommissionRate] = useState<number>(7);
@@ -667,39 +677,86 @@ export default function ManagerReportsPage() {
                           <tr>
                             <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
                             <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-700 bg-amber-50/50">تكلفة المشتريات (المحتسبة)</th>
                             <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
                             <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-rose-600">نسبة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">تكلفة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
                             <th className="px-3 py-3 whitespace-nowrap text-rose-700">الرواتب والسلف</th>
                             <th className="px-3 py-3 whitespace-nowrap text-rose-700">المصروفات الأخرى</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
                             <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
+                            <th className="px-3 py-3 whitespace-nowrap">عدد التذاكر</th>
+                            <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white font-mono">
-                          {archivedReports.map((report: any) => (
-                            <tr key={report.id} className="hover:bg-slate-50 font-semibold">
-                              <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
-                              <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.opening_balance || 0))}</td>
-                              <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.closing_balance || 0))}</td>
-                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
-                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
-                              <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
-                              <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(Number(report.service_revenue))}</td>
-                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.purchases_cost))}</td>
-                              <td className="px-3 py-3 text-rose-500 whitespace-nowrap">{report.purchases_cost_percent}%</td>
-                              <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(Number(report.total_profit))}</td>
-                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
-                              <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
-                              <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(Number(report.net_profit))}</td>
-                              <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
-                            </tr>
-                          ))}
+                          {archivedReports.map((report: any) => {
+                            const calculatedPurchasesCost = Number(report.opening_balance || 0) + Number(report.purchases_cost || 0) - Number(report.closing_balance || 0);
+                            const totalComm = Number(report.total_commissions || 0) || (
+                              Number(report.wallet_commission || 0) +
+                              Number(report.tickets_commission || 0) +
+                              Number(report.machine_deposit_commission || 0) +
+                              Number(report.machine_withdrawal_commission || 0)
+                            );
+                            return (
+                              <tr key={report.id || report.month} className="hover:bg-slate-50 font-semibold">
+                                <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
+                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.opening_balance || 0))}</td>
+                                <td className="px-3 py-3 text-amber-700 font-bold whitespace-nowrap bg-amber-50/40">{formatNumber(calculatedPurchasesCost)}</td>
+                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.closing_balance || 0))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                                <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(Number(report.service_revenue))}</td>
+                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{formatNumber(Number(report.purchases_cost))}</td>
+                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
+                                <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(Number(report.total_profit))}</td>
+                                <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
+                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
+                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
+                                <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(Number(report.net_profit))}</td>
+                                <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
+                                <td className="px-3 py-3 text-purple-700 font-bold whitespace-nowrap">{report.ticket_count || 0} تذكرة</td>
+                                <td className="px-3 py-3 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      onClick={() => {
+                                        setEditArchItem(report);
+                                        setEditArchOpening(String(report.opening_balance || 0));
+                                        setEditArchClosing(String(report.closing_balance || 0));
+                                        setEditArchPurchases(String(report.purchases_cost || 0));
+                                        setEditArchSalaries(String(report.salaries || 0));
+                                        setEditArchExpenses(String(report.other_expenses || 0));
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                      title="تعديل التقرير الأرشيفي"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`هل أنت تأكد من حذف تقرير شهر (${report.month}) من الأرشيف؟`)) return;
+                                        try {
+                                          const res = await fetch(`/api/reports/monthly-archive?month=${encodeURIComponent(report.month)}`, { method: 'DELETE' });
+                                          if (res.ok) fetchReports();
+                                        } catch (e) { console.error(e); }
+                                      }}
+                                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                      title="حذف التقرير"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -827,6 +884,113 @@ export default function ManagerReportsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT ARCHIVAL MONTHLY REPORT MODAL */}
+      {editArchItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-200">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-blue-600" />
+                <span>تعديل التقرير الأرشيفي لشهر ({editArchItem.month})</span>
+              </h3>
+              <button onClick={() => setEditArchItem(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">رصيد أول المدة</label>
+                <input
+                  type="number"
+                  value={editArchOpening}
+                  onChange={e => setEditArchOpening(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">رصيد آخر المدة</label>
+                <input
+                  type="number"
+                  value={editArchClosing}
+                  onChange={e => setEditArchClosing(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-amber-700 mb-1">تكلفة المشتريات</label>
+                <input
+                  type="number"
+                  value={editArchPurchases}
+                  onChange={e => setEditArchPurchases(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">الرواتب والسلف</label>
+                <input
+                  type="number"
+                  value={editArchSalaries}
+                  onChange={e => setEditArchSalaries(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block font-bold text-slate-700 mb-1">المصروفات الأخرى</label>
+                <input
+                  type="number"
+                  value={editArchExpenses}
+                  onChange={e => setEditArchExpenses(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-3">
+              <button
+                disabled={editArchSubmitting}
+                onClick={async () => {
+                  setEditArchSubmitting(true);
+                  try {
+                    const res = await fetch('/api/reports/monthly-archive', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: editArchItem.id,
+                        month: editArchItem.month,
+                        opening_balance: parseFloat(editArchOpening || '0'),
+                        closing_balance: parseFloat(editArchClosing || '0'),
+                        purchases_cost: parseFloat(editArchPurchases || '0'),
+                        salaries: parseFloat(editArchSalaries || '0'),
+                        other_expenses: parseFloat(editArchExpenses || '0')
+                      })
+                    });
+                    if (res.ok) {
+                      setEditArchItem(null);
+                      fetchReports();
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  } finally {
+                    setEditArchSubmitting(false);
+                  }
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {editArchSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+                <span>حفظ التعديلات 💾</span>
+              </button>
+              <button
+                onClick={() => setEditArchItem(null)}
+                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                إلغاء
+              </button>
             </div>
           </div>
         </div>

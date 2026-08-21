@@ -36,9 +36,15 @@ export default function POSPage() {
     const code = generateCode();
     const num = invoiceCounter;
     setInvoiceCounter(n => n + 1);
-    const inv: OpenInvoice = { code, label: label ?? `فاتورة ${num}`, items: [], total: 0 };
+    const invLabel = label ?? `فاتورة ${num}`;
+    const inv: OpenInvoice = { code, label: invLabel, items: [], total: 0 };
     setOpenInvoices(prev => [...prev, inv]);
     setActiveInvoiceCode(code);
+    fetch('/api/invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, label: invLabel })
+    }).catch(console.error);
     return code;
   };
 
@@ -54,7 +60,27 @@ export default function POSPage() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { createNewInvoice('فاتورة 1'); }, []);
+  useEffect(() => {
+    fetch('/api/invoice?active=true')
+      .then(res => res.json())
+      .then(data => {
+        if (data.openInvoices && data.openInvoices.length > 0) {
+          const loadedInvs: OpenInvoice[] = data.openInvoices.map((inv: any, idx: number) => ({
+            code: inv.invoice_number,
+            label: `فاتورة ${idx + 1}`,
+            items: [],
+            total: Number(inv.total_invoice || 0)
+          }));
+          setOpenInvoices(loadedInvs);
+          setInvoiceCounter(loadedInvs.length + 1);
+          setActiveInvoiceCode(loadedInvs[0].code);
+          loadedInvs.forEach(i => fetchInvoice(i.code));
+        } else {
+          createNewInvoice('فاتورة 1');
+        }
+      })
+      .catch(() => createNewInvoice('فاتورة 1'));
+  }, []);
 
   // ─── Refresh invoice items from server ──────────────────
   const [refreshing, setRefreshing] = useState(false);
@@ -352,13 +378,32 @@ export default function POSPage() {
 
   const handleFinishCurrentInvoice = () => {
     const currentCode = activeInvoiceCode;
+    const currentInv = activeInvoice;
+
+    // 1. Mark current invoice as completed in DB
+    if (currentCode) {
+      fetch('/api/invoice', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: currentCode, total: currentInv?.total || 0 })
+      }).catch(console.error);
+    }
+
+    // 2. Create next open invoice
     const nextCode = generateCode();
     const nextNum = invoiceCounter;
     setInvoiceCounter(n => n + 1);
+    const nextLabel = `فاتورة ${nextNum}`;
+
+    fetch('/api/invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: nextCode, label: nextLabel })
+    }).catch(console.error);
 
     const newInv: OpenInvoice = {
       code: nextCode,
-      label: `فاتورة ${nextNum}`,
+      label: nextLabel,
       items: [],
       total: 0
     };
@@ -609,7 +654,55 @@ export default function POSPage() {
                     <input type="number" step="0.25" min="0" value={tktComm || ''}
                       onChange={e => setTktComm(parseFloat(e.target.value) || 0)}
                       placeholder="0"
-                      className="w-full p-2 bg-white border border-slate-        {/* ── TAB: WALLETS ──────────────────────────── */}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes Input Field */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">ملاحظات التذكرة (اختياري)</label>
+                  <input
+                    type="text"
+                    value={tktNotes}
+                    onChange={(e) => setTktNotes(e.target.value)}
+                    placeholder="رقم القطار / اسم الراكب / المحطة..."
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+
+                {/* Summary row + Add button */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-600 bg-white rounded-xl px-3 py-2 border border-slate-200">
+                    <span>الإجمالي:</span>
+                    <span className="font-bold font-mono text-emerald-700 text-sm">
+                      {formatNumber((tktPrice + tktComm) * tktCount)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleAddTicket}
+                    disabled={tktLoading || tktPrice <= 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${tktType === 'قطار'
+                      ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
+                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
+                      }`}
+                  >
+                    {tktLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    إضافة للفاتورة
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!tktType && (
+              <div className="py-8 text-center text-slate-400 text-sm">
+                اختر نوع التذكرة أعلاه لعرض التفاصيل
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: WALLETS ──────────────────────────── */}
         {activeTab === 'wallets' && (
           <div className="glass-panel p-4 rounded-3xl border border-slate-200 space-y-5 flex-1 overflow-y-auto">
             <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
@@ -734,7 +827,7 @@ export default function POSPage() {
             )}
           </div>
         )}
-
+      </div>
 
       {/* ── RIGHT PANEL: INVOICE ──────────────────────────── */}
       <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden`}>

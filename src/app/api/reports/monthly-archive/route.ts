@@ -173,6 +173,61 @@ export async function POST(req: Request) {
   }
 }
 
+// PUT: Edit an existing archived monthly report
+export async function PUT(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح للمدير فقط' }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const { id, month, opening_balance, closing_balance, purchases_cost, salaries, other_expenses, notes } = body;
+
+    if (!id && !month) {
+      return NextResponse.json({ error: 'المعرف أو الشهر مطلوب للتعديل' }, { status: 400 });
+    }
+
+    const report = id
+      ? await db.monthly_financial_reports.findUnique({ where: { id } })
+      : await db.monthly_financial_reports.findUnique({ where: { month } });
+
+    if (!report) {
+      return NextResponse.json({ error: 'التقرير غير موجود' }, { status: 404 });
+    }
+
+    const openBal = opening_balance !== undefined ? Number(opening_balance) : Number(report.opening_balance);
+    const closeBal = closing_balance !== undefined ? Number(closing_balance) : Number(report.closing_balance);
+    const purchCost = purchases_cost !== undefined ? Number(purchases_cost) : Number(report.purchases_cost);
+    const sal = salaries !== undefined ? Number(salaries) : Number(report.salaries);
+    const othExp = other_expenses !== undefined ? Number(other_expenses) : Number(report.other_expenses);
+
+    const totProf = Number(report.service_revenue) - purchCost;
+    const totComm = Number(report.total_commissions || 0);
+    const netProf = totProf + totComm - sal - othExp;
+
+    const updated = await db.monthly_financial_reports.update({
+      where: { id: report.id },
+      data: {
+        opening_balance: openBal,
+        closing_balance: closeBal,
+        purchases_cost: purchCost,
+        salaries: sal,
+        other_expenses: othExp,
+        total_profit: totProf,
+        net_profit: netProf,
+        notes: notes !== undefined ? notes : report.notes,
+        updated_at: new Date()
+      }
+    });
+
+    return NextResponse.json({ success: true, report: updated, message: 'تم تحديث التقرير بنجاح' });
+  } catch (error: any) {
+    console.error('Error updating monthly report:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل التقرير' }, { status: 500 });
+  }
+}
+
 // DELETE: Delete an archived report snapshot
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
@@ -183,16 +238,21 @@ export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const month = searchParams.get('month');
+    const id = searchParams.get('id');
 
-    if (!month) {
-      return NextResponse.json({ error: 'اسم الشهر مطلوب للحذف' }, { status: 400 });
+    if (!month && !id) {
+      return NextResponse.json({ error: 'اسم الشهر أو المعرف مطلوب للحذف' }, { status: 400 });
     }
 
-    await db.monthly_financial_reports.delete({ where: { month } });
+    if (id) {
+      await db.monthly_financial_reports.delete({ where: { id } });
+    } else if (month) {
+      await db.monthly_financial_reports.delete({ where: { month } });
+    }
 
     return NextResponse.json({
       success: true,
-      message: `تم حذف تقرير شهر (${month}) من الأرشيف بنجاح 🗑️`
+      message: 'تم حذف تقرير الشهر من الأرشيف بنجاح 🗑️'
     });
   } catch (error: any) {
     console.error('Error deleting archived report:', error);

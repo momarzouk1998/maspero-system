@@ -8,12 +8,35 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
+  const activeOnly = searchParams.get('active');
+
+  // If requesting all open invoices for current employee
+  if (activeOnly === 'true') {
+    try {
+      const openInvoices = await db.invoices.findMany({
+        where: {
+          employee_id: user.id,
+          status: 'قيد التنفيذ'
+        },
+        orderBy: { timestamp: 'asc' }
+      });
+      return NextResponse.json({ openInvoices });
+    } catch (err) {
+      console.error('Fetch active invoices error:', err);
+      return NextResponse.json({ openInvoices: [] });
+    }
+  }
 
   if (!code) {
     return NextResponse.json({ error: 'برجاء تمرير كود الفاتورة' }, { status: 400 });
   }
 
   try {
+    // Fetch invoice status
+    const invRecord = await db.invoices.findFirst({
+      where: { invoice_number: code }
+    });
+
     // Fetch from all 3 tables
     const [services, tickets, wallets] = await Promise.all([
       db.service_entries.findMany({ where: { invoice_code: code } }),
@@ -47,7 +70,7 @@ export async function GET(req: Request) {
         rawServiceName: s.service_name,
         faceType: s.face_type,
         notes: s.notes,
-        price: Number(s.amount) / (s.paper_count || 1), // Assuming amount is total
+        price: Number(s.amount) / (s.paper_count || 1),
         count: s.paper_count || 1,
         total: Number(s.amount),
         timestamp: s.timestamp,
@@ -105,6 +128,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       invoice_code: code,
+      status: invRecord?.status || 'قيد التنفيذ',
       items,
       total: roundedTotal,
       rawTotal,
@@ -115,5 +139,69 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Invoice GET Error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء جلب الفاتورة' }, { status: 500 });
+  }
+}
+
+// POST: Create or Register Invoice with status "قيد التنفيذ"
+export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  try {
+    const { code, label } = await req.json();
+    if (!code) return NextResponse.json({ error: 'كود الفاتورة مطلوب' }, { status: 400 });
+
+    const existing = await db.invoices.findFirst({
+      where: { invoice_number: code }
+    });
+
+    if (!existing) {
+      const activeShift = await db.shifts.findFirst({
+        where: { employee_id: user.id, end_time: null }
+      });
+
+      const newInv = await db.invoices.create({
+        data: {
+          invoice_number: code,
+          status: 'قيد التنفيذ',
+          employee_id: user.id,
+          employee_name: user.name,
+          date: new Date(),
+          shift_id: activeShift?.id || undefined,
+          shift_name: activeShift?.shift_type || undefined,
+          shift_cashier: user.name
+        }
+      });
+      return NextResponse.json({ success: true, invoice: newInv });
+    }
+
+    return NextResponse.json({ success: true, invoice: existing });
+  } catch (error: any) {
+    console.error('Invoice POST Error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حفظ الفاتورة' }, { status: 500 });
+  }
+}
+
+// PATCH: Complete Invoice (Set status to "مكتملة")
+export async function PATCH(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  try {
+    const { code, total } = await req.json();
+    if (!code) return NextResponse.json({ error: 'كود الفاتورة مطلوب' }, { status: 400 });
+
+    const updated = await db.invoices.updateMany({
+      where: { invoice_number: code },
+      data: {
+        status: 'مكتملة',
+        total_invoice: total !== undefined ? Number(total) : undefined
+      }
+    });
+
+    return NextResponse.json({ success: true, updatedCount: updated.count, status: 'مكتملة' });
+  } catch (error: any) {
+    console.error('Invoice PATCH Error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء إنهاء الفاتورة' }, { status: 500 });
   }
 }

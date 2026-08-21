@@ -3,7 +3,29 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 
-// PUT: Edit invoice item (service or ticket) — adjust amount difference in custody
+// Helper to check if item's employee has an active open shift
+async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null) {
+  if (!employeeId) return false;
+  const activeShift = await db.shifts.findFirst({
+    where: { employee_id: employeeId, end_time: null }
+  });
+  if (!activeShift) return false;
+  if (timestamp && activeShift.start_time) {
+    return new Date(timestamp) >= new Date(activeShift.start_time);
+  }
+  return true;
+}
+
+// Helper to check if invoice is completed
+async function isInvoiceCompleted(invoiceCode?: string | null) {
+  if (!invoiceCode) return false;
+  const inv = await db.invoices.findFirst({
+    where: { invoice_number: invoiceCode }
+  });
+  return inv?.status === 'مكتملة';
+}
+
+// PUT: Edit invoice item (service, ticket, or wallet)
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
@@ -21,14 +43,22 @@ export async function PUT(req: Request) {
       if (type === 'service') {
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
-        if (entry.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
 
-        const oldAmount = Number(entry.amount);
-        const diff = numNewAmount - oldAmount;
+        const isCompleted = await isInvoiceCompleted(entry.invoice_code);
+        if (user.role !== 'manager') {
+          if (entry.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+        }
 
-        // adjust custody by the difference only
-        if (diff !== 0) {
-          await WalletService.adjustEmployeeWallet(entry.employee_id!, diff, tx);
+        const shiftOpen = await isEmployeeShiftOpen(entry.employee_id, entry.timestamp);
+
+        // Adjust custody balance ONLY if shift is open
+        if (shiftOpen) {
+          const oldAmount = Number(entry.amount);
+          const diff = numNewAmount - oldAmount;
+          if (diff !== 0 && entry.employee_id) {
+            await WalletService.adjustEmployeeWallet(entry.employee_id, diff, tx);
+          }
         }
 
         await tx.service_entries.update({
@@ -44,13 +74,21 @@ export async function PUT(req: Request) {
       else if (type === 'ticket') {
         const ticket = await tx.train_ticket_bookings.findUnique({ where: { id } });
         if (!ticket) throw new Error('العنصر غير موجود');
-        if (ticket.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
 
-        const oldAmount = Number(ticket.amount);
-        const diff = numNewAmount - oldAmount;
+        const isCompleted = await isInvoiceCompleted(ticket.invoice_code);
+        if (user.role !== 'manager') {
+          if (ticket.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+        }
 
-        if (diff !== 0) {
-          await WalletService.adjustEmployeeWallet(ticket.employee_id!, diff, tx);
+        const shiftOpen = await isEmployeeShiftOpen(ticket.employee_id, ticket.timestamp);
+
+        if (shiftOpen) {
+          const oldAmount = Number(ticket.amount);
+          const diff = numNewAmount - oldAmount;
+          if (diff !== 0 && ticket.employee_id) {
+            await WalletService.adjustEmployeeWallet(ticket.employee_id, diff, tx);
+          }
         }
 
         await tx.train_ticket_bookings.update({
@@ -65,43 +103,52 @@ export async function PUT(req: Request) {
       else if (type === 'wallet') {
         const txItem = await tx.wallet_transactions.findUnique({ where: { id } });
         if (!txItem) throw new Error('العنصر غير موجود');
-        if (txItem.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بتعديل هذا العنصر');
+
+        const isCompleted = await isInvoiceCompleted(txItem.invoice_code);
+        if (user.role !== 'manager') {
+          if (txItem.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+        }
+
+        const shiftOpen = await isEmployeeShiftOpen(txItem.employee_id, txItem.timestamp);
 
         const targetTxType = newTransactionType || txItem.transaction_type;
-
         const oldAmount = Number(txItem.amount || 0);
         const oldCommission = Number(txItem.wallet_commission || 0);
         const numNewCommission = newCommission !== undefined ? Number(newCommission) : oldCommission;
 
-        const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
+        // If shift is open, adjust balances
+        if (shiftOpen) {
+          const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
 
-        const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
-        const newBalanceChange = targetTxType === 'إيداع' ? -numNewAmount : numNewAmount;
-        const diffExternal = newBalanceChange - oldBalanceChange;
+          const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
+          const newBalanceChange = targetTxType === 'إيداع' ? -numNewAmount : numNewAmount;
+          const diffExternal = newBalanceChange - oldBalanceChange;
 
-        const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
-        const oldEmployeeCash = isDrawer
-          ? (txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount)
-          : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
+          const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
+          const oldEmployeeCash = isDrawer
+            ? (txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount)
+            : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
 
-        const newEmployeeCash = isDrawer
-          ? (targetTxType === 'إيداع' ? -numNewAmount : numNewAmount)
-          : (targetTxType === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
+          const newEmployeeCash = isDrawer
+            ? (targetTxType === 'إيداع' ? -numNewAmount : numNewAmount)
+            : (targetTxType === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
 
-        const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
+          const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
 
-        if (diffExternal !== 0 && txItem.wallet_id) {
-          await tx.external_wallets.update({
-            where: { id: txItem.wallet_id },
-            data: {
-              current_balance: { increment: diffExternal },
-              actual_balance: { increment: diffExternal }
-            }
-          });
-        }
+          if (diffExternal !== 0 && txItem.wallet_id) {
+            await tx.external_wallets.update({
+              where: { id: txItem.wallet_id },
+              data: {
+                current_balance: { increment: diffExternal },
+                actual_balance: { increment: diffExternal }
+              }
+            });
+          }
 
-        if (diffEmployeeCash !== 0 && txItem.employee_id) {
-          await WalletService.adjustEmployeeWallet(txItem.employee_id, diffEmployeeCash, tx);
+          if (diffEmployeeCash !== 0 && txItem.employee_id) {
+            await WalletService.adjustEmployeeWallet(txItem.employee_id, diffEmployeeCash, tx);
+          }
         }
 
         await tx.wallet_transactions.update({
@@ -127,6 +174,7 @@ export async function PUT(req: Request) {
   }
 }
 
+// DELETE: Delete invoice item
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
@@ -138,62 +186,82 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'معرف العنصر ونوعه مطلوبان' }, { status: 400 });
     }
 
-    // Only allow deletion if it belongs to the user, OR if the user is manager.
-    // In POS, the employee can delete items from their current invoice before it's "closed".
-    // Since there's no strict "closed" state yet, we just allow deleting their own items.
-
     await db.$transaction(async (tx) => {
       if (type === 'service') {
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
-        if (entry.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بحذف هذا العنصر');
 
-        // Revert wallet
-        await WalletService.adjustEmployeeWallet(entry.employee_id!, -Number(entry.amount), tx);
+        const isCompleted = await isInvoiceCompleted(entry.invoice_code);
+        if (user.role !== 'manager') {
+          if (entry.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        }
+
+        const shiftOpen = await isEmployeeShiftOpen(entry.employee_id, entry.timestamp);
+
+        if (shiftOpen && entry.employee_id) {
+          await WalletService.adjustEmployeeWallet(entry.employee_id, -Number(entry.amount), tx);
+        }
+
         await tx.service_entries.delete({ where: { id } });
       }
       else if (type === 'ticket') {
         const ticket = await tx.train_ticket_bookings.findUnique({ where: { id } });
         if (!ticket) throw new Error('العنصر غير موجود');
-        if (ticket.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بحذف هذا العنصر');
 
-        // Revert wallet
-        await WalletService.adjustEmployeeWallet(ticket.employee_id!, -Number(ticket.amount), tx);
+        const isCompleted = await isInvoiceCompleted(ticket.invoice_code);
+        if (user.role !== 'manager') {
+          if (ticket.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        }
+
+        const shiftOpen = await isEmployeeShiftOpen(ticket.employee_id, ticket.timestamp);
+
+        if (shiftOpen && ticket.employee_id) {
+          await WalletService.adjustEmployeeWallet(ticket.employee_id, -Number(ticket.amount), tx);
+        }
+
         await tx.train_ticket_bookings.delete({ where: { id } });
       }
       else if (type === 'wallet') {
         const trans = await tx.wallet_transactions.findUnique({ where: { id } });
         if (!trans) throw new Error('العنصر غير موجود');
-        if (trans.employee_id !== user.id && user.role !== 'manager') throw new Error('غير مصرح بحذف هذا العنصر');
 
-        // Revert wallet balance & employee custody based on transaction type
-        const totalAmount = Number(trans.amount) + Number(trans.wallet_commission);
-        const externalWallet = await tx.external_wallets.findUnique({ where: { id: trans.wallet_id! } });
-        if (!externalWallet) throw new Error('المحفظة غير موجودة');
+        const isCompleted = await isInvoiceCompleted(trans.invoice_code);
+        if (user.role !== 'manager') {
+          if (trans.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
+          if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        }
 
-        if (trans.transaction_type === 'إيداع') {
-          // It was a deposit (we subtracted from custody, added to external wallet) -> WAIT NO: 
-          // New logic: It was a deposit (we added to custody, subtracted from external wallet)
-          // Revert: Subtract from custody, add back to external wallet
-          await WalletService.adjustEmployeeWallet(trans.employee_id!, -totalAmount, tx);
-          await tx.external_wallets.update({
-            where: { id: trans.wallet_id! },
-            data: {
-              current_balance: { increment: Number(trans.amount) },
-              actual_balance: { increment: Number(trans.amount) }
+        const shiftOpen = await isEmployeeShiftOpen(trans.employee_id, trans.timestamp);
+
+        if (shiftOpen) {
+          const totalAmount = Number(trans.amount) + Number(trans.wallet_commission || 0);
+          const externalWallet = trans.wallet_id ? await tx.external_wallets.findUnique({ where: { id: trans.wallet_id } }) : null;
+
+          if (trans.transaction_type === 'إيداع') {
+            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, -totalAmount, tx);
+            if (trans.wallet_id) {
+              await tx.external_wallets.update({
+                where: { id: trans.wallet_id },
+                data: {
+                  current_balance: { increment: Number(trans.amount) },
+                  actual_balance: { increment: Number(trans.amount) }
+                }
+              });
             }
-          });
-        } else if (trans.transaction_type === 'سحب') {
-          // New logic: It was a withdrawal (we subtracted from custody, added to external wallet)
-          // Revert: Add to custody, subtract from external wallet
-          await WalletService.adjustEmployeeWallet(trans.employee_id!, totalAmount, tx);
-          await tx.external_wallets.update({
-            where: { id: trans.wallet_id! },
-            data: {
-              current_balance: { decrement: Number(trans.amount) },
-              actual_balance: { decrement: Number(trans.amount) }
+          } else if (trans.transaction_type === 'سحب') {
+            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, totalAmount, tx);
+            if (trans.wallet_id) {
+              await tx.external_wallets.update({
+                where: { id: trans.wallet_id },
+                data: {
+                  current_balance: { decrement: Number(trans.amount) },
+                  actual_balance: { decrement: Number(trans.amount) }
+                }
+              });
             }
-          });
+          }
         }
 
         await tx.wallet_transactions.delete({ where: { id } });

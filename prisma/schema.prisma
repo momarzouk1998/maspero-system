@@ -297,7 +297,7 @@ model invoices {
   month         String?   @db.VarChar(20)
   invoice_number String   @db.VarChar(100)
   total_invoice Decimal   @default(0) @db.Decimal(15, 2)
-  status        String    @default("تم الطباعة") @db.VarChar(50)
+  status        String    @default("قيد التنفيذ") @db.VarChar(50)
   shift_id      String?   @db.VarChar(100)
   shift_name    String?   @db.VarChar(100)
   shift_cashier String?   @db.VarChar(100)
@@ -306,6 +306,7 @@ model invoices {
   timestamp     DateTime? @default(now()) @db.Timestamptz()
 
   @@index([employee_id, date])
+  @@index([invoice_number])
   @@map("invoices")
   @@schema("maspero")
 }

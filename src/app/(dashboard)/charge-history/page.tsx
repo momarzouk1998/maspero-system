@@ -23,6 +23,8 @@ export default function ChargeHistoryPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [walletsList, setWalletsList] = useState<string[]>([]);
 
   // Edit Modal State
@@ -96,6 +98,26 @@ export default function ChargeHistoryPage() {
     return () => clearTimeout(timer);
   }, [search, transactionType, startDate, endDate, filterWalletName, filterEmployeeId]);
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت تأكد من حذف ${selectedIds.length} عملية شحن محددة؟`)) return;
+    try {
+      await Promise.all(
+        selectedIds.map(id =>
+          fetch('/api/invoice/item', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, type: 'wallet' })
+          })
+        )
+      );
+      setSelectedIds([]);
+      fetchTransactions(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
+    }
+  };
+
   const resetFilters = () => {
     setTransactionType('');
     setStartDate('');
@@ -118,23 +140,25 @@ export default function ChargeHistoryPage() {
 
     setEditSubmitting(true);
     try {
-      const res = await fetch('/api/charge-history', {
+      const res = await fetch('/api/invoice/item', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingItem.id,
-          amount: parseFloat(editAmount),
-          wallet_commission: parseFloat(editCommission),
-          description: editDescription
+          type: 'wallet',
+          newAmount: parseFloat(editAmount || '0'),
+          newCommission: parseFloat(editCommission || '0'),
+          newNotes: editDescription
         })
       });
 
-      if (res.ok) {
-        setEditingItem(null);
-        fetchTransactions(pagination.page);
-      }
-    } catch (e) {
-      console.error(e);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تعديل العملية');
+
+      setEditingItem(null);
+      fetchTransactions(pagination.page);
+    } catch (e: any) {
+      alert(e.message);
     } finally {
       setEditSubmitting(false);
     }
@@ -319,10 +343,39 @@ export default function ChargeHistoryPage() {
 
       {/* Transactions Table Container */}
       <div className="flex-1 space-y-4 min-w-0">
+        {selectedIds.length > 0 && (
+          <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center justify-between animate-in fade-in duration-200">
+            <span className="text-xs font-bold text-amber-900">
+              تم تحديد ({selectedIds.length}) عملية شحن
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="py-1.5 px-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>حذف المحدد</span>
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
+                <th className="px-4 py-3 text-center whitespace-nowrap w-10">
+                  <input
+                    type="checkbox"
+                    checked={transactions.length > 0 && selectedIds.length === transactions.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(transactions.map(t => t.id));
+                      } else {
+                        setSelectedIds([]);
+                      }
+                    }}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                  />
+                </th>
                 <th className="px-4 py-3 whitespace-nowrap">المحفظة / الماكينة</th>
                 <th className="px-4 py-3 whitespace-nowrap">نوع العملية</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
@@ -332,7 +385,7 @@ export default function ChargeHistoryPage() {
                 <th className="px-4 py-3 whitespace-nowrap">كود الفاتورة</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
                 <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 whitespace-nowrap text-center">إجراءات المدير</th>}
+                <th className="px-4 py-3 whitespace-nowrap text-center">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -356,7 +409,21 @@ export default function ChargeHistoryPage() {
                   const totalCollected = item.transaction_type === 'إيداع' ? amt + comm : amt - comm;
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-amber-50/50' : ''}`}>
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds(prev => [...prev, item.id]);
+                            } else {
+                              setSelectedIds(prev => prev.filter(id => id !== item.id));
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2 whitespace-nowrap">
                         <Wallet className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>{item.wallet_name || '-'}</span>
@@ -389,7 +456,6 @@ export default function ChargeHistoryPage() {
                         {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.description || '-'}</td>
-                      {currentUser?.role === 'manager' && (
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -402,8 +468,18 @@ export default function ChargeHistoryPage() {
                             <button
                               onClick={async () => {
                                 if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
-                                await fetch(`/api/charge-history?id=${item.id}`, { method: 'DELETE' });
-                                fetchTransactions(pagination.page);
+                                try {
+                                  const res = await fetch(`/api/invoice/item`, {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: item.id, type: 'wallet' })
+                                  });
+                                  const data = await res.json();
+                                  if (!res.ok) throw new Error(data.error || 'فشل الحذف');
+                                  fetchTransactions(pagination.page);
+                                } catch (err: any) {
+                                  alert(err.message);
+                                }
                               }}
                               className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
                               title="حذف العملية"
@@ -412,7 +488,6 @@ export default function ChargeHistoryPage() {
                             </button>
                           </div>
                         </td>
-                      )}
                     </tr>
                   );
                 })
