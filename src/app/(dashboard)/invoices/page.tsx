@@ -462,34 +462,42 @@ export default function InvoicesHistoryPage() {
                       </td>
                     </tr>
                   ) : (
-                    invoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
-                          {inv.invoice_code}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                          {inv.created_at ? new Date(inv.created_at).toLocaleString('en-US') : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">
-                          {inv.employee_name || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">
-                          {inv.item_count || 0} عناصر
-                        </td>
-                        <td className="px-4 py-3 font-mono font-bold text-emerald-700 text-base whitespace-nowrap">
-                          {formatNumber(Number(inv.total_amount))} ج
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => handleOpenDrawer(inv.invoice_code || inv.code)}
-                            className="py-1.5 px-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1 mx-auto transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>عرض وتكبير</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    invoices.map((inv, idx) => {
+                      const invCode = inv.code || inv.invoice_code || '-';
+                      const invDate = inv.timestamp || inv.created_at;
+                      const empName = inv.employeeName || inv.employee_name || '-';
+                      const count = inv.itemCount ?? inv.item_count ?? 0;
+                      const tot = inv.total ?? inv.total_amount ?? 0;
+
+                      return (
+                        <tr key={invCode !== '-' ? invCode : idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                            {invCode}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
+                            {invDate ? new Date(invDate).toLocaleString('en-US') : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">
+                            {empName}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-mono font-bold text-slate-700 whitespace-nowrap">
+                            {count} عناصر
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold text-emerald-700 text-base whitespace-nowrap">
+                            {formatNumber(Number(tot))} ج
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => handleOpenDrawer(invCode)}
+                              className="py-1.5 px-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1 mx-auto transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>عرض وتكبير</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

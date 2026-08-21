@@ -76,41 +76,58 @@ export async function GET(req: Request) {
     const invoiceMap = new Map<string, any>();
 
     services.forEach((s) => {
-      const code = s.invoice_code!;
+      const code = s.invoice_code;
+      if (!code) return;
       if (invoiceMap.has(code)) {
         const inv = invoiceMap.get(code)!;
         inv.itemCount += 1;
+        inv.item_count += 1;
         inv.total += Number(s.amount);
+        inv.total_amount += Number(s.amount);
       } else {
         invoiceMap.set(code, {
           code,
+          invoice_code: code,
           itemCount: 1,
+          item_count: 1,
           total: Number(s.amount),
+          total_amount: Number(s.amount),
           employeeName: s.employee_name || 'غير محدد',
-          timestamp: s.timestamp || new Date()
+          employee_name: s.employee_name || 'غير محدد',
+          timestamp: s.timestamp || new Date(),
+          created_at: s.timestamp || new Date()
         });
       }
     });
 
     tickets.forEach((t) => {
-      const code = t.invoice_code!;
+      const code = t.invoice_code;
+      if (!code) return;
       if (invoiceMap.has(code)) {
         const inv = invoiceMap.get(code)!;
         inv.itemCount += 1;
+        inv.item_count += 1;
         inv.total += Number(t.amount);
+        inv.total_amount += Number(t.amount);
       } else {
         invoiceMap.set(code, {
           code,
+          invoice_code: code,
           itemCount: 1,
+          item_count: 1,
           total: Number(t.amount),
+          total_amount: Number(t.amount),
           employeeName: t.employee_name || 'غير محدد',
-          timestamp: t.timestamp || new Date()
+          employee_name: t.employee_name || 'غير محدد',
+          timestamp: t.timestamp || new Date(),
+          created_at: t.timestamp || new Date()
         });
       }
     });
 
     wallets.forEach((w) => {
-      const code = w.invoice_code!;
+      const code = w.invoice_code;
+      if (!code) return;
       const amt = Number(w.amount || 0);
       const comm = Number(w.wallet_commission || 0);
       const totalCollected = w.transaction_type === 'إيداع' ? amt + comm : amt - comm;
@@ -118,14 +135,21 @@ export async function GET(req: Request) {
       if (invoiceMap.has(code)) {
         const inv = invoiceMap.get(code)!;
         inv.itemCount += 1;
+        inv.item_count += 1;
         inv.total += totalCollected;
+        inv.total_amount += totalCollected;
       } else {
         invoiceMap.set(code, {
           code,
+          invoice_code: code,
           itemCount: 1,
+          item_count: 1,
           total: totalCollected,
+          total_amount: totalCollected,
           employeeName: w.employee_name || 'غير محدد',
-          timestamp: w.timestamp || new Date()
+          employee_name: w.employee_name || 'غير محدد',
+          timestamp: w.timestamp || new Date(),
+          created_at: w.timestamp || new Date()
         });
       }
     });
