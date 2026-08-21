@@ -134,6 +134,9 @@ export default function ManagerReportsPage() {
   const activeMonthReport = monthlyReports.find((m: any) => m.month === selectedMonth) || { items: [], totalSum: 0 };
   const activeCategoryReport = categoryReports.find((c: any) => c.category === selectedCategory) || { items: [], totalSum: 0 };
 
+  // Main 2 Tabs state: 'report' for Financial Report & Live Balances, 'archive' for Monthly Archive Table
+  const [activeMainTab, setActiveMainTab] = useState<'report' | 'archive'>('report');
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Title & Navigation - Sleek Light Theme */}
@@ -150,9 +153,35 @@ export default function ManagerReportsPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart3 className="w-7 h-7 text-emerald-600" />
-              <span>تقرير الماليات</span>
+              <span>تقرير الماليات والأرباح</span>
             </h1>
           </div>
+        </div>
+
+        {/* 2 Main Tabs Switcher */}
+        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+          <button
+            onClick={() => setActiveMainTab('report')}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              activeMainTab === 'report'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-semibold'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>📊 التقرير المالي والأرباح الحالية</span>
+          </button>
+          <button
+            onClick={() => setActiveMainTab('archive')}
+            className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              activeMainTab === 'archive'
+                ? 'bg-slate-900 text-white shadow-md font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-semibold'
+            }`}
+          >
+            <Archive className="w-4 h-4" />
+            <span>🏛️ سجل التقارير الأرشيفية (الأشهر)</span>
+          </button>
         </div>
       </div>
 
@@ -227,8 +256,8 @@ export default function ManagerReportsPage() {
         </div>
       </div>
 
-      {/* MAIN CONTENT: FINANCIAL METRICS GRID */}
-      {activeTab === 'financial' && (
+      {/* TAB 1: FINANCIAL REPORT & LIVE BALANCES */}
+      {activeMainTab === 'report' && (
         <>
           {loading ? (
             <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
@@ -238,19 +267,19 @@ export default function ManagerReportsPage() {
           ) : (
             <div className="space-y-6">
               {/* Top Banner: Net Profit */}
-              <div className="glass-panel p-6 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="glass-panel p-6 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
-                  <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200">
-                    النتيجة المالية
+                  <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
+                    النتيجة المالية للفترة
                   </span>
                   <h2 className="text-xl font-bold mt-2 text-slate-900">صافي الربح</h2>
-                  <p className="text-slate-500 text-xs mt-1">
-                    المسحوبات - المشتريات + العمولات - المصروفات - الرواتب
+                  <p className="text-slate-700 text-xs font-semibold mt-1">
+                    إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات
                   </p>
                 </div>
                 <div className="text-left">
                   <span className={`text-3xl font-bold font-mono ${Number(metrics.netProfit || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    {formatNumberLocale(Number(metrics.netProfit || 0), 'en-US')}
+                    {formatNumberLocale(Number(metrics.netProfit || 0), 'en-US')} ج
                   </span>
                 </div>
               </div>
@@ -639,133 +668,162 @@ export default function ManagerReportsPage() {
                   </div>
                 </div>
               )}
-
-              {/* 📊 ARCHIVAL MONTHLY PROFIT REPORT (مطابق لملف CSV التاريخي) */}
-              <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">
-                <div className="p-5 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                      <Archive className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base flex items-center gap-2">
-                        <span>سجل تقرير الماليات</span>
-                      </h3>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveMonthArchive}
-                    disabled={savingArchive}
-                    className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
-                  >
-                    {savingArchive ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-                    <span>حفظ / أرشفة تقرير الشهر الحالي 💾</span>
-                  </button>
-                </div>
-
-                {/* Archived Monthly Snapshots Table */}
-                <div className="p-5 space-y-4">
-                  {archivedReports.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-xs">
-                      لا توجد أرشفات شهرية مسجلة بعد. اضغط زر أرشفة تقرير الشهر أعلاه لتقييد أول شهر.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-right text-xs text-slate-700 table-auto border border-slate-200 rounded-2xl overflow-hidden">
-                        <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
-                          <tr>
-                            <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-amber-700 bg-amber-50/50">تكلفة المشتريات (المحتسبة)</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">تكلفة المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">الرواتب والسلف</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-rose-700">المصروفات الأخرى</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
-                            <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
-                            <th className="px-3 py-3 whitespace-nowrap">عدد التذاكر</th>
-                            <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 bg-white font-mono">
-                          {archivedReports.map((report: any) => {
-                            const calculatedPurchasesCost = Number(report.opening_balance || 0) + Number(report.purchases_cost || 0) - Number(report.closing_balance || 0);
-                            const totalComm = Number(report.total_commissions || 0) || (
-                              Number(report.wallet_commission || 0) +
-                              Number(report.tickets_commission || 0) +
-                              Number(report.machine_deposit_commission || 0) +
-                              Number(report.machine_withdrawal_commission || 0)
-                            );
-                            return (
-                              <tr key={report.id || report.month} className="hover:bg-slate-50 font-semibold">
-                                <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
-                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.opening_balance || 0))}</td>
-                                <td className="px-3 py-3 text-amber-700 font-bold whitespace-nowrap bg-amber-50/40">{formatNumber(calculatedPurchasesCost)}</td>
-                                <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(Number(report.closing_balance || 0))}</td>
-                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
-                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
-                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
-                                <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(Number(report.service_revenue))}</td>
-                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{formatNumber(Number(report.purchases_cost))}</td>
-                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
-                                <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(Number(report.total_profit))}</td>
-                                <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
-                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.salaries))}</td>
-                                <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(Number(report.other_expenses))}</td>
-                                <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(Number(report.net_profit))}</td>
-                                <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
-                                <td className="px-3 py-3 text-purple-700 font-bold whitespace-nowrap">{report.ticket_count || 0} تذكرة</td>
-                                <td className="px-3 py-3 text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <button
-                                      onClick={() => {
-                                        setEditArchItem(report);
-                                        setEditArchOpening(String(report.opening_balance || 0));
-                                        setEditArchClosing(String(report.closing_balance || 0));
-                                        setEditArchPurchases(String(report.purchases_cost || 0));
-                                        setEditArchSalaries(String(report.salaries || 0));
-                                        setEditArchExpenses(String(report.other_expenses || 0));
-                                      }}
-                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                      title="تعديل التقرير الأرشيفي"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        if (!confirm(`هل أنت تأكد من حذف تقرير شهر (${report.month}) من الأرشيف؟`)) return;
-                                        try {
-                                          const res = await fetch(`/api/reports/monthly-archive?month=${encodeURIComponent(report.month)}`, { method: 'DELETE' });
-                                          if (res.ok) fetchReports();
-                                        } catch (e) { console.error(e); }
-                                      }}
-                                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                      title="حذف التقرير"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           )}
         </>
+      )}
+
+      {/* TAB 2: ARCHIVAL MONTHLY PROFIT REPORTS (سجل تقرير الماليات والأرشيف) */}
+      {activeMainTab === 'archive' && (
+        <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">
+          <div className="p-5 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <Archive className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <span>سجل تقرير الماليات والأرشيف الشهري</span>
+                </h3>
+                <p className="text-xs text-slate-400">سجل تراكمي تاريخي لجميع أشهر التعاملات</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveMonthArchive}
+              disabled={savingArchive}
+              className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
+            >
+              {savingArchive ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+              <span>حفظ / أرشفة تقرير الشهر الحالي 💾</span>
+            </button>
+          </div>
+
+          {/* Formula Explanation Bar */}
+          <div className="px-5 py-3 bg-amber-50 border-y border-amber-200 text-xs text-amber-900 font-medium flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="font-bold text-amber-950">📐 معادلة تكلفة المشتريات: </span>
+              <span>رصيد أول المدة + قيمة المشتريات - رصيد آخر المدة</span>
+            </div>
+            <div>
+              <span className="font-bold text-amber-950">📐 معادلة صافي الربح: </span>
+              <span>إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات</span>
+            </div>
+          </div>
+
+          {/* Archived Monthly Snapshots Table */}
+          <div className="p-5 space-y-4">
+            {archivedReports.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-xs">
+                لا توجد أرشفات شهرية مسجلة بعد. اضغط زر "أرشفة تقرير الشهر" أعلاه لتقييد أول شهر.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs text-slate-700 table-auto border border-slate-200 rounded-2xl overflow-hidden">
+                  <thead className="bg-slate-100 text-slate-800 font-bold uppercase border-b border-slate-200">
+                    <tr>
+                      <th className="px-3 py-3 whitespace-nowrap">الشهر</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-amber-700 bg-amber-50/50">قيمة المشتريات</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-amber-800 bg-amber-100/50">تكلفة المشتريات</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-rose-700">القبض والسلف</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-rose-700">باقي المصروفات</th>
+                      <th className="px-3 py-3 whitespace-nowrap text-emerald-800 font-extrabold bg-emerald-50">صافي الربح</th>
+                      <th className="px-3 py-3 whitespace-nowrap">عدد الورق</th>
+                      <th className="px-3 py-3 whitespace-nowrap">عدد التذاكر</th>
+                      <th className="px-3 py-3 text-center whitespace-nowrap">إجراءات المدير</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white font-mono">
+                    {archivedReports.map((report: any) => {
+                      const opening = Number(report.opening_balance || 0);
+                      const closing = Number(report.closing_balance || 0);
+                      const purchasesVal = Number(report.purchases_cost || 0);
+                      // معادلة تكلفة المشتريات = رصيد اول المدة + قيمة المشتريات - رصيد اخر المدة
+                      const calculatedPurchasesCost = opening + purchasesVal - closing;
+
+                      const serviceRev = Number(report.service_revenue || 0);
+                      const totalProfit = Number(report.total_profit || 0) || (serviceRev - calculatedPurchasesCost);
+
+                      const totalComm = Number(report.total_commissions || 0) || (
+                        Number(report.wallet_commission || 0) +
+                        Number(report.tickets_commission || 0) +
+                        Number(report.machine_deposit_commission || 0) +
+                        Number(report.machine_withdrawal_commission || 0)
+                      );
+                      const salaries = Number(report.salaries || 0);
+                      const otherExpenses = Number(report.other_expenses || 0);
+
+                      // معادلة صافي الربح = إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات
+                      const calculatedNetProfit = totalProfit + totalComm - salaries - otherExpenses;
+
+                      return (
+                        <tr key={report.id || report.month} className="hover:bg-slate-50 font-semibold">
+                          <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap dir-ltr text-right">{report.month}</td>
+                          <td className="px-3 py-3 text-amber-700 font-bold whitespace-nowrap bg-amber-50/30">{formatNumber(purchasesVal)}</td>
+                          <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(opening)}</td>
+                          <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(closing)}</td>
+                          <td className="px-3 py-3 text-amber-900 font-extrabold whitespace-nowrap bg-amber-100/50">{formatNumber(calculatedPurchasesCost)}</td>
+                          <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
+                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
+                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
+                          <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                          <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(serviceRev)}</td>
+                          <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(totalProfit)}</td>
+                          <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
+                          <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(salaries)}</td>
+                          <td className="px-3 py-3 text-rose-600 font-bold whitespace-nowrap">{formatNumber(otherExpenses)}</td>
+                          <td className="px-3 py-3 text-emerald-900 bg-emerald-50 font-extrabold whitespace-nowrap text-sm">{formatNumber(calculatedNetProfit)}</td>
+                          <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{report.paper_count} ورقة</td>
+                          <td className="px-3 py-3 text-purple-700 font-bold whitespace-nowrap">{report.ticket_count || 0} تذكرة</td>
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditArchItem(report);
+                                  setEditArchOpening(String(report.opening_balance || 0));
+                                  setEditArchClosing(String(report.closing_balance || 0));
+                                  setEditArchPurchases(String(report.purchases_cost || 0));
+                                  setEditArchSalaries(String(report.salaries || 0));
+                                  setEditArchExpenses(String(report.other_expenses || 0));
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="تعديل التقرير الأرشيفي"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`هل أنت تأكد من حذف تقرير شهر (${report.month}) من الأرشيف؟`)) return;
+                                  try {
+                                    const res = await fetch(`/api/reports/monthly-archive?month=${encodeURIComponent(report.month)}`, { method: 'DELETE' });
+                                    if (res.ok) fetchReports();
+                                  } catch (e) { console.error(e); }
+                                }}
+                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="حذف التقرير"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* HIDDEN TABS (Kept in code as requested for future needs) */}
