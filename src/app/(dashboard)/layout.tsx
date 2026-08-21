@@ -51,12 +51,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       const data = await res.json();
       setUser(data.user);
+      setLoading(false); // ⚡ Instant unblock for layout rendering
 
-      const transferRes = await fetch('/api/transfers?type=pending');
-      if (transferRes.ok) {
-        const transferData = await transferRes.json();
-        setPendingTransfers(transferData.pendingCount || 0);
-      }
+      // Fetch pending transfers badge count asynchronously in background
+      fetch('/api/transfers?type=pending')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.pendingCount !== undefined) setPendingTransfers(d.pendingCount);
+        })
+        .catch(() => {});
     } catch (e) {
       router.push('/login');
     } finally {
