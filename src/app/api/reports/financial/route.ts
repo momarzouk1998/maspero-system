@@ -109,11 +109,10 @@ export async function GET(req: Request) {
     db.users.findMany({
       select: { id: true, name: true, phone: true, salary: true, role: true, job_title: true, is_active: true, wallet_balance: true }
     }),
-    // Lean financial expenses list for grouping
+    // All Financial Transactions for Monthly & Category Reports
     db.expenses.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
-      select: { id: true, main_type: true, amount: true, date: true, month: true },
-      orderBy: { timestamp: 'desc' }
+      orderBy: { timestamp: 'desc' },
+      take: 500
     })
   ]);
 
@@ -146,8 +145,6 @@ export async function GET(req: Request) {
   function serviceRevenueSum(val: any) {
     return val || 0;
   }
-
-  const employeePayrolls: any[] = [];
 
   // Monthly Grouped Calculation
   const monthlyMap: Record<string, { month: string; totalSum: number; count: number; items: any[] }> = {};
@@ -236,7 +233,6 @@ export async function GET(req: Request) {
     walletsTotals,
     employeeCustody,
     totalEmployeeCustody,
-    employeePayrolls,
     monthlyReports: Object.values(monthlyMap),
     categoryReports: Object.values(categoryMap),
     allExpenses: allExpensesList

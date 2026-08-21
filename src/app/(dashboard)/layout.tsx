@@ -44,22 +44,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const fetchUserAndPending = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const [res, transferRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch('/api/transfers?type=pending')
+      ]);
+
       if (!res.ok) {
         router.push('/login');
         return;
       }
       const data = await res.json();
       setUser(data.user);
-      setLoading(false); // ⚡ Instant unblock for layout rendering
 
-      // Fetch pending transfers badge count asynchronously in background
-      fetch('/api/transfers?type=pending')
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d && d.pendingCount !== undefined) setPendingTransfers(d.pendingCount);
-        })
-        .catch(() => {});
+      if (transferRes.ok) {
+        const transferData = await transferRes.json();
+        setPendingTransfers(transferData.pendingCount || 0);
+      }
     } catch (e) {
       router.push('/login');
     } finally {
