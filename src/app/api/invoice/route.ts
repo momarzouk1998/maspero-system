@@ -13,14 +13,34 @@ export async function GET(req: Request) {
   // If requesting all open invoices for current employee
   if (activeOnly === 'true') {
     try {
-      const openInvoices = await db.invoices.findMany({
+      const rawInvoices = await db.invoices.findMany({
         where: {
           employee_id: user.id,
           status: 'قيد التنفيذ'
         },
         orderBy: { timestamp: 'asc' }
       });
-      return NextResponse.json({ openInvoices });
+
+      const validOpenInvoices = [];
+      for (const inv of rawInvoices) {
+        const [s, t, w] = await Promise.all([
+          db.service_entries.count({ where: { invoice_code: inv.invoice_number } }),
+          db.train_ticket_bookings.count({ where: { invoice_code: inv.invoice_number } }),
+          db.wallet_transactions.count({ where: { invoice_code: inv.invoice_number } })
+        ]);
+
+        if (s + t + w > 0) {
+          validOpenInvoices.push(inv);
+        } else {
+          // Clean up empty draft invoice record with 0 items
+          await db.invoices.updateMany({
+            where: { invoice_number: inv.invoice_number },
+            data: { status: 'مكتملة' }
+          });
+        }
+      }
+
+      return NextResponse.json({ openInvoices: validOpenInvoices });
     } catch (err) {
       console.error('Fetch active invoices error:', err);
       return NextResponse.json({ openInvoices: [] });

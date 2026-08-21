@@ -147,14 +147,33 @@ export async function POST(req: Request) {
         }, { status: 400 });
       }
 
-      // Check open invoices ("قيد التنفيذ")
-      const openInvoicesCount = await db.invoices.count({
-        where: { employee_id: user.id, status: 'قيد التنفيذ' }
+      // Check open invoices ("قيد التنفيذ") that actually contain items
+      const openInvoices = await db.invoices.findMany({
+        where: { employee_id: user.id, status: 'قيد التنفيذ' },
+        select: { invoice_number: true }
       });
 
-      if (openInvoicesCount > 0) {
+      let trulyOpenInvoicesCount = 0;
+      for (const inv of openInvoices) {
+        const [servicesCount, ticketsCount, walletsCount] = await Promise.all([
+          db.service_entries.count({ where: { invoice_code: inv.invoice_number } }),
+          db.train_ticket_bookings.count({ where: { invoice_code: inv.invoice_number } }),
+          db.wallet_transactions.count({ where: { invoice_code: inv.invoice_number } })
+        ]);
+        if (servicesCount + ticketsCount + walletsCount > 0) {
+          trulyOpenInvoicesCount++;
+        } else {
+          // Clean up empty draft invoices with 0 items
+          await db.invoices.updateMany({
+            where: { invoice_number: inv.invoice_number },
+            data: { status: 'مكتملة' }
+          });
+        }
+      }
+
+      if (trulyOpenInvoicesCount > 0) {
         return NextResponse.json({
-          error: `عفواً، يمنع إنهاء الشفت لوجود عدد (${openInvoicesCount}) فواتير قيد التنفيذ لم تنتهِ بعد. برجاء إنهاء الفواتير المفتوحة أولاً.`
+          error: `عفواً، يمنع إنهاء الشفت لوجود عدد (${trulyOpenInvoicesCount}) فواتير مفتوحة تحتوي على بنود مبيعات لم تنتهِ بعد. برجاء إنهاء الفواتير المفتوحة أولاً.`
         }, { status: 400 });
       }
 
