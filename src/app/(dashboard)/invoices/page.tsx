@@ -20,6 +20,8 @@ export default function InvoicesHistoryPage() {
   const [minTotal, setMinTotal] = useState('');
   const [maxTotal, setMaxTotal] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -124,6 +126,7 @@ export default function InvoicesHistoryPage() {
       if (res.ok) {
         const data = await res.json();
         setInvoices(data.invoices || []);
+        setSelectedIds([]);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
       }
     } catch (e) {
@@ -144,6 +147,32 @@ export default function InvoicesHistoryPage() {
     const timer = setTimeout(() => fetchInvoices(1), 300);
     return () => clearTimeout(timer);
   }, [search, startDate, endDate, filterEmployeeId, minTotal, maxTotal]);
+
+  const handleSelectAll = () => {
+    if (invoices.length > 0 && selectedIds.length === invoices.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(invoices.map(inv => inv.code || inv.invoice_code));
+    }
+  };
+
+  const toggleSelectRow = (code: string) => {
+    setSelectedIds(prev =>
+      prev.includes(code) ? prev.filter(x => x !== code) : [...prev, code]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من الفواتير المحددة بالكامل؟`)) return;
+    try {
+      await Promise.all(selectedIds.map(code => fetch(`/api/invoices?code=${code}`, { method: 'DELETE' })));
+      setSelectedIds([]);
+      fetchInvoices(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
+    }
+  };
 
   const resetFilters = () => {
     setStartDate('');
@@ -434,34 +463,58 @@ export default function InvoicesHistoryPage() {
 
       {/* Invoices Table & Pagination */}
       <div className="flex-1 space-y-4 min-w-0">
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm text-slate-700 table-auto">
-                <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between animate-in fade-in">
+            <span className="text-xs font-bold text-emerald-900">
+              تم تحديد ({selectedIds.length}) فاتورة من أصل ({invoices.length})
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>حذف المحددة ({selectedIds.length})</span>
+            </button>
+          </div>
+        )}
+
+        <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-sm text-slate-700 table-auto">
+              <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
+                <tr>
+                  <th className="px-3 py-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={invoices.length > 0 && selectedIds.length === invoices.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                    />
+                  </th>
+                  <th className="px-4 py-3 whitespace-nowrap">رقم الفاتورة</th>
+                  <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
+                  <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
+                  <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
+                  <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {loading ? (
                   <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">رقم الفاتورة</th>
-                    <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
-                    <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
-                    <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
-                    <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
+                    <td colSpan={7} className="text-center py-12 text-slate-500">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                      <span>جاري تحميل سجل الفواتير...</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-slate-500">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
-                        <span>جاري تحميل سجل الفواتير...</span>
-                      </td>
-                    </tr>
-                  ) : invoices.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-slate-500">
-                        لا توجد فواتير مسجلة تطابق التصفية
-                      </td>
-                    </tr>
-                  ) : (
+                ) : invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-slate-500">
+                      لا توجد فواتير مسجلة تطابق التصفية
+                    </td>
+                  </tr>
+                ) : (
                     invoices.map((inv, idx) => {
                       const invCode = inv.code || inv.invoice_code || '-';
                       const invDate = inv.timestamp || inv.created_at;
@@ -469,8 +522,17 @@ export default function InvoicesHistoryPage() {
                       const count = inv.itemCount ?? inv.item_count ?? 0;
                       const tot = inv.total ?? inv.total_amount ?? 0;
 
+                      const isSelected = selectedIds.includes(invCode);
                       return (
-                        <tr key={invCode !== '-' ? invCode : idx} className="hover:bg-slate-50 transition-colors">
+                        <tr key={invCode !== '-' ? invCode : idx} className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-emerald-50/50' : ''}`}>
+                          <td className="px-3 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectRow(invCode)}
+                              className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                            />
+                          </td>
                           <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                             {invCode}
                           </td>

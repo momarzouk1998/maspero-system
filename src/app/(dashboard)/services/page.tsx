@@ -21,6 +21,9 @@ export default function ServicesPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -73,6 +76,7 @@ export default function ServicesPage() {
       if (res.ok) {
         const data = await res.json();
         setEntries(data.entries || []);
+        setSelectedIds([]);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
       }
     } catch (e) {
@@ -88,6 +92,32 @@ export default function ServicesPage() {
   }, [search, filterServiceName, filterFaceType, filterEmployeeId, filterStartDate, filterEndDate]);
 
   const hasActiveFilters = filterServiceName || filterFaceType || filterEmployeeId || filterStartDate || filterEndDate;
+
+  const handleSelectAll = () => {
+    if (entries.length > 0 && selectedIds.length === entries.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(entries.map(e => e.id));
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من الخدمات المحددة؟`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => fetch(`/api/service-entries?id=${id}`, { method: 'DELETE' })));
+      setSelectedIds([]);
+      fetchEntries(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
+    }
+  };
 
   const resetFilters = () => {
     setFilterServiceName('');
@@ -322,10 +352,34 @@ export default function ServicesPage() {
           </h2>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between animate-in fade-in">
+            <span className="text-xs font-bold text-blue-900">
+              تم تحديد ({selectedIds.length}) خدمة من أصل ({entries.length})
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>حذف المحددة ({selectedIds.length})</span>
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
+                <th className="px-3 py-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={entries.length > 0 && selectedIds.length === entries.length}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
+                  />
+                </th>
                 <th className="px-4 py-3 whitespace-nowrap">اسم الخدمة</th>
                 <th className="px-4 py-3 whitespace-nowrap">الورق</th>
                 <th className="px-4 py-3 whitespace-nowrap">الوجه</th>
@@ -346,14 +400,22 @@ export default function ServicesPage() {
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
+                  <td colSpan={9} className="text-center py-12 text-slate-500">
                     لا توجد خدمات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
               ) : (
                 entries.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.service_name}</td>
+                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-blue-50/50' : ''}`}>
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleSelectRow(item.id)}
+                          className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
+                        />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.service_name}</td>
                     <td className="px-4 py-3 font-mono text-slate-700 whitespace-nowrap">{item.paper_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${

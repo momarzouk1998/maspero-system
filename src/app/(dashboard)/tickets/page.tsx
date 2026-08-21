@@ -19,6 +19,9 @@ export default function TicketsPage() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editPrice, setEditPrice] = useState('');
@@ -69,6 +72,7 @@ export default function TicketsPage() {
       if (res.ok) {
         const data = await res.json();
         setBookings(data.bookings || []);
+        setSelectedIds([]);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
       }
     } catch (e) {
@@ -84,6 +88,32 @@ export default function TicketsPage() {
   }, [search, filterEmployeeId, filterStartDate, filterEndDate]);
 
   const hasActiveFilters = filterEmployeeId || filterStartDate || filterEndDate;
+
+  const handleSelectAll = () => {
+    if (bookings.length > 0 && selectedIds.length === bookings.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(bookings.map(b => b.id));
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من الحجوزات المحددة؟`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => fetch(`/api/tickets?id=${id}`, { method: 'DELETE' })));
+      setSelectedIds([]);
+      fetchBookings(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
+    }
+  };
 
   const resetFilters = () => {
     setFilterEmployeeId('');
@@ -314,10 +344,34 @@ export default function TicketsPage() {
           </h2>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl flex items-center justify-between animate-in fade-in">
+            <span className="text-xs font-bold text-purple-900">
+              تم تحديد ({selectedIds.length}) حجز من أصل ({bookings.length})
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>حذف المحددة ({selectedIds.length})</span>
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm text-slate-700">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
+                <th className="px-3 py-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={bookings.length > 0 && selectedIds.length === bookings.length}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+                  />
+                </th>
                 <th className="px-4 py-3">العدد</th>
                 <th className="px-4 py-3">سعر التذكرة</th>
                 <th className="px-4 py-3">العمولة</th>
@@ -344,8 +398,16 @@ export default function TicketsPage() {
                 </tr>
               ) : (
                 bookings.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
+                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-purple-50/50' : ''}`}>
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleSelectRow(item.id)}
+                          className="w-4 h-4 text-purple-600 rounded cursor-pointer accent-purple-600"
+                        />
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.item_count}</td>
                     <td className="px-4 py-3 font-mono text-slate-700">
                       {formatNumberLocale(Number(item.ticket_price), 'en-US')}
                     </td>

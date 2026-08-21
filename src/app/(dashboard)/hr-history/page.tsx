@@ -22,6 +22,8 @@ export default function HRHistoryPage() {
 
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchHRHistory = async (page = 1) => {
     setLoading(true);
@@ -35,6 +37,7 @@ export default function HRHistoryPage() {
       if (res.ok) {
         const data = await res.json();
         setHrItems(data.hrItems || []);
+        setSelectedIds([]);
         if (data.pagination) setPagination(data.pagination);
       }
     } catch (error) {
@@ -103,6 +106,32 @@ export default function HRHistoryPage() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (hrItems.length > 0 && selectedIds.length === hrItems.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(hrItems.map(item => item.id));
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من طلبات الحوافز والخصومات المحددة؟`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => fetch(`/api/hr?id=${id}`, { method: 'DELETE' })));
+      setSelectedIds([]);
+      fetchHRHistory(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
     }
   };
 
@@ -338,11 +367,35 @@ export default function HRHistoryPage() {
 
       {/* HR Table Container */}
       <div className="flex-1 space-y-4 min-w-0">
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between animate-in fade-in">
+            <span className="text-xs font-bold text-indigo-900">
+              تم تحديد ({selectedIds.length}) طلب من أصل ({hrItems.length})
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>حذف المحددة ({selectedIds.length})</span>
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700 table-auto">
-            <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
+          <table className="w-full text-right text-sm text-slate-700 table-auto">
+            <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
+                <th className="px-3 py-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={hrItems.length > 0 && selectedIds.length === hrItems.length}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600"
+                  />
+                </th>
+                <th className="px-4 py-3 whitespace-nowrap">اسم الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">نوع الطلب</th>
                 <th className="px-4 py-3 whitespace-nowrap">عدد الساعات</th>
                 <th className="px-4 py-3 whitespace-nowrap">الحالة والموافقة</th>
@@ -374,7 +427,15 @@ export default function HRHistoryPage() {
                   const canDelete = isManager || (isCreator && isPending);
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-indigo-50/50' : ''}`}>
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleSelectRow(item.id)}
+                          className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600"
+                        />
+                      </td>
                       <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
                         <User className="w-4 h-4 text-indigo-600 shrink-0" />
                         <span>{item.employee_name || item.e_hr_name || '-'}</span>

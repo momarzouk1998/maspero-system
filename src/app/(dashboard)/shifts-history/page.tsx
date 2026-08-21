@@ -12,7 +12,8 @@ export default function ShiftsHistoryPage() {
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Shift Audit Report Modal State (Item 4)
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedAuditShift, setSelectedAuditShift] = useState<any | null>(null);
   const [auditData, setAuditData] = useState<any | null>(null);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -149,6 +150,7 @@ export default function ShiftsHistoryPage() {
       if (res.ok) {
         const data = await res.json();
         setShifts(data.shifts || []);
+        setSelectedIds([]);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0 });
       }
     } catch (e) {
@@ -165,6 +167,40 @@ export default function ShiftsHistoryPage() {
       .then(d => setUsersList(getActiveUsers(d.users || [])))
       .catch(console.error);
   }, [search, filterType, filterStartDate, filterEndDate, filterEmployeeId]);
+
+  const handleSelectAll = () => {
+    if (shifts.length > 0 && selectedIds.length === shifts.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(shifts.map(s => s.id));
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من الشفتات المحددة؟`)) return;
+    try {
+      await Promise.all(selectedIds.map(id => fetch(`/api/shifts?id=${id}`, { method: 'DELETE' })));
+      setSelectedIds([]);
+      fetchShifts(pagination.page);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
+    }
+  };
+
+  const resetFilters = () => {
+    setFilterType('');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setFilterEmployeeId('');
+    setIsFilterOpen(false);
+  };
 
   const handleDeleteShift = async (id: string) => {
     if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الشفت؟')) return;
@@ -212,13 +248,6 @@ export default function ShiftsHistoryPage() {
     } finally {
       setEditSubmitting(false);
     }
-  };
-
-  const resetFilters = () => {
-    setFilterType('');
-    setFilterStartDate('');
-    setFilterEndDate('');
-    setFilterEmployeeId('');
   };
 
   return (
@@ -432,10 +461,35 @@ export default function ShiftsHistoryPage() {
         {/* Shifts Table & Pagination (Flex-1) */}
         <div className="flex-1 space-y-4 min-w-0">
           <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+            {/* Bulk Action Bar */}
+            {selectedIds.length > 0 && (
+              <div className="p-3.5 bg-cyan-50 border border-cyan-200 rounded-2xl flex items-center justify-between animate-in fade-in">
+                <span className="text-xs font-bold text-cyan-900">
+                  تم تحديد ({selectedIds.length}) شفت من أصل ({shifts.length})
+                </span>
+                {currentUser?.role === 'manager' && (
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>حذف المحددة ({selectedIds.length})</span>
+                  </button>
+                )}
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm text-slate-700 table-auto">
                 <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                   <tr>
+                    <th className="px-3 py-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={shifts.length > 0 && selectedIds.length === shifts.length}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-cyan-600 rounded cursor-pointer accent-cyan-600"
+                      />
+                    </th>
                     <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                     <th className="px-4 py-3 whitespace-nowrap">نوع الشفت</th>
                     <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
@@ -449,20 +503,28 @@ export default function ShiftsHistoryPage() {
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                      <td colSpan={9} className="text-center py-12 text-slate-500">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
                         <span>جاري تحميل سجل الشفتات...</span>
                       </td>
                     </tr>
                   ) : shifts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                      <td colSpan={9} className="text-center py-12 text-slate-500">
                         لا توجد شفتات مسجلة تطابق التصفية الحالية
                       </td>
                     </tr>
                   ) : (
                     shifts.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-cyan-50/50' : ''}`}>
+                        <td className="px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(item.id)}
+                            onChange={() => toggleSelectRow(item.id)}
+                            className="w-4 h-4 text-cyan-600 rounded cursor-pointer accent-cyan-600"
+                          />
+                        </td>
                         <td className="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">{item.employee_name || '-'}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
