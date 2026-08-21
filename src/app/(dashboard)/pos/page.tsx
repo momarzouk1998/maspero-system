@@ -518,16 +518,6 @@ export default function POSPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Kiosk Printing Setup Guide Button */}
-            <button
-              onClick={() => setShowKioskGuideModal(true)}
-              className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs rounded-xl border border-amber-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-              title="دليل تفعيل الطباعة الفورية المباشرة بدون نافذة انتظار"
-            >
-              <Printer className="w-3.5 h-3.5 text-amber-700" />
-              <span>الطباعة الفورية (الكشك)</span>
-            </button>
-
             {/* Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
             {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -994,18 +984,12 @@ export default function POSPage() {
             </div>
 
             <button
-              onClick={() => setShowPrintHint(v => !v)}
-              className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              onClick={() => setShowKioskGuideModal(true)}
+              className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer font-medium"
             >
               <Info className="w-3.5 h-3.5" />
               <span>طباعة بدون نافذة انتظار</span>
             </button>
-
-            {showPrintHint && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 leading-relaxed">
-                أضف <code className="bg-blue-100 px-1 rounded font-mono">--kiosk-printing</code> لمسار Chrome واجعل طابعة الكاشير افتراضية.
-              </div>
-            )}
 
             <div className="grid grid-cols-2 gap-2">
               <button
