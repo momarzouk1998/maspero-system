@@ -1,10 +1,6 @@
 import { db } from '@/lib/db';
 
 export async function checkSalesLock(userId: string, userRole: string): Promise<{ locked: boolean; reason: string }> {
-  if (userRole === 'manager') {
-    return { locked: false, reason: '' };
-  }
-
   // 1. Check if user has an active shift
   const activeShift = await db.shifts.findFirst({
     where: { employee_id: userId, end_time: null }
@@ -12,6 +8,11 @@ export async function checkSalesLock(userId: string, userRole: string): Promise<
 
   if (!activeShift) {
     return { locked: true, reason: 'برجاء بدء الشفت أولاً من صفحة إدارة الشفتات قبل تسجيل أي مبيعات.' };
+  }
+
+  // Managers can start selling immediately after starting a shift without cashier drawer
+  if (userRole === 'manager') {
+    return { locked: false, reason: '' };
   }
 
   // 2. Check active shifts of colleagues

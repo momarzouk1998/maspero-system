@@ -144,8 +144,10 @@ export async function POST(req: Request) {
     const currentBal = Number(wallet.current_balance || 0);
     const newBal = currentBal + balanceChange;
 
+    const isExemptFromNegative = (wallet.wallet_name.includes('الصياد') || wallet.wallet_name.includes('الكوماندا')) && transactionType === 'إيداع';
+
     // PREVENT NEGATIVE BALANCE CONSTRAINT FOR WALLETS, MACHINES & DRAWERS
-    if (newBal < 0) {
+    if (newBal < 0 && !isExemptFromNegative) {
       return NextResponse.json({
         error: `عذراً، رصيد (${wallet.wallet_name}) لا يكفي للعملية (الرصيد المتاح: ${currentBal.toLocaleString('en-US')}) ولا يمكن أن يصبح بالسالب!`
       }, { status: 400 });

@@ -117,7 +117,7 @@ export async function GET() {
     if (!isUserShiftActive) {
       isSalesLocked = true;
       lockReason = 'صفحة البيع مغلقة لحين بدء الشفت. برجاء بدء الشفت أولاً من صفحة الشفتات والعهدة.';
-    } else if (userCashBalance <= 0) {
+    } else if (user.role !== 'manager' && userCashBalance <= 0) {
       isSalesLocked = true;
       lockReason = 'صفحة البيع مغلقة لأن رصيد عهدة الكاش يساوي صفر. برجاء استلام عهدة كاش للبدء في البيع.';
     }

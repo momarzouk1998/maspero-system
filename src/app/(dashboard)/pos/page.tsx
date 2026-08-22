@@ -329,8 +329,8 @@ export default function POSPage() {
   // ─── Wallet Popup ────────────────────────────────────────
   const [wltPopup, setWltPopup] = useState<any | null>(null);
   const [wltOpType, setWltOpType] = useState<'إيداع' | 'سحب'>('إيداع');
-  const [wltAmt, setWltAmt] = useState(0);
-  const [wltComm, setWltComm] = useState(0);
+  const [wltAmt, setWltAmt] = useState<number | string>('');
+  const [wltComm, setWltComm] = useState<number | string>('');
   const [wltNotes, setWltNotes] = useState('');
   const [wltLoading, setWltLoading] = useState(false);
   const [komandaProvider, setKomandaProvider] = useState<'011' | '010' | 'انستا' | ''>('');
@@ -364,13 +364,16 @@ export default function POSPage() {
     }
     setWltPopup(w);
     setWltOpType(targetType);
-    setWltAmt(0); setWltComm(0); setWltNotes('');
+    setWltAmt(''); setWltComm(''); setWltNotes('');
     setKomandaProvider('');
     setFawryWithdrawalType('');
   };
 
   const handleAddWallet = async () => {
-    if (!wltPopup || wltAmt <= 0 || !activeInvoiceCode) return;
+    const numWltAmt = parseFloat(String(wltAmt)) || 0;
+    const numWltComm = parseFloat(String(wltComm)) || 0;
+
+    if (!wltPopup || numWltAmt <= 0 || !activeInvoiceCode) return;
     const isKomandaCheck = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
     const isFawryCheck = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
     if (isKomandaCheck && !komandaProvider) {
@@ -396,7 +399,7 @@ export default function POSPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletId: wltPopup.id, transactionType: wltOpType,
-          amount: wltAmt, commission: wltComm,
+          amount: numWltAmt, commission: numWltComm,
           description: finalDescription, invoice_code: activeInvoiceCode,
           comanda_type: isKomanda ? komandaProvider : undefined,
           fawry_type: isFawryMachine ? fawryWithdrawalType : undefined,
@@ -1233,9 +1236,10 @@ export default function POSPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">المبلغ</label>
+                <label className="block text-xs font-medium text-slate-700 mb-2">المبلغ *</label>
                 <input type="number" step="0.25" min="1" value={wltAmt}
-                  onChange={e => setWltAmt(parseFloat(e.target.value) || 0)}
+                  onChange={e => setWltAmt(e.target.value === '' ? '' : (parseFloat(e.target.value) || ''))}
+                  placeholder="0"
                   className={`w-full p-3 bg-white border rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:ring-2 transition-colors ${wltOpType === 'إيداع'
                     ? 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                     : 'border-slate-300 focus:border-red-500 focus:ring-red-200'
@@ -1245,7 +1249,8 @@ export default function POSPage() {
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-2">عمولتنا</label>
                 <input type="number" step="0.25" min="0" value={wltComm}
-                  onChange={e => setWltComm(parseFloat(e.target.value) || 0)}
+                  onChange={e => setWltComm(e.target.value === '' ? '' : (parseFloat(e.target.value) || ''))}
+                  placeholder="0"
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                 />
               </div>
@@ -1260,26 +1265,35 @@ export default function POSPage() {
             </div>
 
             {/* Summary */}
-            <div className={`p-3 rounded-xl border text-xs flex justify-between ${wltOpType === 'إيداع' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
-              }`}>
-              <span className="text-slate-600">الإجمالي المحصّل:</span>
-              <span className={`font-bold font-mono ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
-                {formatNumber(wltOpType === 'إيداع' ? wltAmt + wltComm : wltAmt - wltComm)}
-              </span>
-            </div>
+            {(() => {
+              const numAmt = parseFloat(String(wltAmt)) || 0;
+              const numComm = parseFloat(String(wltComm)) || 0;
+              const summaryVal = wltOpType === 'إيداع' ? (numAmt + numComm) : (numAmt - numComm);
 
-            <div className="flex gap-3">
-              <button onClick={handleAddWallet} disabled={wltLoading || wltAmt <= 0}
-                className={`flex-1 py-3 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors ${wltOpType === 'إيداع'
-                  ? 'bg-emerald-600 hover:bg-emerald-500'
-                  : 'bg-red-600 hover:bg-red-500'
-                  }`}>
-                {wltLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                تسجيل {wltOpType}
-              </button>
-              <button onClick={() => setWltPopup(null)}
-                className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl">إلغاء</button>
-            </div>
+              return (
+                <>
+                  <div className={`p-3 rounded-xl border text-xs flex justify-between ${wltOpType === 'إيداع' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                    <span className="text-slate-600">الإجمالي المحصّل:</span>
+                    <span className={`font-bold font-mono ${wltOpType === 'إيداع' ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {formatNumber(summaryVal)}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button onClick={handleAddWallet} disabled={wltLoading || numAmt <= 0}
+                      className={`flex-1 py-3 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors ${wltOpType === 'إيداع'
+                        ? 'bg-emerald-600 hover:bg-emerald-500'
+                        : 'bg-red-600 hover:bg-red-500'
+                        }`}>
+                      {wltLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      تسجيل {wltOpType}
+                    </button>
+                    <button onClick={() => setWltPopup(null)}
+                      className="py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl">إلغاء</button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

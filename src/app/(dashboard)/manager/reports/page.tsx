@@ -126,8 +126,29 @@ export default function ManagerReportsPage() {
   const metrics = data?.metrics || {};
   const monthlyReports = data?.monthlyReports || [];
   const categoryReports = data?.categoryReports || [];
-  const walletsByType = data?.walletsByType || { محافظ: [], ماكينات: [], أدراج: [] };
-  const walletsTotals = data?.walletsTotals || { محافظ: 0, ماكينات: 0, أدراج: 0 };
+  const rawWalletsByType = data?.walletsByType || { محافظ: [], ماكينات: [], أدراج: [] };
+
+  const filteredWallets = (rawWalletsByType.محافظ || []).filter((w: any) =>
+    !w.wallet_name.includes('الصياد') && !w.wallet_name.includes('الكوماندا')
+  );
+
+  const filteredMachines = (rawWalletsByType.ماكينات || []).filter((w: any) =>
+    !w.wallet_name.includes('سحب فوري 1') && !w.wallet_name.includes('سحب فوري 2') && !w.wallet_name.includes('سحب فوري1') && !w.wallet_name.includes('سحب فوري2')
+  );
+
+  const filteredDrawers = rawWalletsByType.أدراج || [];
+
+  const walletsByType = {
+    محافظ: filteredWallets,
+    ماكينات: filteredMachines,
+    أدراج: filteredDrawers
+  };
+
+  const walletsTotals = {
+    محافظ: filteredWallets.reduce((sum: number, w: any) => sum + Number(w.current_balance || 0), 0),
+    ماكينات: filteredMachines.reduce((sum: number, w: any) => sum + Number(w.current_balance || 0), 0),
+    أدراج: filteredDrawers.reduce((sum: number, w: any) => sum + Number(w.current_balance || 0), 0)
+  };
   const employeeCustody = data?.employeeCustody || [];
   const totalEmployeeCustody = data?.totalEmployeeCustody || 0;
 
@@ -512,10 +533,11 @@ export default function ManagerReportsPage() {
                             <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد أول المدة</th>
                             <th className="px-3 py-3 whitespace-nowrap text-indigo-700 bg-indigo-50/50">رصيد آخر المدة</th>
                             <th className="px-3 py-3 whitespace-nowrap text-amber-800 bg-amber-100/50">تكلفة المشتريات</th>
-                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة المشتريات</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-amber-600 bg-amber-50/30">نسبة تكلفة المشتريات</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة المحافظ</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة التذاكر</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة إيداع المكن</th>
+                            <th className="px-3 py-3 whitespace-nowrap text-emerald-700">عمولة سحب المكن</th>
                             <th className="px-3 py-3 whitespace-nowrap text-blue-700">إيراد الخدمات والطباعة</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700">إجمالي الربح</th>
                             <th className="px-3 py-3 whitespace-nowrap text-emerald-700 bg-emerald-50/50">إجمالي العمولات</th>
@@ -535,6 +557,11 @@ export default function ManagerReportsPage() {
                             const calculatedPurchasesCost = opening + purchasesVal - closing;
 
                             const serviceRev = Number(report.service_revenue || 0);
+                            const totalRev = Number(report.total_revenue || serviceRev || 0);
+                            const purchasesCostPercent = totalRev > 0
+                              ? ((calculatedPurchasesCost / totalRev) * 100).toFixed(1)
+                              : (report.purchases_cost_percent || 0);
+
                             const totalProfit = Number(report.total_profit || 0) || (serviceRev - calculatedPurchasesCost);
 
                             const totalComm = Number(report.total_commissions || 0) || (
@@ -554,10 +581,11 @@ export default function ManagerReportsPage() {
                                 <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(opening)}</td>
                                 <td className="px-3 py-3 text-indigo-700 font-bold whitespace-nowrap bg-indigo-50/30">{formatNumber(closing)}</td>
                                 <td className="px-3 py-3 text-amber-900 font-extrabold whitespace-nowrap bg-amber-100/50">{formatNumber(calculatedPurchasesCost)}</td>
-                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{report.purchases_cost_percent}%</td>
+                                <td className="px-3 py-3 text-amber-600 font-bold whitespace-nowrap bg-amber-50/20">{purchasesCostPercent}%</td>
                                 <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.wallet_commission))}</td>
                                 <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.tickets_commission))}</td>
                                 <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_deposit_commission))}</td>
+                                <td className="px-3 py-3 text-emerald-600 font-bold whitespace-nowrap">{formatNumber(Number(report.machine_withdrawal_commission))}</td>
                                 <td className="px-3 py-3 text-blue-700 whitespace-nowrap">{formatNumber(serviceRev)}</td>
                                 <td className="px-3 py-3 text-emerald-700 whitespace-nowrap font-bold">{formatNumber(totalProfit)}</td>
                                 <td className="px-3 py-3 text-emerald-700 font-bold whitespace-nowrap bg-emerald-50/40">{formatNumber(totalComm)}</td>
