@@ -603,113 +603,143 @@ export default function ManagerUsersPage() {
             <div className="flex items-center justify-between border-b pb-3 border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-purple-600" />
-                <span>ضبط صلاحيات الموظف: ({permissionUser.name})</span>
+                <span>
+                  {permissionUser.role === 'manager'
+                    ? `صلاحيات المدير: (${permissionUser.name})`
+                    : `ضبط صلاحيات الموظف: (${permissionUser.name})`}
+                </span>
               </h3>
               <button onClick={() => setPermissionUser(null)} className="p-1 text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 leading-relaxed">
-              حدد الصلاحيات المتاحة بدقة لكل صفحة عبر مفاتيح الاختيار (Checkboxes):
-            </p>
+            {permissionUser.role === 'manager' ? (
+              <div className="space-y-4">
+                <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-relaxed font-medium">
+                  حساب المدير يمتلك صلاحية الوصول الكاملة عبر كافة أقسام النظام تلقائياً دون الحاجة لتحديد خانات اختيار.
+                </div>
 
-            <form onSubmit={handleSavePermissions} className="space-y-4">
-              <div className="space-y-3">
-                {FEATURES_LIST.map((feat) => {
-                  const perm = userPermissions[feat.key] || { create: true, update: false, delete: false };
-
-                  // Features where edit/delete is conditional on open shift
-                  const shiftConditional = ['services', 'tickets', 'machines', 'expenses', 'charge_history'].includes(feat.key);
-                  const showShiftNote = shiftConditional && (perm.update || perm.delete);
-
-                  return (
-                    <div key={feat.key} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
-                      <span className="text-xs font-bold text-slate-900 block">{feat.label}</span>
-
-                      <div className="grid grid-cols-3 gap-2 pt-1">
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                          perm.create ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={perm.create}
-                            onChange={() => togglePermissionCheckbox(feat.key, 'create')}
-                            className="hidden"
-                          />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                            perm.create ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'
-                          }`}>
-                            {perm.create && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
-                          <span>إضافة</span>
-                        </label>
-
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                          perm.update ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={perm.update}
-                            onChange={() => togglePermissionCheckbox(feat.key, 'update')}
-                            className="hidden"
-                          />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                            perm.update ? 'bg-amber-600 border-amber-600 text-white' : 'border-slate-300'
-                          }`}>
-                            {perm.update && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
-                          <span>تعديل</span>
-                        </label>
-
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                          perm.delete ? 'bg-red-50 border-red-300 text-red-800' : 'bg-white border-slate-200 text-slate-500'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={perm.delete}
-                            onChange={() => togglePermissionCheckbox(feat.key, 'delete')}
-                            className="hidden"
-                          />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                            perm.delete ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300'
-                          }`}>
-                            {perm.delete && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
-                          <span>حذف</span>
-                        </label>
-                      </div>
-
-                      {showShiftNote && (
-                        <div className="flex items-start gap-1.5 mt-1 p-2 bg-amber-50 border border-amber-200 rounded-xl">
-                          <HelpCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-[10px] text-amber-700 leading-relaxed">
-                            التعديل/الحذف مقيد بالشفت المفتوح — يتم تعديل الأرصدة تلقائياً عند الحذف/التعديل.
-                          </span>
-                        </div>
-                      )}
+                <div className="space-y-2.5">
+                  {FEATURES_LIST.map((feat) => (
+                    <div key={feat.key} className="p-3 rounded-2xl border border-slate-200 bg-slate-50/80 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">{feat.label}</span>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                        {feat.key === 'invoices' ? 'إدارة وحذف السجل (في أي وقت)' : 'إضافة - تعديل - حذف (في أي وقت)'}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
 
-              <div className="flex gap-3 pt-3 border-t border-slate-200">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  حفظ الأذونات والصلاحيات
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPermissionUser(null)}
-                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  إلغاء
-                </button>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2 text-xs text-amber-900 leading-relaxed">
+                  <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>ملاحظة للمدير:</strong> التعديل والحذف متاحان للمدير في أي وقت (سواء شفت مغلق أو مفتوح). وفي حالة التعديل أو الحذف لشفت مفتوح (سواء للمدير أو لموظف) يتم تحديث وعكس الأرصدة والعهدة تلقائياً.
+                  </span>
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setPermissionUser(null)}
+                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
+                  >
+                    إغلاق
+                  </button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleSavePermissions} className="space-y-4">
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl flex items-start gap-2 text-xs text-purple-900 leading-relaxed">
+                  <HelpCircle className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>
+                    حدد الصلاحيات المتاحة للموظف عبر الـ Checkboxes. ملاحظة: التعديل والحذف للموظف مقيدان بوقت الشفت المفتوح الخاص به، ويتم تحديث الأرصدة تلقائياً عند التعديل أو الحذف.
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {FEATURES_LIST.map((feat) => {
+                    const perm = userPermissions[feat.key] || { create: true, update: false, delete: false };
+
+                    return (
+                      <div key={feat.key} className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
+                        <span className="text-xs font-bold text-slate-900 block">{feat.label}</span>
+
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                            perm.create ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={perm.create}
+                              onChange={() => togglePermissionCheckbox(feat.key, 'create')}
+                              className="hidden"
+                            />
+                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                              perm.create ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {perm.create && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span>إضافة</span>
+                          </label>
+
+                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                            perm.update ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={perm.update}
+                              onChange={() => togglePermissionCheckbox(feat.key, 'update')}
+                              className="hidden"
+                            />
+                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                              perm.update ? 'bg-amber-600 border-amber-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {perm.update && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span>تعديل</span>
+                          </label>
+
+                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                            perm.delete ? 'bg-red-50 border-red-300 text-red-800' : 'bg-white border-slate-200 text-slate-500'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={perm.delete}
+                              onChange={() => togglePermissionCheckbox(feat.key, 'delete')}
+                              className="hidden"
+                            />
+                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                              perm.delete ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {perm.delete && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span>حذف</span>
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3 pt-3 border-t border-slate-200">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    حفظ الأذونات والصلاحيات
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPermissionUser(null)}
+                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
