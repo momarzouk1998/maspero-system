@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -108,8 +108,11 @@ export async function DELETE(req: Request) {
     }
 
     // If shift is OPEN, verify user permissions (manager or the employee who made the tx)
+    if (!hasPermission(user, 'charge_history', 'delete')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية حذف سجلات الشحن. تواصل مع المدير.' }, { status: 403 });
+    }
     if (user.role !== 'manager' && user.id !== txItem.employee_id) {
-      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه العملية' }, { status: 403 });
+      return NextResponse.json({ error: 'لا يمكن الحذف خارج الشفت المفتوح الخاص بك' }, { status: 403 });
     }
 
     // Perform balance reversal for open shift deletion

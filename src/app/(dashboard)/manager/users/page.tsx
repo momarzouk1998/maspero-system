@@ -15,14 +15,14 @@ const FEATURES_LIST = [
   { key: 'charge_history', label: 'سجل عمليات الشحن' },
 ];
 
-const DEFAULT_PERMISSIONS: Record<string, { read: boolean; create: boolean; update: boolean; delete: boolean }> = {
-  services: { read: true, create: true, update: false, delete: false },
-  tickets: { read: true, create: true, update: false, delete: false },
-  machines: { read: true, create: true, update: true, delete: false },
-  expenses: { read: true, create: true, update: false, delete: false },
-  shifts: { read: true, create: true, update: false, delete: false },
-  invoices: { read: true, create: false, update: false, delete: false },
-  charge_history: { read: true, create: true, update: false, delete: false },
+const DEFAULT_PERMISSIONS: Record<string, { create: boolean; update: boolean; delete: boolean }> = {
+  services: { create: true, update: false, delete: false },
+  tickets: { create: true, update: false, delete: false },
+  machines: { create: true, update: true, delete: false },
+  expenses: { create: true, update: false, delete: false },
+  shifts: { create: true, update: false, delete: false },
+  invoices: { create: false, update: false, delete: false },
+  charge_history: { create: true, update: false, delete: false },
 };
 
 export default function ManagerUsersPage() {
@@ -46,7 +46,7 @@ export default function ManagerUsersPage() {
 
   // Permissions Modal State
   const [permissionUser, setPermissionUser] = useState<any>(null);
-  const [userPermissions, setUserPermissions] = useState<Record<string, { read: boolean; create: boolean; update: boolean; delete: boolean }>>(DEFAULT_PERMISSIONS);
+  const [userPermissions, setUserPermissions] = useState<Record<string, { create: boolean; update: boolean; delete: boolean }>>(DEFAULT_PERMISSIONS);
 
   // Adjust Wallet Modal State
   const [adjustWalletUser, setAdjustWalletUser] = useState<any>(null);
@@ -175,7 +175,7 @@ export default function ManagerUsersPage() {
   // Permissions Handler
   const openPermissionsModal = (u: any) => {
     setPermissionUser(u);
-    let parsed: Record<string, { read: boolean; create: boolean; update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    let parsed: Record<string, { create: boolean; update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
 
     let rawPerms = u.permissions;
     if (typeof rawPerms === 'string') {
@@ -191,15 +191,14 @@ export default function ManagerUsersPage() {
         const p = rawPerms[feat.key];
         if (p && typeof p === 'object') {
           parsed[feat.key] = {
-            read: Boolean(p.read ?? true),
             create: Boolean(p.create ?? true),
             update: Boolean(p.update ?? false),
             delete: Boolean(p.delete ?? false),
           };
         } else if (p === 'READ_ONLY') {
-          parsed[feat.key] = { read: true, create: false, update: false, delete: false };
+          parsed[feat.key] = { create: false, update: false, delete: false };
         } else if (p === 'FULL_ACCESS') {
-          parsed[feat.key] = { read: true, create: true, update: true, delete: true };
+          parsed[feat.key] = { create: true, update: true, delete: true };
         }
       });
     }
@@ -207,7 +206,7 @@ export default function ManagerUsersPage() {
     setUserPermissions(parsed);
   };
 
-  const togglePermissionCheckbox = (featKey: string, actionKey: 'read' | 'create' | 'update' | 'delete') => {
+  const togglePermissionCheckbox = (featKey: string, actionKey: 'create' | 'update' | 'delete') => {
     setUserPermissions(prev => ({
       ...prev,
       [featKey]: {
@@ -618,69 +617,77 @@ export default function ManagerUsersPage() {
             <form onSubmit={handleSavePermissions} className="space-y-4">
               <div className="space-y-3">
                 {FEATURES_LIST.map((feat) => {
-                  const perm = userPermissions[feat.key] || { read: true, create: true, update: false, delete: false };
+                  const perm = userPermissions[feat.key] || { create: true, update: false, delete: false };
+
+                  // Features where edit/delete is conditional on open shift
+                  const shiftConditional = ['services', 'tickets', 'machines', 'expenses', 'charge_history'].includes(feat.key);
+                  const showShiftNote = shiftConditional && (perm.update || perm.delete);
 
                   return (
                     <div key={feat.key} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
                       <span className="text-xs font-bold text-slate-900 block">{feat.label}</span>
 
-                      <div className="grid grid-cols-4 gap-2 pt-1">
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${perm.read ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-white border-slate-200 text-slate-500'
-                          }`}>
-                          <input
-                            type="checkbox"
-                            checked={perm.read}
-                            onChange={() => togglePermissionCheckbox(feat.key, 'read')}
-                            className="hidden"
-                          />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${perm.read ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'}`}>
-                            {perm.read && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
-                          <span>عرض</span>
-                        </label>
-
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${perm.create ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500'
-                          }`}>
+                      <div className="grid grid-cols-3 gap-2 pt-1">
+                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                          perm.create ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500'
+                        }`}>
                           <input
                             type="checkbox"
                             checked={perm.create}
                             onChange={() => togglePermissionCheckbox(feat.key, 'create')}
                             className="hidden"
                           />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${perm.create ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'}`}>
+                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            perm.create ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'
+                          }`}>
                             {perm.create && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                           <span>إضافة</span>
                         </label>
 
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${perm.update ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500'
-                          }`}>
+                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                          perm.update ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500'
+                        }`}>
                           <input
                             type="checkbox"
                             checked={perm.update}
                             onChange={() => togglePermissionCheckbox(feat.key, 'update')}
                             className="hidden"
                           />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${perm.update ? 'bg-amber-600 border-amber-600 text-white' : 'border-slate-300'}`}>
+                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            perm.update ? 'bg-amber-600 border-amber-600 text-white' : 'border-slate-300'
+                          }`}>
                             {perm.update && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                           <span>تعديل</span>
                         </label>
 
-                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${perm.delete ? 'bg-red-50 border-red-300 text-red-800' : 'bg-white border-slate-200 text-slate-500'
-                          }`}>
+                        <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                          perm.delete ? 'bg-red-50 border-red-300 text-red-800' : 'bg-white border-slate-200 text-slate-500'
+                        }`}>
                           <input
                             type="checkbox"
                             checked={perm.delete}
                             onChange={() => togglePermissionCheckbox(feat.key, 'delete')}
                             className="hidden"
                           />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${perm.delete ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300'}`}>
+                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            perm.delete ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300'
+                          }`}>
                             {perm.delete && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                           <span>حذف</span>
                         </label>
                       </div>
+
+                      {showShiftNote && (
+                        <div className="flex items-start gap-1.5 mt-1 p-2 bg-amber-50 border border-amber-200 rounded-xl">
+                          <HelpCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-[10px] text-amber-700 leading-relaxed">
+                            التعديل/الحذف مقيد بالشفت المفتوح — يتم تعديل الأرصدة تلقائياً عند الحذف/التعديل.
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

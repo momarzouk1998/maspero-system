@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 
 export async function GET(req: Request) {
@@ -128,6 +128,10 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
+  if (!hasPermission(user, 'expenses', 'create')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية تسجيل المصروفات والسلف. تواصل مع المدير.' }, { status: 403 });
+  }
+
   try {
     const { mainType, items, paymentMethod, amount, notes, targetEmployeeId, date } = await req.json();
 
@@ -231,8 +235,11 @@ export async function DELETE(req: Request) {
 
     const isShiftOpen = Boolean(activeShift);
 
+    if (!hasPermission(user, 'expenses', 'delete')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية حذف المصروفات. تواصل مع المدير.' }, { status: 403 });
+    }
     if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
-      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه المعاملة' }, { status: 403 });
+      return NextResponse.json({ error: 'لا يمكن الحذف خارج الشفت المفتوح الخاص بك' }, { status: 403 });
     }
 
     const numAmount = Number(exp.amount || 0);
@@ -277,9 +284,13 @@ export async function PUT(req: Request) {
 
     const isShiftOpen = Boolean(activeShift);
 
-    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
-      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذه المعاملة' }, { status: 403 });
+    if (!hasPermission(user, 'expenses', 'update')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية تعديل المصروفات. تواصل مع المدير.' }, { status: 403 });
     }
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+      return NextResponse.json({ error: 'لا يمكن التعديل خارج الشفت المفتوح الخاص بك' }, { status: 403 });
+    }
+
 
     const numNewAmount = amount !== undefined ? Number(amount) : Number(exp.amount || 0);
     const targetMainType = mainType || exp.main_type;

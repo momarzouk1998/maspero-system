@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { checkSalesLock } from '@/lib/custody-lock';
 
@@ -70,6 +70,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  if (!hasPermission(user, 'services', 'create')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية إضافة خدمات. تواصل مع المدير.' }, { status: 403 });
+  }
 
   const lockStatus = await checkSalesLock(user.id, user.role);
   if (lockStatus.locked) {
@@ -151,8 +155,11 @@ export async function DELETE(req: Request) {
 
     const isShiftOpen = Boolean(activeShift);
 
+    if (!hasPermission(user, 'services', 'delete')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية حذف الخدمات. تواصل مع المدير.' }, { status: 403 });
+    }
     if (user.role !== 'manager' && (!isShiftOpen || user.id !== entry.employee_id)) {
-      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه العملية' }, { status: 403 });
+      return NextResponse.json({ error: 'لا يمكن الحذف خارج الشفت المفتوح الخاص بك' }, { status: 403 });
     }
 
     await db.$transaction(async (tx: any) => {
@@ -187,8 +194,11 @@ export async function PUT(req: Request) {
 
     const isShiftOpen = Boolean(activeShift);
 
+    if (!hasPermission(user, 'services', 'update')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية تعديل الخدمات. تواصل مع المدير.' }, { status: 403 });
+    }
     if (user.role !== 'manager' && (!isShiftOpen || user.id !== entry.employee_id)) {
-      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذه العملية' }, { status: 403 });
+      return NextResponse.json({ error: 'لا يمكن التعديل خارج الشفت المفتوح الخاص بك' }, { status: 403 });
     }
 
     const numNewAmount = amount !== undefined ? Number(amount) : Number(entry.amount || 0);
