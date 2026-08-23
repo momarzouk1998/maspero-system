@@ -7,7 +7,7 @@ import {
   Calendar, RefreshCw, ArrowRight, Coins, ShoppingBag, Layers, 
   FileText, ArrowDownLeft, ArrowUpRight, Zap, Wallet, Building2,
   Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle,
-  Edit3, Trash2, X
+  Edit3, Trash2, X, Calculator
 } from 'lucide-react';
 import { formatNumber, formatNumberLocale } from '@/lib/user-utils';
 
@@ -505,15 +505,33 @@ export default function ManagerReportsPage() {
                   </button>
                 </div>
 
-                {/* Formula Explanation Bar */}
-                <div className="px-5 py-3 bg-amber-50 border-y border-amber-200 text-xs text-amber-900 font-medium flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="font-bold text-amber-950">📐 معادلة تكلفة المشتريات: </span>
-                    <span>رصيد أول المدة + قيمة المشتريات - رصيد آخر المدة</span>
+                {/* Formula Explanation Block */}
+                <div className="px-5 py-4 bg-amber-50/90 border-y border-amber-200 space-y-2 text-xs">
+                  <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
+                    <Calculator className="w-4 h-4 text-amber-600" />
+                    <span>دليل ومعادلات تقرير الماليات (للتذكرة 📐):</span>
                   </div>
-                  <div>
-                    <span className="font-bold text-amber-950">📐 معادلة صافي الربح: </span>
-                    <span>إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-sm flex flex-col">
+                      <span className="font-bold text-amber-950 text-xs">📐 إجمالي الربح</span>
+                      <span className="text-slate-700 font-mono text-[11px] font-bold mt-0.5 dir-ltr text-right">(إيراد الخدمات - تكلفة المشتريات)</span>
+                    </div>
+                    <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-sm flex flex-col">
+                      <span className="font-bold text-amber-950 text-xs">📐 نسبة تكلفة المشتريات</span>
+                      <span className="text-slate-700 font-mono text-[11px] font-bold mt-0.5 dir-ltr text-right">(تكلفة المشتريات ÷ إيراد الخدمات)</span>
+                    </div>
+                    <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-sm flex flex-col">
+                      <span className="font-bold text-amber-950 text-xs">📐 عمولة إيداع المكن</span>
+                      <span className="text-slate-700 font-mono text-[11px] font-bold mt-0.5 dir-ltr text-right">(إيداع المكن × النسبة المرادة ÷ 1000)</span>
+                    </div>
+                    <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-sm flex flex-col">
+                      <span className="font-bold text-amber-950 text-xs">📐 تكلفة المشتريات</span>
+                      <span className="text-slate-700 font-mono text-[11px] font-bold mt-0.5 dir-ltr text-right">(رصيد أول المدة + قيمة المشتريات - رصيد آخر المدة)</span>
+                    </div>
+                    <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-sm flex flex-col md:col-span-2 lg:col-span-2">
+                      <span className="font-bold text-amber-950 text-xs">📐 صافي الربح النهائي</span>
+                      <span className="text-slate-700 font-mono text-[11px] font-bold mt-0.5 dir-ltr text-right">(إجمالي الربح + إجمالي العمولات - القبض والسلف - باقي المصروفات)</span>
+                    </div>
                   </div>
                 </div>
 
@@ -557,12 +575,11 @@ export default function ManagerReportsPage() {
                             const calculatedPurchasesCost = opening + purchasesVal - closing;
 
                             const serviceRev = Number(report.service_revenue || 0);
-                            const totalRev = Number(report.total_revenue || serviceRev || 0);
-                            const purchasesCostPercent = totalRev > 0
-                              ? ((calculatedPurchasesCost / totalRev) * 100).toFixed(1)
-                              : (report.purchases_cost_percent || 0);
+                            const purchasesCostPercent = serviceRev > 0
+                              ? ((calculatedPurchasesCost / serviceRev) * 100).toFixed(1)
+                              : '0.0';
 
-                            const totalProfit = Number(report.total_profit || 0) || (serviceRev - calculatedPurchasesCost);
+                            const totalProfit = serviceRev - calculatedPurchasesCost;
 
                             const totalComm = Number(report.total_commissions || 0) || (
                               Number(report.wallet_commission || 0) +
