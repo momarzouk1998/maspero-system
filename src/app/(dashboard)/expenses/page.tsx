@@ -174,12 +174,6 @@ export default function FinancialAndHROperationsPage() {
     }
   };
 
-  const adjustFinAmount = (delta: number) => {
-    const curr = parseFloat(finAmount || '0');
-    const next = Math.max(0, curr + delta);
-    setFinAmount(next.toString());
-  };
-
   const adjustHrHours = (delta: number) => {
     const curr = parseFloat(hrHours || '0');
     const next = Math.max(0.5, curr + delta);

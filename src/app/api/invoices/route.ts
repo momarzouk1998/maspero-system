@@ -237,7 +237,7 @@ export async function DELETE(req: Request) {
         for (const w of wallets) {
           const amt = Number(w.amount || 0);
           const comm = Number(w.wallet_commission || 0);
-          const isDrawer = w.wallet_type === 'درج كاشير' || w.wallet_name.includes('درج');
+          const isDrawer = w.wallet_type === 'درج كاشير' || Boolean(w.wallet_name && w.wallet_name.includes('درج'));
 
           if (w.transaction_type === 'إيداع') {
             // Restore external wallet

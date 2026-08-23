@@ -156,22 +156,18 @@ export default function InvoicesHistoryPage() {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (invoices.length > 0 && selectedIds.length === invoices.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(invoices.map(inv => inv.code || inv.invoice_code));
+    }
+  };
+
   const toggleSelectRow = (code: string) => {
     setSelectedIds(prev =>
       prev.includes(code) ? prev.filter(x => x !== code) : [...prev, code]
     );
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.length} من الفواتير المحددة بالكامل؟`)) return;
-    try {
-      await Promise.all(selectedIds.map(code => fetch(`/api/invoices?code=${code}`, { method: 'DELETE' })));
-      setSelectedIds([]);
-      fetchInvoices(pagination.page);
-    } catch (e: any) {
-      alert(e.message || 'حدث خطأ أثناء الحذف الجماعي');
-    }
   };
 
   const resetFilters = () => {
@@ -229,20 +225,6 @@ export default function InvoicesHistoryPage() {
     } catch (err: any) {
       alert(err.message);
     }
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === invoices.length && invoices.length > 0) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(invoices.map(i => i.code || i.invoice_code));
-    }
-  };
-
-  const toggleSelectRow = (code: string) => {
-    setSelectedIds(prev =>
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
-    );
   };
 
   const handleBulkDeleteInvoices = async () => {
