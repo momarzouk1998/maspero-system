@@ -35,6 +35,14 @@ export default function TicketsPage() {
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') {
+    try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; }
+  }
+  const canUpdate = isManager || Boolean(userPerms?.tickets?.update);
+  const canDelete = isManager || Boolean(userPerms?.tickets?.delete);
+
   const fetchTreeData = () => {
     fetch('/api/tickets/tree')
       .then(r => r.json())
@@ -345,7 +353,7 @@ export default function TicketsPage() {
         </div>
 
         {/* Bulk Action Bar */}
-        {selectedIds.length > 0 && (
+        {selectedIds.length > 0 && canDelete && (
           <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl flex items-center justify-between animate-in fade-in">
             <span className="text-xs font-bold text-purple-900">
               تم تحديد ({selectedIds.length}) حجز من أصل ({bookings.length})
@@ -379,7 +387,7 @@ export default function TicketsPage() {
                 <th className="px-4 py-3">الموظف</th>
                 <th className="px-4 py-3">التاريخ</th>
                 <th className="px-4 py-3">الملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center">إجراءات المدير</th>}
+                {(canUpdate || canDelete) && <th className="px-4 py-3 text-center">إجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -429,27 +437,31 @@ export default function TicketsPage() {
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
                       {item.notes || '-'}
                     </td>
-                    {currentUser?.role === 'manager' && (
+                    {(canUpdate || canDelete) && (
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditModal(item)}
-                            className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg border border-purple-200 transition-colors"
-                            title="تعديل الحجز"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الحجز؟')) return;
-                              await fetch(`/api/tickets?id=${item.id}`, { method: 'DELETE' });
-                              fetchBookings(pagination.page);
-                            }}
-                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                            title="حذف الحجز"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canUpdate && (
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg border border-purple-200 transition-colors"
+                              title="تعديل الحجز"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذا الحجز؟')) return;
+                                await fetch(`/api/tickets?id=${item.id}`, { method: 'DELETE' });
+                                fetchBookings(pagination.page);
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف الحجز"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}

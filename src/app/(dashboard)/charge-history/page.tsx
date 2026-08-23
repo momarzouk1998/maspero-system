@@ -42,6 +42,14 @@ export default function ChargeHistoryPage() {
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') {
+    try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; }
+  }
+  const canUpdate = isManager || Boolean(userPerms?.charge_history?.update);
+  const canDelete = isManager || Boolean(userPerms?.charge_history?.delete);
+
   const fetchTreeData = () => {
     fetch('/api/charge-history/tree')
       .then(r => r.json())
@@ -379,7 +387,7 @@ export default function ChargeHistoryPage() {
 
       {/* Transactions Table Container */}
       <div className="flex-1 space-y-4 min-w-0">
-        {selectedIds.length > 0 && (
+        {selectedIds.length > 0 && canDelete && (
           <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center justify-between animate-in fade-in duration-200">
             <span className="text-xs font-bold text-amber-900">
               تم تحديد ({selectedIds.length}) عملية شحن
@@ -421,7 +429,7 @@ export default function ChargeHistoryPage() {
                 <th className="px-4 py-3 whitespace-nowrap">كود الفاتورة</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
                 <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
-                <th className="px-4 py-3 whitespace-nowrap text-center">الإجراءات</th>
+                {(canUpdate || canDelete) && <th className="px-4 py-3 whitespace-nowrap text-center">الإجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -492,38 +500,44 @@ export default function ChargeHistoryPage() {
                         {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.description || '-'}</td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => openEditModal(item)}
-                              className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-200 transition-colors"
-                              title="تعديل العملية"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
-                                try {
-                                  const res = await fetch(`/api/invoice/item`, {
-                                    method: 'DELETE',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ id: item.id, type: 'wallet' })
-                                  });
-                                  const data = await res.json();
-                                  if (!res.ok) throw new Error(data.error || 'فشل الحذف');
-                                  fetchTransactions(pagination.page);
-                                } catch (err: any) {
-                                  alert(err.message);
-                                }
-                              }}
-                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                              title="حذف العملية"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                        {(canUpdate || canDelete) && (
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {canUpdate && (
+                                <button
+                                  onClick={() => openEditModal(item)}
+                                  className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-200 transition-colors"
+                                  title="تعديل العملية"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
+                                    try {
+                                      const res = await fetch(`/api/invoice/item`, {
+                                        method: 'DELETE',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: item.id, type: 'wallet' })
+                                      });
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.error || 'فشل الحذف');
+                                      fetchTransactions(pagination.page);
+                                    } catch (err: any) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                  title="حذف العملية"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                     </tr>
                   );
                 })

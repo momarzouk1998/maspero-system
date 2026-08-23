@@ -28,6 +28,14 @@ export default function ExpensesHistoryPage() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [treeData, setTreeData] = useState<any>(null);
+
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') {
+    try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; }
+  }
+  const canUpdate = isManager || Boolean(userPerms?.expenses?.update);
+  const canDelete = isManager || Boolean(userPerms?.expenses?.delete);
   const [treeMode, setTreeMode] = useState<'month' | 'category'>('month');
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
@@ -611,7 +619,7 @@ export default function ExpensesHistoryPage() {
         {/* Table & Pagination (Flex-1) */}
         <div className="flex-1 space-y-4 min-w-0">
           {/* Bulk Action Bar */}
-          {selectedIds.length > 0 && currentUser?.role === 'manager' && (
+          {selectedIds.length > 0 && canDelete && (
             <div className="flex items-center justify-between bg-rose-50 border border-rose-200 p-4 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-200">
               <span className="text-xs font-bold text-rose-955">
                 تم تحديد {selectedIds.length} معاملة للمصروفات
@@ -632,7 +640,7 @@ export default function ExpensesHistoryPage() {
               <table className="w-full text-right text-sm text-slate-700 table-auto">
                 <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                   <tr>
-                    {currentUser?.role === 'manager' && (
+                    {canDelete && (
                       <th className="px-4 py-3 text-center w-10">
                         <input
                           type="checkbox"
@@ -654,27 +662,27 @@ export default function ExpensesHistoryPage() {
                     <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
                     <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
                     <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
-                    {currentUser?.role === 'manager' && <th className="px-4 py-3 whitespace-nowrap text-center">إجراءات المدير</th>}
+                    {(canUpdate || canDelete) && <th className="px-4 py-3 whitespace-nowrap text-center">إجراءات</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={currentUser?.role === 'manager' ? 8 : 7} className="text-center py-12 text-slate-500">
+                      <td colSpan={(canDelete ? 1 : 0) + 6 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
                         <span>جاري تحميل سجل المصروفات...</span>
                       </td>
                     </tr>
                   ) : expenses.length === 0 ? (
                     <tr>
-                      <td colSpan={currentUser?.role === 'manager' ? 8 : 7} className="text-center py-12 text-slate-500">
+                      <td colSpan={(canDelete ? 1 : 0) + 6 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
                         لا توجد مصروفات مسجلة تطابق التصفية
                       </td>
                     </tr>
                   ) : (
                     expenses.map((item) => (
                       <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-rose-50/45' : ''}`}>
-                        {currentUser?.role === 'manager' && (
+                        {canDelete && (
                           <td className="px-4 py-3 text-center">
                             <input
                               type="checkbox"
@@ -704,28 +712,32 @@ export default function ExpensesHistoryPage() {
                         <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
                           {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                         </td>
-                        {currentUser?.role === 'manager' && (
+                        {(canUpdate || canDelete) && (
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => openEditModal(item)}
-                                className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg border border-rose-200 transition-colors"
-                                title="تعديل المعاملة"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
-                                  await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
-                                  fetchExpenses(pagination.page);
-                                  fetchTreeData();
-                                }}
-                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                                title="حذف المصروف"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {canUpdate && (
+                                <button
+                                  onClick={() => openEditModal(item)}
+                                  className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg border border-rose-200 transition-colors"
+                                  title="تعديل المعاملة"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm('هل أنت تأكد من رغبتك في حذف هذا المصروف؟')) return;
+                                    await fetch(`/api/expenses?id=${item.id}`, { method: 'DELETE' });
+                                    fetchExpenses(pagination.page);
+                                    fetchTreeData();
+                                  }}
+                                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                  title="حذف المصروف"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}

@@ -37,6 +37,14 @@ export default function ServicesPage() {
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') {
+    try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; }
+  }
+  const canUpdate = isManager || Boolean(userPerms?.services?.update);
+  const canDelete = isManager || Boolean(userPerms?.services?.delete);
+
   const fetchTreeData = () => {
     fetch('/api/services/tree')
       .then(r => r.json())
@@ -353,7 +361,7 @@ export default function ServicesPage() {
         </div>
 
         {/* Bulk Action Bar */}
-        {selectedIds.length > 0 && (
+        {selectedIds.length > 0 && canDelete && (
           <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between animate-in fade-in">
             <span className="text-xs font-bold text-blue-900">
               تم تحديد ({selectedIds.length}) خدمة من أصل ({entries.length})
@@ -387,7 +395,7 @@ export default function ServicesPage() {
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
                 <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
-                {currentUser?.role === 'manager' && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات المدير</th>}
+                {(canUpdate || canDelete) && <th className="px-4 py-3 text-center whitespace-nowrap">إجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -441,27 +449,31 @@ export default function ServicesPage() {
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate whitespace-nowrap">
                       {item.notes || '-'}
                     </td>
-                    {currentUser?.role === 'manager' && (
+                    {(canUpdate || canDelete) && (
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditModal(item)}
-                            className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg border border-blue-200 transition-colors"
-                            title="تعديل الخدمة"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm('هل أنت تأكد من رغبتك في حذف هذه الخدمة؟')) return;
-                              await fetch(`/api/service-entries?id=${item.id}`, { method: 'DELETE' });
-                              fetchEntries(pagination.page);
-                            }}
-                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                            title="حذف الخدمة"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canUpdate && (
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg border border-blue-200 transition-colors"
+                              title="تعديل الخدمة"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm('هل أنت تأكد من رغبتك في حذف هذه الخدمة؟')) return;
+                                await fetch(`/api/service-entries?id=${item.id}`, { method: 'DELETE' });
+                                fetchEntries(pagination.page);
+                              }}
+                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                              title="حذف الخدمة"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}
