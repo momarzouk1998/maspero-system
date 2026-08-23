@@ -71,10 +71,6 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  if (!hasPermission(user, 'services', 'create')) {
-    return NextResponse.json({ error: 'ليس لديك صلاحية إضافة خدمات. تواصل مع المدير.' }, { status: 403 });
-  }
-
   const lockStatus = await checkSalesLock(user.id, user.role);
   if (lockStatus.locked) {
     return NextResponse.json({ error: lockStatus.reason }, { status: 403 });

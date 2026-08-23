@@ -128,10 +128,6 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  if (!hasPermission(user, 'expenses', 'create')) {
-    return NextResponse.json({ error: 'ليس لديك صلاحية تسجيل المصروفات والسلف. تواصل مع المدير.' }, { status: 403 });
-  }
-
   try {
     const { mainType, items, paymentMethod, amount, notes, targetEmployeeId, date } = await req.json();
 
