@@ -188,10 +188,12 @@ export async function GET(req: Request) {
   }
 }
 
-// DELETE: Employee or Manager can delete invoice and all related records with balance reversal for open shift
+// DELETE: Manager ONLY - Deletes the invoice record from the invoice registry log ONLY (does not alter underlying transactions or financial reports)
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'حذف الفواتير متاح للمدير فقط' }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
@@ -199,84 +201,11 @@ export async function DELETE(req: Request) {
   if (!code) return NextResponse.json({ error: 'كود الفاتورة مطلوب' }, { status: 400 });
 
   try {
-    const [services, tickets, wallets] = await Promise.all([
-      db.service_entries.findMany({ where: { invoice_code: code } }),
-      db.train_ticket_bookings.findMany({ where: { invoice_code: code } }),
-      db.wallet_transactions.findMany({ where: { invoice_code: code } })
-    ]);
-
-    const creatorId = services[0]?.employee_id || tickets[0]?.employee_id || wallets[0]?.employee_id || user.id;
-
-    const activeShift = creatorId ? await db.shifts.findFirst({
-      where: { employee_id: creatorId, end_time: null }
-    }) : null;
-
-    const isShiftOpen = Boolean(activeShift);
-
-    if (user.role !== 'manager' && (!isShiftOpen || user.id !== creatorId)) {
-      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه الفاتورة' }, { status: 403 });
-    }
-
-    await db.$transaction(async (tx: any) => {
-      if (isShiftOpen) {
-        // Revert Services
-        for (const s of services) {
-          if (s.employee_id) {
-            await WalletService.adjustEmployeeWallet(s.employee_id, -Number(s.amount), tx);
-          }
-        }
-
-        // Revert Tickets
-        for (const t of tickets) {
-          if (t.employee_id) {
-            await WalletService.adjustEmployeeWallet(t.employee_id, -Number(t.amount), tx);
-          }
-        }
-
-        // Revert Wallets
-        for (const w of wallets) {
-          const amt = Number(w.amount || 0);
-          const comm = Number(w.wallet_commission || 0);
-          const isDrawer = w.wallet_type === 'درج كاشير' || Boolean(w.wallet_name && w.wallet_name.includes('درج'));
-
-          if (w.transaction_type === 'إيداع') {
-            // Restore external wallet
-            if (w.wallet_id) {
-              await tx.external_wallets.update({
-                where: { id: w.wallet_id },
-                data: { current_balance: { increment: amt }, actual_balance: { increment: amt } }
-              });
-            }
-            // Deduct employee cash custody
-            const cashDeduct = isDrawer ? amt : (amt + comm);
-            if (w.employee_id) {
-              await WalletService.adjustEmployeeWallet(w.employee_id, -cashDeduct, tx);
-            }
-          } else if (w.transaction_type === 'سحب') {
-            // Deduct external wallet
-            if (w.wallet_id) {
-              await tx.external_wallets.update({
-                where: { id: w.wallet_id },
-                data: { current_balance: { decrement: amt }, actual_balance: { decrement: amt } }
-              });
-            }
-            // Restore employee cash custody
-            const cashRestore = isDrawer ? amt : (amt - comm);
-            if (w.employee_id) {
-              await WalletService.adjustEmployeeWallet(w.employee_id, cashRestore, tx);
-            }
-          }
-        }
-      }
-
-      // Delete all related records & invoice
-      await tx.service_entries.deleteMany({ where: { invoice_code: code } });
-      await tx.train_ticket_bookings.deleteMany({ where: { invoice_code: code } });
-      await tx.wallet_transactions.deleteMany({ where: { invoice_code: code } });
-      await tx.invoices.deleteMany({ where: { invoice_number: code } });
+    await db.invoices.deleteMany({
+      where: { invoice_number: code }
     });
 
-    return NextResponse.json({ success: true, message: 'تم حذف الفاتورة وجميع عناصرها وعكس التأثير المالي بنجاح 🗑️' });
+    return NextResponse.json({ success: true, message: 'تم حذف الفاتورة من سجل الفواتير بنجاح (سجل فقط دون التأثير على المالية) 🗑️' });
   } catch (error: any) {
     console.error('Delete invoice error:', error);
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف الفاتورة' }, { status: 500 });

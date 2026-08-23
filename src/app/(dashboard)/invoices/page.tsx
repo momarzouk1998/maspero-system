@@ -211,7 +211,7 @@ export default function InvoicesHistoryPage() {
   };
 
   const handleDeleteInvoice = async (code: string) => {
-    if (!confirm(`⚠️ هل أنت تأكد من حذف الفاتورة (${code})؟\nسوف يتم حذف جميع عمليات الفاتورة (شحن، خدمات، تذاكر) من السجلات وعكس التأثير المالي وإعادة الأرصدة تلقائياً.`)) return;
+    if (!confirm(`⚠️ هل أنت تأكد من حذف الفاتورة (${code}) من السجل؟\nملاحظة: سيتم حذف سجل الفاتورة فقط دون التأثير على التقرير المالي أو المعاملات.`)) return;
 
     try {
       const res = await fetch(`/api/invoices?code=${encodeURIComponent(code)}`, {
@@ -219,7 +219,7 @@ export default function InvoicesHistoryPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل حذف الفاتورة');
-      alert(data.message || 'تم حذف الفاتورة وعكس تأثيرها المالي بنجاح 🗑️');
+      alert(data.message || 'تم حذف الفاتورة من السجل بنجاح 🗑️');
       fetchInvoices(pagination.page);
       fetchTreeData();
     } catch (err: any) {
@@ -229,14 +229,14 @@ export default function InvoicesHistoryPage() {
 
   const handleBulkDeleteInvoices = async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`⚠️ هل أنت تأكد من حذف عدد (${selectedIds.length}) فاتورة محددة؟\nسوف يتم حذف جميع عمليات الفواتير وعكس التأثير المالي وإعادة الأرصدة.`)) return;
+    if (!confirm(`⚠️ هل أنت تأكد من حذف عدد (${selectedIds.length}) فاتورة محددة من السجل؟\nملاحظة: سيتم حذف سجلات الفواتير فقط دون التأثير على التقرير المالي.`)) return;
 
     setLoading(true);
     try {
       for (const code of selectedIds) {
         await fetch(`/api/invoices?code=${encodeURIComponent(code)}`, { method: 'DELETE' });
       }
-      alert('تم حذف الفواتير المحددة وعكس تأثيرها المالي بنجاح 🗑️');
+      alert('تم حذف الفواتير المحددة من السجل بنجاح 🗑️');
       setSelectedIds([]);
       fetchInvoices(pagination.page);
       fetchTreeData();
@@ -496,8 +496,8 @@ export default function InvoicesHistoryPage() {
 
       {/* Invoices Table & Pagination */}
       <div className="flex-1 space-y-4 min-w-0">
-        {/* Bulk Action Bar */}
-        {selectedIds.length > 0 && (
+        {/* Bulk Action Bar - Manager Only */}
+        {currentUser?.role === 'manager' && selectedIds.length > 0 && (
           <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between animate-in fade-in">
             <span className="text-xs font-bold text-emerald-900">
               تم تحديد ({selectedIds.length}) فاتورة من أصل ({invoices.length})
@@ -507,7 +507,7 @@ export default function InvoicesHistoryPage() {
               className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
-              <span>حذف الفواتير المحددة وعكس التأثير المالي ({selectedIds.length})</span>
+              <span>حذف الفواتير المحددة من السجل ({selectedIds.length})</span>
             </button>
           </div>
         )}
@@ -590,13 +590,15 @@ export default function InvoicesHistoryPage() {
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>عرض وتكبير</span>
                               </button>
-                              <button
-                                onClick={() => handleDeleteInvoice(invCode)}
-                                className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"
-                                title="حذف الفاتورة بالكامل وعكس التأثير المالي"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {currentUser?.role === 'manager' && (
+                                <button
+                                  onClick={() => handleDeleteInvoice(invCode)}
+                                  className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="حذف الفاتورة من السجل فقط (للمدير)"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
