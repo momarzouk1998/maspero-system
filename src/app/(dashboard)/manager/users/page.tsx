@@ -6,23 +6,27 @@ import { Users, UserPlus, ShieldCheck, Key, Edit3, Lock, Unlock, Phone, DollarSi
 import { formatNumberLocale } from '@/lib/user-utils';
 
 const FEATURES_LIST = [
-  { key: 'services', label: 'تسجيل الخدمات والطباعة' },
+  { key: 'services', label: 'سجل الخدمات والطباعة' },
   { key: 'tickets', label: 'حجوزات التذاكر' },
   { key: 'machines', label: 'الخدمات المالية والماكينات (فوري)' },
   { key: 'expenses', label: 'المصروفات والسلف' },
-  { key: 'shifts', label: 'الشفتات والعهدة النقدية' },
+  { key: 'shifts', label: 'سجل الشفتات والعهدة النقدية' },
   { key: 'invoices', label: 'سجل الفواتير' },
   { key: 'charge_history', label: 'سجل عمليات الشحن' },
+  { key: 'handover', label: 'سجل التسليم والعهدة' },
+  { key: 'hr', label: 'سجل الحوافز والخصومات' },
 ];
 
-const DEFAULT_PERMISSIONS: Record<string, { create: boolean; update: boolean; delete: boolean }> = {
-  services: { create: true, update: false, delete: false },
-  tickets: { create: true, update: false, delete: false },
-  machines: { create: true, update: true, delete: false },
-  expenses: { create: true, update: false, delete: false },
-  shifts: { create: true, update: false, delete: false },
-  invoices: { create: false, update: false, delete: false },
-  charge_history: { create: true, update: false, delete: false },
+const DEFAULT_PERMISSIONS: Record<string, { update: boolean; delete: boolean }> = {
+  services: { update: false, delete: false },
+  tickets: { update: false, delete: false },
+  machines: { update: true, delete: false },
+  expenses: { update: false, delete: false },
+  shifts: { update: false, delete: false },
+  invoices: { update: false, delete: false },
+  charge_history: { update: false, delete: false },
+  handover: { update: false, delete: false },
+  hr: { update: false, delete: false },
 };
 
 export default function ManagerUsersPage() {
@@ -46,7 +50,7 @@ export default function ManagerUsersPage() {
 
   // Permissions Modal State
   const [permissionUser, setPermissionUser] = useState<any>(null);
-  const [userPermissions, setUserPermissions] = useState<Record<string, { create: boolean; update: boolean; delete: boolean }>>(DEFAULT_PERMISSIONS);
+  const [userPermissions, setUserPermissions] = useState<Record<string, { update: boolean; delete: boolean }>>(DEFAULT_PERMISSIONS);
 
   // Adjust Wallet Modal State
   const [adjustWalletUser, setAdjustWalletUser] = useState<any>(null);
@@ -175,7 +179,7 @@ export default function ManagerUsersPage() {
   // Permissions Handler
   const openPermissionsModal = (u: any) => {
     setPermissionUser(u);
-    let parsed: Record<string, { create: boolean; update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    let parsed: Record<string, { update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
 
     let rawPerms = u.permissions;
     if (typeof rawPerms === 'string') {
@@ -191,14 +195,13 @@ export default function ManagerUsersPage() {
         const p = rawPerms[feat.key];
         if (p && typeof p === 'object') {
           parsed[feat.key] = {
-            create: Boolean(p.create ?? true),
             update: Boolean(p.update ?? false),
             delete: Boolean(p.delete ?? false),
           };
         } else if (p === 'READ_ONLY') {
-          parsed[feat.key] = { create: false, update: false, delete: false };
+          parsed[feat.key] = { update: false, delete: false };
         } else if (p === 'FULL_ACCESS') {
-          parsed[feat.key] = { create: true, update: true, delete: true };
+          parsed[feat.key] = { update: true, delete: true };
         }
       });
     }
@@ -206,7 +209,7 @@ export default function ManagerUsersPage() {
     setUserPermissions(parsed);
   };
 
-  const togglePermissionCheckbox = (featKey: string, actionKey: 'create' | 'update' | 'delete') => {
+  const togglePermissionCheckbox = (featKey: string, actionKey: 'update' | 'delete') => {
     setUserPermissions(prev => ({
       ...prev,
       [featKey]: {
@@ -617,7 +620,7 @@ export default function ManagerUsersPage() {
             {permissionUser.role === 'manager' ? (
               <div className="space-y-4">
                 <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 leading-relaxed font-medium">
-                  حساب المدير يمتلك صلاحية الوصول الكاملة عبر كافة أقسام النظام تلقائياً دون الحاجة لتحديد خانات اختيار.
+                  حساب المدير يمتلك صلاحية الوصول الكاملة عبر كافة أقسام وجداول النظام تلقائياً.
                 </div>
 
                 <div className="space-y-2.5">
@@ -625,7 +628,7 @@ export default function ManagerUsersPage() {
                     <div key={feat.key} className="p-3 rounded-2xl border border-slate-200 bg-slate-50/80 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-900">{feat.label}</span>
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                        {feat.key === 'invoices' ? 'إدارة وحذف السجل (في أي وقت)' : 'إضافة - تعديل - حذف (في أي وقت)'}
+                        {feat.key === 'invoices' ? 'إدارة وحذف السجل (في أي وقت)' : 'تعديل - حذف (في أي وقت)'}
                       </span>
                     </div>
                   ))}
@@ -634,7 +637,7 @@ export default function ManagerUsersPage() {
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2 text-xs text-amber-900 leading-relaxed">
                   <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <span>
-                    <strong>ملاحظة للمدير:</strong> التعديل والحذف متاحان للمدير في أي وقت (سواء شفت مغلق أو مفتوح). وفي حالة التعديل أو الحذف لشفت مفتوح (سواء للمدير أو لموظف) يتم تحديث وعكس الأرصدة والعهدة تلقائياً.
+                    <strong>ملاحظة للمدير:</strong> التعديل والحذف متاحان للمدير في أي وقت. وفي حالة التعديل أو الحذف لشفت مفتوح (سواء للمدير أو لموظف) يتم تحديث وتعديل الأرصدة والعهدة تلقائياً.
                   </span>
                 </div>
 
@@ -653,37 +656,20 @@ export default function ManagerUsersPage() {
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl flex items-start gap-2 text-xs text-purple-900 leading-relaxed">
                   <HelpCircle className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                   <span>
-                    حدد الصلاحيات المتاحة للموظف عبر الـ Checkboxes. ملاحظة: التعديل والحذف للموظف مقيدان بوقت الشفت المفتوح الخاص به، ويتم تحديث الأرصدة تلقائياً عند التعديل أو الحذف.
+                    📌 <strong>تنويه:</strong> إمكانية البيع والتعامل متاحة بالصفحة الرئيسية حسب قيود الشفت. الخيارات أدناه تُحدد صلاحيات <strong>(التعديل والحذف)</strong> للموظف فقط أثناء الشفت المفتوح الخاص به.
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   {FEATURES_LIST.map((feat) => {
-                    const perm = userPermissions[feat.key] || { create: true, update: false, delete: false };
+                    const perm = userPermissions[feat.key] || { update: false, delete: false };
 
                     return (
                       <div key={feat.key} className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
                         <span className="text-xs font-bold text-slate-900 block">{feat.label}</span>
 
-                        <div className="grid grid-cols-3 gap-2 pt-1">
-                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                            perm.create ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500'
-                          }`}>
-                            <input
-                              type="checkbox"
-                              checked={perm.create}
-                              onChange={() => togglePermissionCheckbox(feat.key, 'create')}
-                              className="hidden"
-                            />
-                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                              perm.create ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'
-                            }`}>
-                              {perm.create && <Check className="w-3 h-3 stroke-[3]" />}
-                            </div>
-                            <span>إضافة</span>
-                          </label>
-
-                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                        <div className="grid grid-cols-2 gap-3 pt-1">
+                          <label className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
                             perm.update ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500'
                           }`}>
                             <input
@@ -700,7 +686,7 @@ export default function ManagerUsersPage() {
                             <span>تعديل</span>
                           </label>
 
-                          <label className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                          <label className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
                             perm.delete ? 'bg-red-50 border-red-300 text-red-800' : 'bg-white border-slate-200 text-slate-500'
                           }`}>
                             <input
@@ -728,7 +714,7 @@ export default function ManagerUsersPage() {
                     disabled={submitting}
                     className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
                   >
-                    حفظ الأذونات والصلاحيات
+                    حفظ الصلاحيات
                   </button>
                   <button
                     type="button"
