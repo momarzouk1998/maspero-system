@@ -22,6 +22,14 @@ export default function HRHistoryPage() {
 
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') {
+    try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; }
+  }
+  const canUpdate = isManager || Boolean(userPerms?.hr?.update);
+  const canDeletePerm = isManager || Boolean(userPerms?.hr?.delete);
   // Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -368,7 +376,7 @@ export default function HRHistoryPage() {
       {/* HR Table Container */}
       <div className="flex-1 space-y-4 min-w-0">
         {/* Bulk Action Bar */}
-        {selectedIds.length > 0 && (
+        {selectedIds.length > 0 && canDeletePerm && (
           <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between animate-in fade-in">
             <span className="text-xs font-bold text-indigo-900">
               تم تحديد ({selectedIds.length}) طلب من أصل ({hrItems.length})
@@ -402,7 +410,7 @@ export default function HRHistoryPage() {
                 <th className="px-4 py-3 whitespace-nowrap">مُنشئ الطلب</th>
                 <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
-                <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات</th>
+                {(canUpdate || canDeletePerm || isManager) && <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -421,10 +429,9 @@ export default function HRHistoryPage() {
                 </tr>
               ) : (
                 filteredItems.map((item) => {
-                  const isManager = currentUser?.role === 'manager';
                   const isCreator = item.created_by_id === currentUser?.id;
                   const isPending = item.approval === 'معلق';
-                  const canDelete = isManager || (isCreator && isPending);
+                  const canDelete = canDeletePerm && (isManager || (isCreator && isPending));
 
                   return (
                     <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.includes(item.id) ? 'bg-indigo-50/50' : ''}`}>
@@ -469,42 +476,44 @@ export default function HRHistoryPage() {
                         {item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}
                       </td>
 
-                      <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Manager Approval Controls */}
-                          {isManager && isPending && (
-                            <>
-                              <button
-                                onClick={() => handleApproveReject(item.id, 'موافقة')}
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1"
-                                title="اعتماد الطلب"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>قبول</span>
-                              </button>
-                              <button
-                                onClick={() => handleApproveReject(item.id, 'مرفوض')}
-                                className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1"
-                                title="رفض الطلب"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                <span>رفض</span>
-                              </button>
-                            </>
-                          )}
+                      {(canUpdate || canDeletePerm || isManager) && (
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {/* Manager Approval Controls */}
+                            {isManager && isPending && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveReject(item.id, 'موافقة')}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1"
+                                  title="اعتماد الطلب"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>قبول</span>
+                                </button>
+                                <button
+                                  onClick={() => handleApproveReject(item.id, 'مرفوض')}
+                                  className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1"
+                                  title="رفض الطلب"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>رفض</span>
+                                </button>
+                              </>
+                            )}
 
-                          {/* Delete Button for Manager OR Creator when pending */}
-                          {canDelete && (
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                              title="حذف الطلب"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                            {/* Delete Button for Manager OR Creator when pending */}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                title="حذف الطلب"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

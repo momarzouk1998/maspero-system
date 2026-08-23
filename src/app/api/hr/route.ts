@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -127,6 +127,9 @@ export async function PUT(req: Request) {
 
   try {
     const { id, approval, hours, notes, hrItems } = await req.json();
+    if (!hasPermission(user, 'hr', 'update')) {
+      return NextResponse.json({ error: 'ليس لديك صلاحية تعديل الحوافز والخصومات. تواصل مع المدير.' }, { status: 403 });
+    }
     if (!id) return NextResponse.json({ error: 'معرف الطلب مطلوب' }, { status: 400 });
 
     const existing = await db.employee_hr.findUnique({ where: { id } });
@@ -162,6 +165,10 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+
+  if (!hasPermission(user, 'hr', 'delete')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية حذف الحوافز والخصومات. تواصل مع المدير.' }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
