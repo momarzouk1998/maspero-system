@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET custody items (wallets, machines, cash drawers) & shift custody status
 export async function GET() {
@@ -593,11 +593,11 @@ export async function PUT(req: Request) {
   }
 }
 
-// Manager Delete Handover Entry
+// Delete Handover Entry (Manager or Permitted Employee)
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  if (!user || !hasPermission(user, 'handover', 'delete')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية حذف سجلات التسليم' }, { status: 403 });
   }
 
   try {

@@ -14,6 +14,11 @@ export default function HandoverHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') { try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; } }
+  const canDeleteHandover = isManager || Boolean(userPerms?.handover?.delete);
+
   const [search, setSearch] = useState('');
   const [reviewStatus, setReviewStatus] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -536,7 +541,7 @@ export default function HandoverHistoryPage() {
                         {item.created_at ? new Date(item.created_at).toLocaleString('en-US') : '-'}
                       </td>
 
-                      {currentUser?.role === 'manager' && (
+                      {canDeleteHandover && (
                         <td className="px-4 py-3 text-center whitespace-nowrap">
                           <button
                             onClick={async () => {

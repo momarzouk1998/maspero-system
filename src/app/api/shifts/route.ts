@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET shifts with pagination & filtering
 export async function GET(req: Request) {
@@ -192,8 +192,8 @@ export async function POST(req: Request) {
     }
 
     if (action === 'edit') {
-      if (user.role !== 'manager') {
-        return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+      if (!hasPermission(user, 'shifts', 'update')) {
+        return NextResponse.json({ error: 'ليس لديك صلاحية تعديل سجل الشفتات' }, { status: 403 });
       }
 
       const { totalHours } = body;
@@ -215,11 +215,11 @@ export async function POST(req: Request) {
   }
 }
 
-// DELETE: Manager can delete shift record
+// DELETE: Delete shift record (Manager or Permitted Employee)
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  if (!user || !hasPermission(user, 'shifts', 'delete')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية حذف سجل الشفتات' }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);

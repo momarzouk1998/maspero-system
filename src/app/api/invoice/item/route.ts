@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 
 // Helper to check if item's employee has an active open shift
@@ -41,6 +41,7 @@ export async function PUT(req: Request) {
 
     await db.$transaction(async (tx) => {
       if (type === 'service') {
+        if (!hasPermission(user, 'services', 'update')) throw new Error('ليس لديك صلاحية تعديل خدمات الطباعة');
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
 
@@ -190,6 +191,7 @@ export async function DELETE(req: Request) {
 
     await db.$transaction(async (tx) => {
       if (type === 'service') {
+        if (!hasPermission(user, 'services', 'delete')) throw new Error('ليس لديك صلاحية حذف خدمات الطباعة');
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
 
@@ -208,6 +210,7 @@ export async function DELETE(req: Request) {
         await tx.service_entries.delete({ where: { id } });
       }
       else if (type === 'ticket') {
+        if (!hasPermission(user, 'tickets', 'delete')) throw new Error('ليس لديك صلاحية حذف التذاكر');
         const ticket = await tx.train_ticket_bookings.findUnique({ where: { id } });
         if (!ticket) throw new Error('العنصر غير موجود');
 
@@ -226,6 +229,7 @@ export async function DELETE(req: Request) {
         await tx.train_ticket_bookings.delete({ where: { id } });
       }
       else if (type === 'wallet') {
+        if (!hasPermission(user, 'charge_history', 'delete')) throw new Error('ليس لديك صلاحية حذف العمليات المالية والشحن');
         const trans = await tx.wallet_transactions.findUnique({ where: { id } });
         if (!trans) throw new Error('العنصر غير موجود');
 

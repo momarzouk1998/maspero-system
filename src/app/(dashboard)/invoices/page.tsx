@@ -20,6 +20,11 @@ export default function InvoicesHistoryPage() {
   const [minTotal, setMinTotal] = useState('');
   const [maxTotal, setMaxTotal] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') { try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; } }
+  const canDeleteInvoice = isManager || Boolean(userPerms?.invoices?.delete);
   // Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -590,7 +595,7 @@ export default function InvoicesHistoryPage() {
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>عرض وتكبير</span>
                               </button>
-                              {currentUser?.role === 'manager' && (
+                               {canDeleteInvoice && (
                                 <button
                                   onClick={() => handleDeleteInvoice(invCode)}
                                   className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"

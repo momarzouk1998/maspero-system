@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 
 export async function GET(req: Request) {
@@ -188,11 +188,11 @@ export async function GET(req: Request) {
   }
 }
 
-// DELETE: Manager ONLY - Deletes the invoice record from the invoice registry log ONLY (does not alter underlying transactions or financial reports)
+// DELETE: Deletes the invoice record from the invoice registry log ONLY
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'حذف الفواتير متاح للمدير فقط' }, { status: 403 });
+  if (!user || !hasPermission(user, 'invoices', 'delete')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية حذف سجل الفواتير' }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);

@@ -11,6 +11,11 @@ export default function ShiftsHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const isManager = currentUser?.role === 'manager';
+  let userPerms = currentUser?.permissions;
+  if (typeof userPerms === 'string') { try { userPerms = JSON.parse(userPerms); } catch { userPerms = {}; } }
+  const canUpdateShift = isManager || Boolean(userPerms?.shifts?.update);
+  const canDeleteShift = isManager || Boolean(userPerms?.shifts?.delete);
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -558,23 +563,23 @@ export default function ShiftsHistoryPage() {
                               <FileText className="w-3.5 h-3.5" />
                               <span>تقرير الشفت</span>
                             </button>
-                            {currentUser?.role === 'manager' && (
-                              <>
-                                <button
-                                  onClick={() => openEditModal(item)}
-                                  className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-200 transition-colors"
-                                  title="تعديل الشفت"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteShift(item.id)}
-                                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                                  title="حذف الشفت"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
+                            {canUpdateShift && (
+                              <button
+                                onClick={() => openEditModal(item)}
+                                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-200 transition-colors"
+                                title="تعديل الشفت"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {canDeleteShift && (
+                              <button
+                                onClick={() => handleDeleteShift(item.id)}
+                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                title="حذف الشفت"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             )}
                           </div>
                         </td>
