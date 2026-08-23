@@ -106,55 +106,94 @@ export async function POST(req: Request) {
   }
 }
 
-// DELETE: Manager can delete ticket booking
+// DELETE: Employee or Manager can delete ticket booking with balance reversal if shift is open
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
 
   if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-  await db.train_ticket_bookings.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+  try {
+    const ticket = await db.train_ticket_bookings.findUnique({ where: { id } });
+    if (!ticket) return NextResponse.json({ error: 'العنصر غير موجود' }, { status: 404 });
+
+    const activeShift = ticket.employee_id ? await db.shifts.findFirst({
+      where: { employee_id: ticket.employee_id, end_time: null }
+    }) : null;
+
+    const isShiftOpen = Boolean(activeShift);
+
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== ticket.employee_id)) {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه العملية' }, { status: 403 });
+    }
+
+    await db.$transaction(async (tx: any) => {
+      if (isShiftOpen && ticket.employee_id) {
+        await WalletService.adjustEmployeeWallet(ticket.employee_id, -Number(ticket.amount), tx);
+      }
+      await tx.train_ticket_bookings.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ success: true, message: 'تم حذف التذكرة وعكس التأثير المالي بنجاح' });
+  } catch (error: any) {
+    console.error('Delete ticket booking error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف التذكرة' }, { status: 500 });
+  }
 }
 
-// PUT: Manager can edit ticket booking
+// PUT: Employee or Manager can edit ticket booking with balance adjustment if shift is open
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  const { id, itemCount, ticketPrice, ticketCommission, notes } = await req.json();
+  try {
+    const { id, itemCount, ticketPrice, ticketCommission, notes } = await req.json();
+    if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+    const ticket = await db.train_ticket_bookings.findUnique({ where: { id } });
+    if (!ticket) return NextResponse.json({ error: 'العنصر غير موجود' }, { status: 404 });
 
-  const price = ticketPrice !== undefined ? Number(ticketPrice) : undefined;
-  const commission = ticketCommission !== undefined ? Number(ticketCommission) : undefined;
-  let totalAmount = undefined;
-  if (price !== undefined || commission !== undefined) {
-    const existing = await db.train_ticket_bookings.findUnique({ where: { id } });
-    if (existing) {
-      const p = price !== undefined ? price : Number(existing.ticket_price);
-      const c = commission !== undefined ? commission : Number(existing.ticket_commission);
-      totalAmount = p + c;
+    const activeShift = ticket.employee_id ? await db.shifts.findFirst({
+      where: { employee_id: ticket.employee_id, end_time: null }
+    }) : null;
+
+    const isShiftOpen = Boolean(activeShift);
+
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== ticket.employee_id)) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذه العملية' }, { status: 403 });
     }
+
+    const cnt = itemCount !== undefined ? parseInt(itemCount) : (ticket.item_count || 1);
+    const p = ticketPrice !== undefined ? Number(ticketPrice) : Number(ticket.ticket_price || 0);
+    const c = ticketCommission !== undefined ? Number(ticketCommission) : Number(ticket.ticket_commission || 0);
+    const newTotalAmount = cnt * (p + c);
+
+    const updated = await db.$transaction(async (tx: any) => {
+      if (isShiftOpen && ticket.employee_id) {
+        const diff = newTotalAmount - Number(ticket.amount || 0);
+        if (diff !== 0) {
+          await WalletService.adjustEmployeeWallet(ticket.employee_id, diff, tx);
+        }
+      }
+
+      return await tx.train_ticket_bookings.update({
+        where: { id },
+        data: {
+          item_count: cnt,
+          ticket_price: p,
+          ticket_commission: c,
+          amount: newTotalAmount,
+          notes: notes !== undefined ? notes : undefined,
+        }
+      });
+    });
+
+    return NextResponse.json({ success: true, booking: updated, message: 'تم تعديل التذكرة وضبط العهدة بنجاح' });
+  } catch (error: any) {
+    console.error('Update ticket booking error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل التذكرة' }, { status: 500 });
   }
-
-  const updated = await db.train_ticket_bookings.update({
-    where: { id },
-    data: {
-      item_count: itemCount !== undefined ? parseInt(itemCount) : undefined,
-      ticket_price: price,
-      ticket_commission: commission,
-      amount: totalAmount,
-      notes: notes !== undefined ? notes : undefined,
-    }
-  });
-
-  return NextResponse.json({ success: true, booking: updated });
 }

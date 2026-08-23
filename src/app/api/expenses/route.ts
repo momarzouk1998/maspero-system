@@ -211,46 +211,106 @@ export async function POST(req: Request) {
   }
 }
 
-// DELETE: Manager can delete financial transaction by ID
+// DELETE: Employee or Manager can delete financial transaction by ID with balance reversal if shift is open
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
 
   if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-  await db.expenses.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+  try {
+    const exp = await db.expenses.findUnique({ where: { id } });
+    if (!exp) return NextResponse.json({ error: 'المعاملة غير موجودة' }, { status: 404 });
+
+    const activeShift = exp.employee_id ? await db.shifts.findFirst({
+      where: { employee_id: exp.employee_id, end_time: null }
+    }) : null;
+
+    const isShiftOpen = Boolean(activeShift);
+
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذه المعاملة' }, { status: 403 });
+    }
+
+    const numAmount = Number(exp.amount || 0);
+
+    await db.$transaction(async (tx: any) => {
+      if (isShiftOpen && exp.employee_id) {
+        // Reverse expense cash impact:
+        // 'دعم مالي' previously added cash -> reverse by subtracting
+        // other expense types previously subtracted cash -> reverse by adding back
+        if (exp.main_type === 'دعم مالي') {
+          await WalletService.adjustEmployeeWallet(exp.employee_id, -numAmount, tx);
+        } else {
+          await WalletService.adjustEmployeeWallet(exp.employee_id, numAmount, tx);
+        }
+      }
+
+      await tx.expenses.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ success: true, message: 'تم حذف المعاملة المالية وعكس عهدة الكاش بنجاح' });
+  } catch (error: any) {
+    console.error('Delete Expense Error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف المعاملة' }, { status: 500 });
+  }
 }
 
-// PUT: Manager can edit financial transaction by ID
+// PUT: Employee or Manager can edit financial transaction by ID with balance adjustment if shift is open
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
     const { id, mainType, items, amount, notes } = await req.json();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-    const updated = await db.expenses.update({
-      where: { id },
-      data: {
-        main_type: mainType || undefined,
-        items: items !== undefined ? items : undefined,
-        amount: amount !== undefined ? Number(amount) : undefined,
-        notes: notes !== undefined ? notes : undefined,
+    const exp = await db.expenses.findUnique({ where: { id } });
+    if (!exp) return NextResponse.json({ error: 'المعاملة غير موجودة' }, { status: 404 });
+
+    const activeShift = exp.employee_id ? await db.shifts.findFirst({
+      where: { employee_id: exp.employee_id, end_time: null }
+    }) : null;
+
+    const isShiftOpen = Boolean(activeShift);
+
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذه المعاملة' }, { status: 403 });
+    }
+
+    const numNewAmount = amount !== undefined ? Number(amount) : Number(exp.amount || 0);
+    const targetMainType = mainType || exp.main_type;
+
+    const updated = await db.$transaction(async (tx: any) => {
+      if (isShiftOpen && exp.employee_id) {
+        const oldAmount = Number(exp.amount || 0);
+        const oldChange = exp.main_type === 'دعم مالي' ? oldAmount : -oldAmount;
+        const newChange = targetMainType === 'دعم مالي' ? numNewAmount : -numNewAmount;
+        const diff = newChange - oldChange;
+
+        if (diff !== 0) {
+          await WalletService.adjustEmployeeWallet(exp.employee_id, diff, tx);
+        }
       }
+
+      return await tx.expenses.update({
+        where: { id },
+        data: {
+          main_type: targetMainType,
+          expense_type: targetMainType,
+          items: items !== undefined ? items : undefined,
+          amount: numNewAmount,
+          notes: notes !== undefined ? notes : undefined,
+        }
+      });
     });
 
-    return NextResponse.json({ success: true, expense: updated });
+    return NextResponse.json({ success: true, expense: updated, message: 'تم تعديل المعاملة وضبط العهدة بنجاح' });
   } catch (error: any) {
     console.error('Update Expense Error:', error);
-    return NextResponse.json({ error: 'حدث خطأ أثناء تعديل المعاملة المالية' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل المعاملة المالية' }, { status: 500 });
   }
 }

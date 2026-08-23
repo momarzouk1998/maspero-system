@@ -120,19 +120,28 @@ export async function POST(req: Request) {
   }
 }
 
-// PUT: Manager can Approve, Reject, or Update HR Entry
+// PUT: Manager can Approve, Reject, or Update HR Entry; Employee can edit only their PENDING request
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
     const { id, approval, hours, notes, hrItems } = await req.json();
     if (!id) return NextResponse.json({ error: 'معرف الطلب مطلوب' }, { status: 400 });
 
+    const existing = await db.employee_hr.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 });
+
+    const isManager = user.role === 'manager';
+    const isCreator = existing.created_by_id === user.id;
+    const isPending = existing.approval === 'معلق';
+
+    if (!isManager && (!isCreator || !isPending)) {
+      return NextResponse.json({ error: 'عفواً، لا يمكن تعديل أي طلب تم اعتماده أو رفضه من المدير.' }, { status: 403 });
+    }
+
     const updateData: any = {};
-    if (approval) updateData.approval = approval; // 'موافقة' | 'مرفوض' | 'معلق'
+    if (isManager && approval) updateData.approval = approval; // 'موافقة' | 'مرفوض' | 'معلق'
     if (hours !== undefined) updateData.hours = Number(hours);
     if (notes !== undefined) updateData.notes = notes;
     if (hrItems) updateData.hr_items = hrItems;
@@ -166,8 +175,13 @@ export async function DELETE(req: Request) {
   const isCreator = existing.created_by_id === user.id;
   const isPending = existing.approval === 'معلق';
 
-  if (!isManager && !(isCreator && isPending)) {
-    return NextResponse.json({ error: 'غير مصرح لك بحذف هذا الطلب' }, { status: 403 });
+  if (!isManager) {
+    if (!isCreator) {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذا الطلب' }, { status: 403 });
+    }
+    if (!isPending) {
+      return NextResponse.json({ error: 'عفواً، لا يمكن حذف أي طلب تم اعتماده أو رفضه من المدير.' }, { status: 403 });
+    }
   }
 
   await db.employee_hr.delete({ where: { id } });

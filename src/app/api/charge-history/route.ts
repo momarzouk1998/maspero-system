@@ -95,12 +95,7 @@ export async function DELETE(req: Request) {
       where: { employee_id: txItem.employee_id, end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(
-      activeShift &&
-      txItem.timestamp &&
-      activeShift.start_time &&
-      new Date(txItem.timestamp) >= new Date(activeShift.start_time)
-    );
+    const isShiftOpen = Boolean(activeShift);
 
     // If shift is CLOSED, only manager can delete, and balances are NOT altered
     if (!isShiftOpen) {
@@ -166,24 +161,86 @@ export async function DELETE(req: Request) {
   }
 }
 
-// PUT: Manager can edit transaction by ID
+// PUT: Manager or Employee (if shift is open) can edit transaction by ID
 export async function PUT(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  const { id, amount, wallet_commission, description } = await req.json();
+  const { id, amount, wallet_commission, description, transaction_type } = await req.json();
   if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-  const updated = await db.wallet_transactions.update({
-    where: { id },
-    data: {
-      amount: amount !== undefined ? Number(amount) : undefined,
-      wallet_commission: wallet_commission !== undefined ? Number(wallet_commission) : undefined,
-      description: description !== undefined ? description : undefined,
-    }
-  });
+  try {
+    const txItem = await db.wallet_transactions.findUnique({ where: { id } });
+    if (!txItem) return NextResponse.json({ error: 'العملية غير موجودة' }, { status: 404 });
 
-  return NextResponse.json({ success: true, transaction: updated });
+    const activeShift = txItem.employee_id ? await db.shifts.findFirst({
+      where: { employee_id: txItem.employee_id, end_time: null }
+    }) : null;
+
+    const isShiftOpen = Boolean(activeShift);
+
+    if (user.role !== 'manager' && (!isShiftOpen || user.id !== txItem.employee_id)) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذه العملية' }, { status: 403 });
+    }
+
+    const numNewAmount = amount !== undefined ? Number(amount) : Number(txItem.amount || 0);
+    const numNewCommission = wallet_commission !== undefined ? Number(wallet_commission) : Number(txItem.wallet_commission || 0);
+    const targetTxType = transaction_type || txItem.transaction_type;
+
+    await db.$transaction(async (tx) => {
+      if (isShiftOpen) {
+        const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
+
+        const oldAmount = Number(txItem.amount || 0);
+        const oldCommission = Number(txItem.wallet_commission || 0);
+
+        const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
+        const newBalanceChange = targetTxType === 'إيداع' ? -numNewAmount : numNewAmount;
+        const diffExternal = newBalanceChange - oldBalanceChange;
+
+        const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
+        const oldEmployeeCash = isDrawer
+          ? (txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount)
+          : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
+
+        const newEmployeeCash = isDrawer
+          ? (targetTxType === 'إيداع' ? -numNewAmount : numNewAmount)
+          : (targetTxType === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
+
+        const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
+
+        if (diffExternal !== 0 && txItem.wallet_id) {
+          await tx.external_wallets.update({
+            where: { id: txItem.wallet_id },
+            data: {
+              current_balance: { increment: diffExternal },
+              actual_balance: { increment: diffExternal }
+            }
+          });
+        }
+
+        if (diffEmployeeCash !== 0 && txItem.employee_id) {
+          await tx.users.update({
+            where: { id: txItem.employee_id },
+            data: { wallet_balance: { increment: diffEmployeeCash } }
+          });
+        }
+      }
+
+      await tx.wallet_transactions.update({
+        where: { id },
+        data: {
+          amount: numNewAmount,
+          wallet_commission: numNewCommission,
+          transaction_type: targetTxType,
+          description: description !== undefined ? description : undefined,
+        }
+      });
+    });
+
+    return NextResponse.json({ success: true, message: 'تم تعديل العملية وضبط الأرصدة بنجاح' });
+  } catch (error: any) {
+    console.error('Update charge transaction error:', error);
+    return NextResponse.json({ error: error.message || 'حدث خطأ أثناء تعديل العملية' }, { status: 500 });
+  }
 }

@@ -214,6 +214,57 @@ export default function InvoicesHistoryPage() {
     }
   };
 
+  const handleDeleteInvoice = async (code: string) => {
+    if (!confirm(`⚠️ هل أنت تأكد من حذف الفاتورة (${code})؟\nسوف يتم حذف جميع عمليات الفاتورة (شحن، خدمات، تذاكر) من السجلات وعكس التأثير المالي وإعادة الأرصدة تلقائياً.`)) return;
+
+    try {
+      const res = await fetch(`/api/invoices?code=${encodeURIComponent(code)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل حذف الفاتورة');
+      alert(data.message || 'تم حذف الفاتورة وعكس تأثيرها المالي بنجاح 🗑️');
+      fetchInvoices(pagination.page);
+      fetchTreeData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === invoices.length && invoices.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(invoices.map(i => i.code || i.invoice_code));
+    }
+  };
+
+  const toggleSelectRow = (code: string) => {
+    setSelectedIds(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+  };
+
+  const handleBulkDeleteInvoices = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`⚠️ هل أنت تأكد من حذف عدد (${selectedIds.length}) فاتورة محددة؟\nسوف يتم حذف جميع عمليات الفواتير وعكس التأثير المالي وإعادة الأرصدة.`)) return;
+
+    setLoading(true);
+    try {
+      for (const code of selectedIds) {
+        await fetch(`/api/invoices?code=${encodeURIComponent(code)}`, { method: 'DELETE' });
+      }
+      alert('تم حذف الفواتير المحددة وعكس تأثيرها المالي بنجاح 🗑️');
+      setSelectedIds([]);
+      fetchInvoices(pagination.page);
+      fetchTreeData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePrint = (mode: 'cashier' | 'normal') => {
     const parent = document.body;
     parent.classList.add(mode === 'cashier' ? 'cashier-print' : 'normal-print');
@@ -470,11 +521,11 @@ export default function InvoicesHistoryPage() {
               تم تحديد ({selectedIds.length}) فاتورة من أصل ({invoices.length})
             </span>
             <button
-              onClick={handleBulkDelete}
+              onClick={handleBulkDeleteInvoices}
               className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
-              <span>حذف المحددة ({selectedIds.length})</span>
+              <span>حذف الفواتير المحددة وعكس التأثير المالي ({selectedIds.length})</span>
             </button>
           </div>
         )}
@@ -488,7 +539,7 @@ export default function InvoicesHistoryPage() {
                     <input
                       type="checkbox"
                       checked={invoices.length > 0 && selectedIds.length === invoices.length}
-                      onChange={handleSelectAll}
+                      onChange={toggleSelectAll}
                       className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
                     />
                   </th>
@@ -497,7 +548,7 @@ export default function InvoicesHistoryPage() {
                   <th className="px-4 py-3 whitespace-nowrap">الكاشير / الموظف</th>
                   <th className="px-4 py-3 whitespace-nowrap">عدد العناصر</th>
                   <th className="px-4 py-3 whitespace-nowrap">إجمالي الفاتورة</th>
-                  <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">التفاصيل / الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -549,13 +600,22 @@ export default function InvoicesHistoryPage() {
                             {formatNumber(Number(tot))} ج
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <button
-                              onClick={() => handleOpenDrawer(invCode)}
-                              className="py-1.5 px-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1 mx-auto transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>عرض وتكبير</span>
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenDrawer(invCode)}
+                                className="py-1.5 px-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>عرض وتكبير</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteInvoice(invCode)}
+                                className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"
+                                title="حذف الفاتورة بالكامل وعكس التأثير المالي"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
