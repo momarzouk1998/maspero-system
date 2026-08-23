@@ -1082,7 +1082,7 @@ export default function POSPage() {
               <div className="flex items-center gap-3">
                 <button onClick={() => setSvcPaper(p => Math.max(0, p - 1))}
                   className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-lg flex items-center justify-center border border-slate-200">−</button>
-                <input type="number" min="0" value={svcPaper}
+                <input type="number" min="0" value={svcPaper || ''} placeholder="0"
                   onChange={e => setSvcPaper(parseInt(e.target.value) || 0)}
                   className="flex-1 p-2.5 text-center bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />

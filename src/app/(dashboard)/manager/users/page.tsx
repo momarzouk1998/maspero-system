@@ -8,7 +8,6 @@ import { formatNumberLocale } from '@/lib/user-utils';
 const FEATURES_LIST = [
   { key: 'services', label: 'سجل الخدمات والطباعة' },
   { key: 'tickets', label: 'حجوزات التذاكر' },
-  { key: 'machines', label: 'الخدمات المالية والماكينات (فوري)' },
   { key: 'expenses', label: 'المصروفات والسلف' },
   { key: 'shifts', label: 'سجل الشفتات والعهدة النقدية' },
   { key: 'invoices', label: 'سجل الفواتير' },
@@ -20,7 +19,6 @@ const FEATURES_LIST = [
 const DEFAULT_PERMISSIONS: Record<string, { update: boolean; delete: boolean }> = {
   services: { update: false, delete: false },
   tickets: { update: false, delete: false },
-  machines: { update: true, delete: false },
   expenses: { update: false, delete: false },
   shifts: { update: false, delete: false },
   invoices: { update: false, delete: false },
