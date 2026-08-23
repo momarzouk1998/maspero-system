@@ -84,7 +84,7 @@ export function calculatePrintPrice(
 
       return {
         unitPrice,
-        totalAmount: Number((count * unitPrice).toFixed(2)),
+        totalAmount: Math.ceil(count * unitPrice),
         tierLabel: `${label} — ${unitPrice} ج / ورقة`
       };
     }
@@ -104,7 +104,7 @@ export function calculatePrintPrice(
 
     return {
       unitPrice,
-      totalAmount: Number((count * unitPrice).toFixed(2)),
+      totalAmount: Math.ceil(count * unitPrice),
       tierLabel: `طباعة ألوان — ${targetFaceType} (${unitPrice} ج / ورقة)`
     };
   }
@@ -117,7 +117,7 @@ export function calculatePrintPrice(
 
     return {
       unitPrice,
-      totalAmount: Number((count * unitPrice).toFixed(2)),
+      totalAmount: Math.ceil(count * unitPrice),
       tierLabel: isBulk
         ? `طباعة أسود وجهين (>30 وجه / >15 ورقة) — ${unitPrice} ج / ورقة`
         : `طباعة أسود وجهين (≤30 وجه / ≤15 ورقة) — ${unitPrice} ج / ورقة`
@@ -130,7 +130,7 @@ export function calculatePrintPrice(
 
     return {
       unitPrice,
-      totalAmount: Number((count * unitPrice).toFixed(2)),
+      totalAmount: Math.ceil(count * unitPrice),
       tierLabel: isBulk
         ? `طباعة أسود وجه واحد (>30 ورقة) — ${unitPrice} ج / ورقة`
         : `طباعة أسود وجه واحد (≤30 ورقة) — ${unitPrice} ج / ورقة`

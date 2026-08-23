@@ -128,8 +128,17 @@ export async function GET() {
       current_balance: Number(d.actual_balance || d.current_balance || 0)
     }));
 
-    const assignedWalletIds = itemsInUserCustody
-      .filter((i: any) => i.wallet_type !== 'درج كاشير' && !i.wallet_name.includes('درج'))
+    const activeShiftEmployeeIds = new Set(activeShifts.map((s: any) => s.employee_id));
+
+    const assignedWalletIds = allCustodyItems
+      .filter((i: any) =>
+        i.wallet_type !== 'درج كاشير' &&
+        !i.wallet_name.includes('درج') &&
+        i.custodian_name !== 'ماسـبيرو (المركز)' &&
+        i.custodian_name !== 'ماسبيرو (المركز)' &&
+        i.custodian_id !== null &&
+        activeShiftEmployeeIds.has(i.custodian_id)
+      )
       .map((i: any) => i.id);
 
     return NextResponse.json({

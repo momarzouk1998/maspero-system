@@ -20,9 +20,15 @@ export default function FinancialAndHROperationsPage() {
   const [customItem, setCustomItem] = useState('');
   const [finDate, setFinDate] = useState(new Date().toISOString().split('T')[0]);
   const [finEmployeeId, setFinEmployeeId] = useState('');
-  const [finAmount, setFinAmount] = useState('0');
+  const [finAmount, setFinAmount] = useState('');
   const [finNotes, setFinNotes] = useState('');
   const [finStats, setFinStats] = useState({ baseSalary: 0, totalDrawnThisMonth: 0, remainingSalary: 0 });
+
+  const adjustFinAmount = (delta: number) => {
+    const current = parseFloat(finAmount) || 0;
+    const next = Math.max(0, current + delta);
+    setFinAmount(next === 0 ? '' : String(next));
+  };
 
   // --- HR Form State ---
   const [hrDate, setHrDate] = useState(new Date().toISOString().split('T')[0]);
@@ -122,7 +128,7 @@ export default function FinancialAndHROperationsPage() {
       if (!res.ok) throw new Error(data.error || 'فشل حفظ المعاملة المالية');
 
       showToast(`تم تسجيل معاملة (${finCategory}) بمبلغ ${amt} بنجاح 🎉`);
-      setFinAmount('0');
+      setFinAmount('');
       setFinNotes('');
       setCustomItem('');
     } catch (err: any) {
@@ -339,6 +345,7 @@ export default function FinancialAndHROperationsPage() {
                     required
                     value={finAmount}
                     onChange={(e) => setFinAmount(e.target.value)}
+                    placeholder="0"
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base font-bold font-mono text-center focus:outline-none focus:border-emerald-500"
                   />
                   <button
