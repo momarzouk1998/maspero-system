@@ -133,6 +133,24 @@ export default function ManagerReportsPage() {
     }
   };
 
+  const openArchEditModal = (report: any) => {
+    setEditArchItem(report);
+    setEditArchMonth(report.month || '');
+    setEditArchOpening(String(report.opening_balance || 0));
+    setEditArchClosing(String(report.closing_balance || 0));
+    setEditArchPurchases(String(report.purchases_cost || 0));
+    setEditArchServiceRevenue(String(report.service_revenue || 0));
+    setEditArchWalletComm(String(report.wallet_commission || 0));
+    setEditArchTicketsComm(String(report.tickets_commission || 0));
+    setEditArchMachineDepComm(String(report.machine_deposit_commission || 0));
+    setEditArchMachineWtdComm(String(report.machine_withdrawal_commission || 0));
+    setEditArchSalaries(String(report.salaries || 0));
+    setEditArchExpenses(String(report.other_expenses || 0));
+    setEditArchPaperCount(String(report.paper_count || 0));
+    setEditArchTicketCount(String(report.ticket_count || 0));
+    setEditArchNotes(report.notes || '');
+  };
+
   const metrics = data?.metrics || {};
   const monthlyReports = data?.monthlyReports || [];
   const categoryReports = data?.categoryReports || [];
@@ -713,7 +731,8 @@ export default function ManagerReportsPage() {
                                   <div className="flex items-center justify-center gap-1.5">
                                     <button
                                       onClick={() => {
-                                        setEditArchItem(report);
+                                        openArchEditModal(report);
+                                        return;
                                         setEditArchOpening(String(report.opening_balance || 0));
                                         setEditArchClosing(String(report.closing_balance || 0));
                                         setEditArchPurchases(String(report.purchases_cost || 0));
