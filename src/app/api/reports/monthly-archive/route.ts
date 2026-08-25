@@ -182,7 +182,12 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, month, opening_balance, closing_balance, purchases_cost, salaries, other_expenses, notes } = body;
+    const {
+      id, month, opening_balance, closing_balance, purchases_cost,
+      service_revenue, wallet_commission, tickets_commission,
+      machine_deposit_commission, machine_withdrawal_commission,
+      salaries, other_expenses, paper_count, ticket_count, notes
+    } = body;
 
     if (!id && !month) {
       return NextResponse.json({ error: 'المعرف أو الشهر مطلوب للتعديل' }, { status: 400 });
@@ -199,23 +204,45 @@ export async function PUT(req: Request) {
     const openBal = opening_balance !== undefined ? Number(opening_balance) : Number(report.opening_balance);
     const closeBal = closing_balance !== undefined ? Number(closing_balance) : Number(report.closing_balance);
     const purchCost = purchases_cost !== undefined ? Number(purchases_cost) : Number(report.purchases_cost);
+    const srvRev = service_revenue !== undefined ? Number(service_revenue) : Number(report.service_revenue);
+
+    const wComm = wallet_commission !== undefined ? Number(wallet_commission) : Number(report.wallet_commission);
+    const tComm = tickets_commission !== undefined ? Number(tickets_commission) : Number(report.tickets_commission);
+    const mDepComm = machine_deposit_commission !== undefined ? Number(machine_deposit_commission) : Number(report.machine_deposit_commission);
+    const mWtdComm = machine_withdrawal_commission !== undefined ? Number(machine_withdrawal_commission) : Number(report.machine_withdrawal_commission);
+
     const sal = salaries !== undefined ? Number(salaries) : Number(report.salaries);
     const othExp = other_expenses !== undefined ? Number(other_expenses) : Number(report.other_expenses);
+    const pCount = paper_count !== undefined ? Number(paper_count) : Number(report.paper_count);
+    const tCount = ticket_count !== undefined ? Number(ticket_count) : Number(report.ticket_count);
 
-    const totProf = Number(report.service_revenue) - purchCost;
-    const totComm = Number(report.total_commissions || 0);
+    const calcPurchasesCost = openBal + purchCost - closeBal;
+    const calcPurchasesCostPercent = srvRev > 0 ? (calcPurchasesCost / srvRev) * 100 : 0;
+    const totProf = srvRev - calcPurchasesCost;
+    const totComm = wComm + tComm + mDepComm + mWtdComm;
     const netProf = totProf + totComm - sal - othExp;
 
     const updated = await db.monthly_financial_reports.update({
       where: { id: report.id },
       data: {
+        month: month || report.month,
         opening_balance: openBal,
         closing_balance: closeBal,
         purchases_cost: purchCost,
+        purchases_cost_percent: Number(calcPurchasesCostPercent.toFixed(2)),
+        service_revenue: srvRev,
+        total_revenue: srvRev,
+        wallet_commission: wComm,
+        tickets_commission: tComm,
+        machine_deposit_commission: mDepComm,
+        machine_withdrawal_commission: mWtdComm,
+        total_commissions: totComm,
         salaries: sal,
         other_expenses: othExp,
         total_profit: totProf,
         net_profit: netProf,
+        paper_count: pCount,
+        ticket_count: tCount,
         notes: notes !== undefined ? notes : report.notes,
         updated_at: new Date()
       }

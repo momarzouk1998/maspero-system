@@ -29,13 +29,22 @@ export default function ManagerReportsPage() {
   const [archivedReports, setArchivedReports] = useState<any[]>([]);
   const [savingArchive, setSavingArchive] = useState(false);
 
-  // Edit Modal State for Manager Archival Reports
+  // Edit Modal State for Manager Archival Reports (All Fields)
   const [editArchItem, setEditArchItem] = useState<any>(null);
+  const [editArchMonth, setEditArchMonth] = useState('');
   const [editArchOpening, setEditArchOpening] = useState('');
   const [editArchClosing, setEditArchClosing] = useState('');
   const [editArchPurchases, setEditArchPurchases] = useState('');
+  const [editArchServiceRevenue, setEditArchServiceRevenue] = useState('');
+  const [editArchWalletComm, setEditArchWalletComm] = useState('');
+  const [editArchTicketsComm, setEditArchTicketsComm] = useState('');
+  const [editArchMachineDepComm, setEditArchMachineDepComm] = useState('');
+  const [editArchMachineWtdComm, setEditArchMachineWtdComm] = useState('');
   const [editArchSalaries, setEditArchSalaries] = useState('');
   const [editArchExpenses, setEditArchExpenses] = useState('');
+  const [editArchPaperCount, setEditArchPaperCount] = useState('');
+  const [editArchTicketCount, setEditArchTicketCount] = useState('');
+  const [editArchNotes, setEditArchNotes] = useState('');
   const [editArchSubmitting, setEditArchSubmitting] = useState(false);
 
   // نسبة عمولة إيداع المكن — قابلة للتعديل (default: 7 لكل 1000)
@@ -971,41 +980,108 @@ export default function ManagerReportsPage() {
         </div>
       )}
 
-      {/* EDIT ARCHIVAL MONTHLY REPORT MODAL */}
+      {/* EDIT ARCHIVAL MONTHLY REPORT MODAL (ALL COLUMNS EDITABLE) */}
       {editArchItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-lg space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-3xl space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-3 border-slate-200">
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-blue-600" />
-                <span>تعديل التقرير الأرشيفي لشهر ({editArchItem.month})</span>
+                <span>تعديل التقرير الأرشيفي الكامل لشهر ({editArchMonth || editArchItem.month})</span>
               </h3>
               <button onClick={() => setEditArchItem(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            {/* Live Preview Bar of Calculated Equations */}
+            {(() => {
+              const op = parseFloat(editArchOpening || '0');
+              const cl = parseFloat(editArchClosing || '0');
+              const pu = parseFloat(editArchPurchases || '0');
+              const sr = parseFloat(editArchServiceRevenue || '0');
+              const wc = parseFloat(editArchWalletComm || '0');
+              const tc = parseFloat(editArchTicketsComm || '0');
+              const md = parseFloat(editArchMachineDepComm || '0');
+              const mw = parseFloat(editArchMachineWtdComm || '0');
+              const sa = parseFloat(editArchSalaries || '0');
+              const ex = parseFloat(editArchExpenses || '0');
+
+              const calcPurchasesCost = op + pu - cl;
+              const calcPurchasesCostPercent = sr > 0 ? ((calcPurchasesCost / sr) * 100).toFixed(1) : '0.0';
+              const calcTotalProfit = sr - calcPurchasesCost;
+              const calcTotalComm = wc + tc + md + mw;
+              const calcNetProfit = calcTotalProfit + calcTotalComm - sa - ex;
+
+              return (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <span className="text-xs font-bold text-slate-800 block">📊 المعاينة اللحظية للمعادلات المحسوبة:</span>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] font-mono">
+                    <div className="bg-white p-2 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 block">تكلفة المشتريات:</span>
+                      <span className="font-bold text-amber-800">{formatNumber(calcPurchasesCost)} ({calcPurchasesCostPercent}%)</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 block">إجمالي الربح:</span>
+                      <span className="font-bold text-emerald-700">{formatNumber(calcTotalProfit)}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 block">إجمالي العمولات:</span>
+                      <span className="font-bold text-emerald-700">{formatNumber(calcTotalComm)}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 block">صافي الربح:</span>
+                      <span className={`font-bold ${calcNetProfit < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{formatNumber(calcNetProfit)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Inputs Grid for ALL columns */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {/* 1. Period & Balances */}
+              <div className="md:col-span-3 font-bold text-slate-800 border-b pb-1 border-slate-200 mt-1 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span>الشهر والأرصدة المخزنية:</span>
+              </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">رصيد أول المدة</label>
+                <label className="block font-bold text-slate-700 mb-1">فترة الشهر (الشهر/السنة) *</label>
+                <input
+                  type="text"
+                  required
+                  value={editArchMonth}
+                  onChange={e => setEditArchMonth(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                  placeholder="2026 8"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-indigo-700 mb-1">رصيد أول المدة *</label>
                 <input
                   type="number"
                   value={editArchOpening}
                   onChange={e => setEditArchOpening(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                  className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-indigo-900"
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">رصيد آخر المدة</label>
+                <label className="block font-bold text-indigo-700 mb-1">رصيد آخر المدة *</label>
                 <input
                   type="number"
                   value={editArchClosing}
                   onChange={e => setEditArchClosing(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                  className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-indigo-900"
                 />
               </div>
+
+              {/* 2. Revenues & Purchases */}
+              <div className="md:col-span-3 font-bold text-slate-800 border-b pb-1 border-slate-200 mt-2 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-emerald-600" />
+                <span>المشتريات وإيرادات الخدمات:</span>
+              </div>
               <div>
-                <label className="block font-bold text-amber-700 mb-1">تكلفة المشتريات</label>
+                <label className="block font-bold text-amber-700 mb-1">قيمة المشتريات</label>
                 <input
                   type="number"
                   value={editArchPurchases}
@@ -1013,27 +1089,118 @@ export default function ManagerReportsPage() {
                   className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900"
                 />
               </div>
+              <div className="md:col-span-2">
+                <label className="block font-bold text-blue-700 mb-1">إيراد الخدمات والطباعة</label>
+                <input
+                  type="number"
+                  value={editArchServiceRevenue}
+                  onChange={e => setEditArchServiceRevenue(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900"
+                />
+              </div>
+
+              {/* 3. Commissions */}
+              <div className="md:col-span-3 font-bold text-slate-800 border-b pb-1 border-slate-200 mt-2 flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-emerald-600" />
+                <span>عمولات الأنشطة المباشرة:</span>
+              </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">الرواتب والسلف</label>
+                <label className="block font-bold text-slate-700 mb-1">عمولة المحافظ (فودافون كاش)</label>
+                <input
+                  type="number"
+                  value={editArchWalletComm}
+                  onChange={e => setEditArchWalletComm(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عمولة التذاكر</label>
+                <input
+                  type="number"
+                  value={editArchTicketsComm}
+                  onChange={e => setEditArchTicketsComm(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عمولة إيداع المكن</label>
+                <input
+                  type="number"
+                  value={editArchMachineDepComm}
+                  onChange={e => setEditArchMachineDepComm(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عمولة سحب المكن (فوري وأمان)</label>
+                <input
+                  type="number"
+                  value={editArchMachineWtdComm}
+                  onChange={e => setEditArchMachineWtdComm(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+
+              {/* 4. Expenses & Salaries */}
+              <div className="md:col-span-3 font-bold text-slate-800 border-b pb-1 border-slate-200 mt-2 flex items-center gap-1.5">
+                <Receipt className="w-4 h-4 text-rose-600" />
+                <span>القبض والمصروفات الإدارية:</span>
+              </div>
+              <div>
+                <label className="block font-bold text-rose-700 mb-1">القبض والسلف</label>
                 <input
                   type="number"
                   value={editArchSalaries}
                   onChange={e => setEditArchSalaries(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                  className="w-full p-2.5 bg-white border border-rose-200 rounded-xl font-mono font-bold text-rose-800"
                 />
               </div>
-              <div className="col-span-2">
-                <label className="block font-bold text-slate-700 mb-1">المصروفات الأخرى</label>
+              <div className="md:col-span-2">
+                <label className="block font-bold text-rose-700 mb-1">باقي المصروفات</label>
                 <input
                   type="number"
                   value={editArchExpenses}
                   onChange={e => setEditArchExpenses(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-rose-200 rounded-xl font-mono font-bold text-rose-800"
+                />
+              </div>
+
+              {/* 5. Quantities & Notes */}
+              <div className="md:col-span-3 font-bold text-slate-800 border-b pb-1 border-slate-200 mt-2 flex items-center gap-1.5">
+                <Printer className="w-4 h-4 text-blue-600" />
+                <span>أعداد العمليات والملاحظات:</span>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عدد الورق</label>
+                <input
+                  type="number"
+                  value={editArchPaperCount}
+                  onChange={e => setEditArchPaperCount(e.target.value)}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عدد التذاكر</label>
+                <input
+                  type="number"
+                  value={editArchTicketCount}
+                  onChange={e => setEditArchTicketCount(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">ملاحظات التقرير</label>
+                <input
+                  type="text"
+                  value={editArchNotes}
+                  onChange={e => setEditArchNotes(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+                  placeholder="ملاحظات توضيحية..."
                 />
               </div>
             </div>
 
-            <div className="pt-2 flex gap-3">
+            <div className="pt-3 flex gap-3 border-t border-slate-200">
               <button
                 disabled={editArchSubmitting}
                 onClick={async () => {
@@ -1044,12 +1211,20 @@ export default function ManagerReportsPage() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         id: editArchItem.id,
-                        month: editArchItem.month,
+                        month: editArchMonth || editArchItem.month,
                         opening_balance: parseFloat(editArchOpening || '0'),
                         closing_balance: parseFloat(editArchClosing || '0'),
                         purchases_cost: parseFloat(editArchPurchases || '0'),
+                        service_revenue: parseFloat(editArchServiceRevenue || '0'),
+                        wallet_commission: parseFloat(editArchWalletComm || '0'),
+                        tickets_commission: parseFloat(editArchTicketsComm || '0'),
+                        machine_deposit_commission: parseFloat(editArchMachineDepComm || '0'),
+                        machine_withdrawal_commission: parseFloat(editArchMachineWtdComm || '0'),
                         salaries: parseFloat(editArchSalaries || '0'),
-                        other_expenses: parseFloat(editArchExpenses || '0')
+                        other_expenses: parseFloat(editArchExpenses || '0'),
+                        paper_count: parseInt(editArchPaperCount || '0'),
+                        ticket_count: parseInt(editArchTicketCount || '0'),
+                        notes: editArchNotes
                       })
                     });
                     if (res.ok) {
@@ -1065,7 +1240,7 @@ export default function ManagerReportsPage() {
                 className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {editArchSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
-                <span>حفظ التعديلات 💾</span>
+                <span>حفظ التعديلات الشاملة 💾</span>
               </button>
               <button
                 onClick={() => setEditArchItem(null)}
