@@ -240,7 +240,9 @@ export default function FinancialAndHROperationsPage() {
                   { key: 'دعم مالي', label: 'دعم مالي 💸', color: 'bg-blue-100 text-blue-800 border-blue-300' },
                   { key: 'مشتريات', label: 'مشتريات 🛒', color: 'bg-purple-100 text-purple-800 border-purple-300' },
                   { key: 'مسحوبات', label: 'مسحوبات 📈', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-                ].map((c) => (
+                ]
+                  .filter(c => currentUser?.role === 'manager' || c.key !== 'قبض')
+                  .map((c) => (
                   <button
                     key={c.key}
                     type="button"

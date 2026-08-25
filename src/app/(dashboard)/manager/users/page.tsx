@@ -48,7 +48,7 @@ export default function ManagerUsersPage() {
 
   // Permissions Modal State
   const [permissionUser, setPermissionUser] = useState<any>(null);
-  const [userPermissions, setUserPermissions] = useState<Record<string, { update: boolean; delete: boolean }>>(DEFAULT_PERMISSIONS);
+  const [userPermissions, setUserPermissions] = useState<Record<string, any>>(DEFAULT_PERMISSIONS);
 
   // Adjust Wallet Modal State
   const [adjustWalletUser, setAdjustWalletUser] = useState<any>(null);
@@ -177,7 +177,7 @@ export default function ManagerUsersPage() {
   // Permissions Handler
   const openPermissionsModal = (u: any) => {
     setPermissionUser(u);
-    let parsed: Record<string, { update: boolean; delete: boolean }> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    let parsed: Record<string, any> = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
 
     let rawPerms = u.permissions;
     if (typeof rawPerms === 'string') {
@@ -202,6 +202,9 @@ export default function ManagerUsersPage() {
           parsed[feat.key] = { update: true, delete: true };
         }
       });
+      parsed.allow_advances = rawPerms.allow_advances !== false;
+    } else {
+      parsed.allow_advances = true;
     }
 
     setUserPermissions(parsed);
@@ -659,6 +662,25 @@ export default function ManagerUsersPage() {
                 </div>
 
                 <div className="space-y-3">
+                  {/* Allow Advances Option */}
+                  <div className="p-3.5 rounded-2xl border border-indigo-200 bg-indigo-50/70 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">السماح بسحب السُلف النقدية 💸</span>
+                      <span className="text-[11px] text-slate-500">عند إلغاء هذا الخيار، لن يستطيع الموظف سحب سُلفة لنفسه ولن يستطيع أي موظف آخر تسجيل سُلفة له.</span>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={userPermissions.allow_advances !== false}
+                        onChange={(e) => setUserPermissions(prev => ({ ...prev, allow_advances: e.target.checked }))}
+                        className="w-4 h-4 text-indigo-600 rounded cursor-pointer accent-indigo-600"
+                      />
+                      <span className={`text-xs font-bold ${userPermissions.allow_advances !== false ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {userPermissions.allow_advances !== false ? 'مسموح بالسلف ✔️' : 'ممنوع من السلف ❌'}
+                      </span>
+                    </label>
+                  </div>
+
                   {FEATURES_LIST.map((feat) => {
                     const perm = userPermissions[feat.key] || { update: false, delete: false };
 

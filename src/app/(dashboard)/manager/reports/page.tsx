@@ -322,163 +322,186 @@ export default function ManagerReportsPage() {
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Revenue / Withdrawals */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">المسحوبات</span>
-                    <TrendingUp className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-600">
-                    {formatNumberLocale(Number(metrics.totalRevenue || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">المبيعات والمسحوبات</p>
-                </div>
+              {(() => {
+                const livePurchaseVal = Number(metrics.purchaseValue ?? metrics.purchasesCost ?? 0);
+                const liveCalculatedPurchasesCost = openingBalance + livePurchaseVal - closingBalance;
+                const liveServiceRev = Number(metrics.serviceValue ?? metrics.totalRevenue ?? 0);
+                const livePurchasesCostPercent = liveServiceRev > 0
+                  ? ((liveCalculatedPurchasesCost / liveServiceRev) * 100).toFixed(1)
+                  : '0.0';
 
-                {/* 2. Total Commissions */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">العمولات</span>
-                    <Coins className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-600">
-                    {formatNumberLocale(Number(metrics.totalCommissions || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">محافظ + ماكينات + تذاكر</p>
-                </div>
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 1. Revenue / Withdrawals */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">المسحوبات</span>
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-600">
+                        {formatNumberLocale(Number(metrics.totalRevenue || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">المبيعات والمسحوبات</p>
+                    </div>
 
-                {/* 3. Operational Expenses */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">المصروفات</span>
-                    <Receipt className="w-5 h-5 text-rose-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-rose-600">
-                    {formatNumberLocale(Number(metrics.otherExpenses || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">الإدارة والمحل</p>
-                </div>
+                    {/* 2. Total Commissions */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">العمولات</span>
+                        <Coins className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-600">
+                        {formatNumberLocale(Number(metrics.totalCommissions || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">محافظ + ماكينات + تذاكر</p>
+                    </div>
 
-                {/* 4. Salaries & Advances */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">الرواتب والسلف</span>
-                    <DollarSign className="w-5 h-5 text-rose-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-rose-600">
-                    {formatNumberLocale(Number(metrics.salaries || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">الموظفين</p>
-                </div>
+                    {/* 3. Operational Expenses */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">المصروفات</span>
+                        <Receipt className="w-5 h-5 text-rose-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-rose-600">
+                        {formatNumberLocale(Number(metrics.otherExpenses || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">الإدارة والمحل</p>
+                    </div>
 
-                {/* 5. Purchases Cost */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">المشتريات</span>
-                    <ShoppingBag className="w-5 h-5 text-rose-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-rose-600">
-                    {formatNumberLocale(Number(metrics.purchasesCost || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-rose-500 font-bold">{metrics.purchasesCostPercent || 0}%</p>
-                </div>
+                    {/* 4. Salaries & Advances */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">الرواتب والسلف</span>
+                        <DollarSign className="w-5 h-5 text-rose-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-rose-600">
+                        {formatNumberLocale(Number(metrics.salaries || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">الموظفين</p>
+                    </div>
 
-                {/* 6. Manager Withdrawals */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">مسحوبات المدير</span>
-                    <ArrowUpRight className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-amber-600">
-                    {formatNumberLocale(Number(metrics.withdrawnRevenue || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">الأرباح الشخصية</p>
-                </div>
+                    {/* 5. Purchases Value */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">المشتريات</span>
+                        <ShoppingBag className="w-5 h-5 text-rose-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-rose-600">
+                        {formatNumberLocale(livePurchaseVal, 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">قيمة المشتريات الإجمالية</p>
+                    </div>
 
-                {/* 7. Paper Count */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">الورق</span>
-                    <Printer className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-blue-600">
-                    {formatNumberLocale(Number(metrics.paperCount || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">ورقة</p>
-                </div>
+                    {/* 6. Manager Withdrawals */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">مسحوبات المدير</span>
+                        <ArrowUpRight className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-amber-600">
+                        {formatNumberLocale(Number(metrics.withdrawnRevenue || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">الأرباح الشخصية</p>
+                    </div>
 
-                {/* 8. Ticket Count */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">التذاكر</span>
-                    <Train className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-blue-600">
-                    {formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">تذكرة</p>
-                </div>
+                    {/* 7. Paper Count */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">الورق</span>
+                        <Printer className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-blue-600">
+                        {formatNumberLocale(Number(metrics.paperCount || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">ورقة</p>
+                    </div>
 
-                {/* 9. Wallet Commissions */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولات المحافظ</span>
-                    <Zap className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
-                    {formatNumber(Number(metrics.walletCommission || 0))}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">فودافون كاش</p>
-                </div>
+                    {/* 8. Ticket Count */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">التذاكر</span>
+                        <Train className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-blue-600">
+                        {formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">تذكرة</p>
+                    </div>
 
-                {/* 10. Machine Withdrawals Commission */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولات سحب المكن</span>
-                    <Cpu className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
-                    {formatNumber(Number(metrics.machineWithdrawlCommission || 0))}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">فوري وأمان</p>
-                </div>
+                    {/* 9. Wallet Commissions */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">عمولات المحافظ</span>
+                        <Zap className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-700">
+                        {formatNumber(Number(metrics.walletCommission || 0))}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">فودافون كاش</p>
+                    </div>
 
-                {/* 11. Machine Deposits Commission */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولات إيداع المكن</span>
-                    <Coins className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
-                    {formatNumber(Number(metrics.machineDepositsCommission || 0))}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">إيداع: {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')} ج</p>
-                </div>
+                    {/* 10. Machine Withdrawals Commission */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">عمولات سحب المكن</span>
+                        <Cpu className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-700">
+                        {formatNumber(Number(metrics.machineWithdrawlCommission || 0))}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">فوري وأمان</p>
+                    </div>
 
-                {/* 12. Ticket Commissions */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">عمولة التذاكر</span>
-                    <Train className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-mono text-emerald-700">
-                    {formatNumber(Number(metrics.ticketCommission || 0))}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">{formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')} تذكرة</p>
-                </div>
+                    {/* 11. Machine Deposits Commission */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">عمولات إيداع المكن</span>
+                        <Coins className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-700">
+                        {formatNumber(Number(metrics.machineDepositsCommission || 0))}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">إيداع: {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')} ج</p>
+                    </div>
 
-                {/* 13. Machine Deposits (raw amount) */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">إيداع المكن</span>
-                    <Cpu className="w-5 h-5 text-indigo-600" />
+                    {/* 12. Ticket Commissions */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">عمولة التذاكر</span>
+                        <Train className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-emerald-700">
+                        {formatNumber(Number(metrics.ticketCommission || 0))}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">{formatNumberLocale(Number(metrics.ticketCount || 0), 'en-US')} تذكرة</p>
+                    </div>
+
+                    {/* 13. Machine Deposits (raw amount) */}
+                    <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">إيداع المكن</span>
+                        <Cpu className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-indigo-700">
+                        {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">أساس حساب عمولة الإيداع</p>
+                    </div>
+
+                    {/* 14. Calculated Purchases Cost & Percentage */}
+                    <div className="glass-panel p-5 rounded-2xl border border-amber-300 bg-amber-50/50 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-950">تكلفة المشتريات</span>
+                        <ShoppingBag className="w-5 h-5 text-amber-700" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-mono text-amber-800">
+                        {formatNumberLocale(liveCalculatedPurchasesCost, 'en-US')}
+                      </h3>
+                      <p className="text-[11px] text-amber-700 font-bold">النسبة: {livePurchasesCostPercent}%</p>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold font-mono text-indigo-700">
-                    {formatNumberLocale(Number(metrics.machineDeposits || 0), 'en-US')}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">أساس حساب عمولة الإيداع</p>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* 📊 ARCHIVAL MONTHLY PROFIT REPORT (سجل تقرير الماليات والأرشيف الشهري) */}
               <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden space-y-4">

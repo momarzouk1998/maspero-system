@@ -150,8 +150,19 @@ export async function POST(req: Request) {
         employeeId = emp.id;
         employeeName = emp.name;
 
-        // Check if non-manager advance exceeds target employee's remaining salary
+        // Check if target employee is allowed to take advances ("مسموح بالسلف")
         if (mainType === 'سلفة' && user.role !== 'manager') {
+          let targetPerms: any = {};
+          if (typeof emp.permissions === 'string') {
+            try { targetPerms = JSON.parse(emp.permissions); } catch { targetPerms = {}; }
+          } else if (typeof emp.permissions === 'object' && emp.permissions !== null) {
+            targetPerms = emp.permissions;
+          }
+
+          if (targetPerms.allow_advances === false) {
+            return NextResponse.json({ error: 'عفواً، هذا الموظف غير مسموح له بسحب سُلفة. تواصل مع المدير.' }, { status: 403 });
+          }
+
           const baseSalary = Number(emp.salary || 0);
           const startOfMonth = new Date(txDate.getFullYear(), txDate.getMonth(), 1);
           const endOfMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0, 23, 59, 59);
@@ -176,6 +187,11 @@ export async function POST(req: Request) {
       }
     }
 
+    // Check if user currently has an active open shift
+    const activeShift = await db.shifts.findFirst({
+      where: { employee_id: user.id, end_time: null }
+    });
+
     const expense = await db.$transaction(async (tx) => {
       const created = await tx.expenses.create({
         data: {
@@ -192,13 +208,13 @@ export async function POST(req: Request) {
         }
       });
 
-      // Adjust cash custody balance of the active employee creating the entry
-      // "دعم مالي" = Manager gave cash to employee -> INCREMENT employee custody (+)
-      // "مسحوبات", "مصروفات", "مشتريات", "سلفة", "قبض" = Cash paid out -> DECREMENT employee custody (-)
-      if (mainType === 'دعم مالي') {
-        await WalletService.adjustEmployeeWallet(user.id, numAmount, tx);
-      } else {
-        await WalletService.adjustEmployeeWallet(user.id, -numAmount, tx);
+      // Adjust cash custody balance ONLY IF user is employee OR manager HAS an active open shift
+      if (user.role !== 'manager' || activeShift) {
+        if (mainType === 'دعم مالي') {
+          await WalletService.adjustEmployeeWallet(user.id, numAmount, tx);
+        } else {
+          await WalletService.adjustEmployeeWallet(user.id, -numAmount, tx);
+        }
       }
 
       return created;

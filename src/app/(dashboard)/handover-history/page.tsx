@@ -424,7 +424,7 @@ export default function HandoverHistoryPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto glass-panel rounded-3xl border border-slate-200">
+          <div className="overflow-x-auto glass-panel rounded-3xl border border-slate-200 pb-3">
             <table className="w-full text-right text-sm text-slate-700 table-auto">
               <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                 <tr>

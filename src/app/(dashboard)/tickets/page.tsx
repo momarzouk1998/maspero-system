@@ -431,8 +431,8 @@ export default function TicketsPage() {
                         {item.employee_name || '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 font-mono">
-                      {new Date(item.timestamp || item.date).toLocaleDateString('en-US')}
+                    <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
+                      {item.timestamp || item.date ? new Date(item.timestamp || item.date).toLocaleString('en-US') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
                       {item.notes || '-'}

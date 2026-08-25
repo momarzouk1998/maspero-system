@@ -402,7 +402,7 @@ export default function ChargeHistoryPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-3">
           <table className="w-full text-right text-sm text-slate-700 table-auto">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
