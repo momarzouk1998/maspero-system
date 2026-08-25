@@ -7,7 +7,7 @@ import {
   Calendar, RefreshCw, ArrowRight, Coins, ShoppingBag, Layers, 
   FileText, ArrowDownLeft, ArrowUpRight, Zap, Wallet, Building2,
   Archive, Users, ChevronDown, ChevronUp, Banknote, AlertCircle,
-  Edit3, Trash2, X, Calculator
+  Edit3, Trash2, X, Calculator, HelpCircle
 } from 'lucide-react';
 import { formatNumber, formatNumberLocale } from '@/lib/user-utils';
 
@@ -24,6 +24,7 @@ export default function ManagerReportsPage() {
   const [activeTab, setActiveTab] = useState<'financial' | 'monthly' | 'category'>('financial');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('مسحوبات');
+  const [showGuide, setShowGuide] = useState(false);
 
   // Archival Monthly Profit Reports State (CSV Matching)
   const [archivedReports, setArchivedReports] = useState<any[]>([]);
@@ -314,6 +315,71 @@ export default function ManagerReportsPage() {
                     {formatNumberLocale(Number(metrics.netProfit || 0), 'en-US')} ج
                   </span>
                 </div>
+              </div>
+
+              {/* 📖 Interactive Explanatory Guide Banner */}
+              <div className="glass-panel rounded-2xl border border-blue-200 bg-blue-50/70 p-4 space-y-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-blue-950 font-bold text-xs">
+                    <HelpCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>💡 دليل وبدائل مصطلحات تقرير الماليات والأرباح (للتوضيح 📘):</span>
+                  </div>
+                  <button
+                    onClick={() => setShowGuide(!showGuide)}
+                    className="text-xs font-bold text-blue-700 hover:text-blue-900 bg-white px-3 py-1 rounded-xl border border-blue-200 shadow-sm cursor-pointer transition-colors"
+                  >
+                    {showGuide ? 'إخفاء الشرح التفصيلي ▲' : 'عرض الشرح والتفاصيل 📖 ▼'}
+                  </button>
+                </div>
+
+                {showGuide && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 text-xs border-t border-blue-200/80 animate-in fade-in duration-200">
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">1. إيراد الخدمات والطباعة 🖨️</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        إجمالي الإيرادات والمبيعات المحصلة بالمركز من أعمال الطباعة والتصوير والخدمات العامة.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">2. مسحوبات المدير 👤</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        المبالغ المسحوبة شخصياً من الخزينة لحساب المدير الخاص (الأرباح الشخصية للمدير).
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">3. قيمة المشتريات 🛒</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        إجمالي قيمة المشتريات المسجلة بالفواتير والمصروفات خلال هذه الفترة.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">4. تكلفة المشتريات ونسبتها 📐</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-mono">
+                        التكلفة = (أول المدة + المشتريات - آخر المدة).<br />
+                        النسبة = (تكلفة المشتريات ÷ إيراد الخدمات) × 100.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">5. الرواتب والسلف والمصروفات 💼</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        الرواتب والسلف = إجمالي القبض والسحبيات الكاش للموظفين.<br />
+                        المصروفات = الفواتير التشغيلية ومصروفات الإدارة والمحل.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-1 shadow-2xs">
+                      <span className="font-bold text-blue-950 text-xs block">6. العمولات وصافي الربح 📊</span>
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-mono">
+                        العمولات = (محافظ + تذاكر + إيداع/سحب المكن).<br />
+                        صافي الربح = (إجمالي الربح + العمولات - الرواتب - المصروفات).
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ── Section A: متغيرة بالتصفية ── */}
