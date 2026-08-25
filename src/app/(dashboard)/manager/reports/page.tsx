@@ -341,16 +341,16 @@ export default function ManagerReportsPage() {
 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* 1. Revenue / Withdrawals */}
+                    {/* 1. Services & Printing Revenue */}
                     <div className="glass-panel p-5 rounded-2xl border border-slate-200 bg-white space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700">المسحوبات</span>
+                        <span className="text-xs font-bold text-slate-700">إيراد الخدمات والطباعة</span>
                         <TrendingUp className="w-5 h-5 text-emerald-600" />
                       </div>
                       <h3 className="text-2xl font-bold font-mono text-emerald-600">
                         {formatNumberLocale(Number(metrics.totalRevenue || 0), 'en-US')}
                       </h3>
-                      <p className="text-[11px] text-slate-500">المبيعات والمسحوبات</p>
+                      <p className="text-[11px] text-slate-500">إجمالي مبيعات وإيراد الخدمات والطباعة</p>
                     </div>
 
                     {/* 2. Total Commissions */}
