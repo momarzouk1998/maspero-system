@@ -31,10 +31,22 @@ export async function GET(req: Request) {
     const baseSalary = Number(targetUser.salary || 0);
     const remainingSalary = Math.max(0, baseSalary - totalDrawnThisMonth);
 
+    let allowAdvances = true;
+    let targetPerms: any = {};
+    if (typeof targetUser.permissions === 'string') {
+      try { targetPerms = JSON.parse(targetUser.permissions); } catch { targetPerms = {}; }
+    } else if (typeof targetUser.permissions === 'object' && targetUser.permissions !== null) {
+      targetPerms = targetUser.permissions;
+    }
+    if (targetPerms.allow_advances === false) {
+      allowAdvances = false;
+    }
+
     return NextResponse.json({
       baseSalary,
       totalDrawnThisMonth,
-      remainingSalary
+      remainingSalary,
+      allowAdvances
     });
   }
 

@@ -24,6 +24,7 @@ export default function FinancialAndHROperationsPage() {
   const [finAmount, setFinAmount] = useState('');
   const [finNotes, setFinNotes] = useState('');
   const [finStats, setFinStats] = useState({ baseSalary: 0, totalDrawnThisMonth: 0, remainingSalary: 0 });
+  const [allowAdvances, setAllowAdvances] = useState(true);
 
   const adjustFinAmount = (delta: number) => {
     const current = parseFloat(finAmount) || 0;
@@ -80,7 +81,10 @@ export default function FinancialAndHROperationsPage() {
 
   // Fetch employee salary stats when employee changes in financial form
   useEffect(() => {
-    if (!finEmployeeId) return;
+    if (!finEmployeeId) {
+      setAllowAdvances(true);
+      return;
+    }
     fetch(`/api/expenses?employeeId=${finEmployeeId}`)
       .then(r => r.json())
       .then(d => {
@@ -90,6 +94,7 @@ export default function FinancialAndHROperationsPage() {
             totalDrawnThisMonth: d.totalDrawnThisMonth,
             remainingSalary: d.remainingSalary
           });
+          setAllowAdvances(d.allowAdvances !== false);
         }
       })
       .catch(console.error);
@@ -109,6 +114,10 @@ export default function FinancialAndHROperationsPage() {
     }
     if (['سلفة', 'قبض'].includes(finCategory) && !finEmployeeId) {
       showToast('برجاء اختيار الموظف المعني أولاً', 'error');
+      return;
+    }
+    if (finCategory === 'سلفة' && !allowAdvances) {
+      showToast('عفواً، هذا الموظف غير مسموح له بسحب سُلفة. تواصل مع المدير.', 'error');
       return;
     }
     const amt = parseFloat(finAmount);
@@ -229,6 +238,17 @@ export default function FinancialAndHROperationsPage() {
           <div className="flex items-center gap-2">
             {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
             <span>{toast.text}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Disallowed Advance Static Warning Banner */}
+      {finCategory === 'سلفة' && !allowAdvances && finEmployeeId && (
+        <div className="p-5 rounded-2xl border-2 border-red-300 bg-red-50 text-red-950 flex items-start gap-3.5 shadow-md max-w-6xl mx-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+          <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-extrabold text-red-900">عفواً، هذا الموظف غير مسموح له بسحب سلفة.</h4>
+            <p className="text-xs font-bold text-red-700">برجاء التواصل مع المدير لتعديل الصلاحيات الممنوحة للموظف.</p>
           </div>
         </div>
       )}
