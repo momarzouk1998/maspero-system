@@ -183,8 +183,7 @@ export default function ManagerReportsPage() {
   const activeMonthReport = monthlyReports.find((m: any) => m.month === selectedMonth) || { items: [], totalSum: 0 };
   const activeCategoryReport = categoryReports.find((c: any) => c.category === selectedCategory) || { items: [], totalSum: 0 };
 
-  // Main 2 Tabs state: 'report' for Financial Report & Monthly Archive, 'balances' for Live Balances Tables
-  const [activeMainTab, setActiveMainTab] = useState<'report' | 'balances'>('report');
+
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -206,37 +205,10 @@ export default function ManagerReportsPage() {
             </h1>
           </div>
         </div>
-
-        {/* 2 Main Tabs Switcher */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-          <button
-            onClick={() => setActiveMainTab('report')}
-            className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeMainTab === 'report'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold'
-                : 'text-slate-600 hover:text-slate-900 font-semibold'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>📊 التقرير المالي والأرشيف الشهري</span>
-          </button>
-          <button
-            onClick={() => setActiveMainTab('balances')}
-            className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-              activeMainTab === 'balances'
-                ? 'bg-slate-900 text-white shadow-md font-bold'
-                : 'text-slate-600 hover:text-slate-900 font-semibold'
-            }`}
-          >
-            <Banknote className="w-4 h-4" />
-            <span>🏛️ الأرصدة الحالية اللحظية</span>
-          </button>
-        </div>
       </div>
 
-      {/* Date Range Selector Bar (Show ONLY on Financial Report Tab) */}
-      {activeMainTab === 'report' && (
-        <div className="glass-panel p-4 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      {/* Date Range Selector Bar */}
+      <div className="glass-panel p-4 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-wrap">
             <Calendar className="w-4 h-4 text-emerald-600" />
             <span className="text-xs font-bold text-slate-700">تصفية بالفترة:</span>
@@ -305,11 +277,9 @@ export default function ManagerReportsPage() {
             </div>
           </div>
         </div>
-      )}
 
       {/* TAB 1: FINANCIAL REPORT & LIVE BALANCES */}
-      {activeMainTab === 'report' && (
-        <>
+      <>
           {loading ? (
             <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
               <RefreshCw className="w-6 h-6 animate-spin text-emerald-600 mb-2" />
@@ -771,7 +741,6 @@ export default function ManagerReportsPage() {
             </div>
           )}
         </>
-      )}
 
 
 
