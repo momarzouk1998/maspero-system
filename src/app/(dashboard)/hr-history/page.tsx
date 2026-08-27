@@ -473,7 +473,7 @@ export default function HRHistoryPage() {
                         {item.notes || '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                        {item.date || item.created_at ? new Date(item.date || item.created_at).toLocaleString('en-US') : '-'}
+                        {item.timestamp || item.date ? new Date(item.timestamp || item.date).toLocaleString('en-US') : '-'}
                       </td>
 
                       {(canUpdate || canDeletePerm || isManager) && (

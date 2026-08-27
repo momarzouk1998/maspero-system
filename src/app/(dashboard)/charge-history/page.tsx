@@ -420,29 +420,29 @@ export default function ChargeHistoryPage() {
                     className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
                   />
                 </th>
-                <th className="px-4 py-3 whitespace-nowrap">المحفظة / الماكينة</th>
-                <th className="px-4 py-3 whitespace-nowrap">نوع العملية</th>
+                <th className="px-4 py-3 whitespace-nowrap">العهدة</th>
+                <th className="px-4 py-3 whitespace-nowrap">النوع</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
                 <th className="px-4 py-3 whitespace-nowrap">العمولة</th>
-                <th className="px-4 py-3 whitespace-nowrap">الإجمالي المحصل</th>
+                <th className="px-4 py-3 whitespace-nowrap">الاجمالى</th>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
+                {(canUpdate || canDelete) && <th className="px-4 py-3 whitespace-nowrap text-center">الاجراءات</th>}
+                <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
                 <th className="px-4 py-3 whitespace-nowrap">كود الفاتورة</th>
-                <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
-                <th className="px-4 py-3 whitespace-nowrap">ملاحظات</th>
-                {(canUpdate || canDelete) && <th className="px-4 py-3 whitespace-nowrap text-center">الإجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-500">
+                  <td colSpan={11} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
                     <span>جاري تحميل سجل عمليات الشحن...</span>
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-12 text-slate-500">
+                  <td colSpan={11} className="text-center py-12 text-slate-500">
                     لا توجد عمليات شحن مسجلة تطابق التصفية
                   </td>
                 </tr>
@@ -495,49 +495,49 @@ export default function ChargeHistoryPage() {
                           {item.employee_name || '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-blue-600 whitespace-nowrap">{item.invoice_code || '-'}</td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
                         {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
                       </td>
+                      {(canUpdate || canDelete) && (
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {canUpdate && (
+                              <button
+                                onClick={() => openEditModal(item)}
+                                className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-200 transition-colors"
+                                title="تعديل العملية"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
+                                  try {
+                                    const res = await fetch(`/api/invoice/item`, {
+                                      method: 'DELETE',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: item.id, type: 'wallet' })
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) throw new Error(data.error || 'فشل الحذف');
+                                    fetchTransactions(pagination.page);
+                                  } catch (err: any) {
+                                    alert(err.message);
+                                  }
+                                }}
+                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
+                                title="حذف العملية"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.description || '-'}</td>
-                        {(canUpdate || canDelete) && (
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {canUpdate && (
-                                <button
-                                  onClick={() => openEditModal(item)}
-                                  className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg border border-amber-200 transition-colors"
-                                  title="تعديل العملية"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                              )}
-                              {canDelete && (
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm('هل أنت تأكد من رغبتك في حذف هذه العملية؟')) return;
-                                    try {
-                                      const res = await fetch(`/api/invoice/item`, {
-                                        method: 'DELETE',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ id: item.id, type: 'wallet' })
-                                      });
-                                      const data = await res.json();
-                                      if (!res.ok) throw new Error(data.error || 'فشل الحذف');
-                                      fetchTransactions(pagination.page);
-                                    } catch (err: any) {
-                                      alert(err.message);
-                                    }
-                                  }}
-                                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg border border-red-200 transition-colors"
-                                  title="حذف العملية"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600 whitespace-nowrap">{item.invoice_code || '-'}</td>
                     </tr>
                   );
                 })

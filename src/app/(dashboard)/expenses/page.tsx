@@ -14,7 +14,8 @@ export default function FinancialAndHROperationsPage() {
   const [employees, setEmployees] = useState<any[]>([]);
 
   // --- Financial Form State ---
-  const [finCategory, setFinCategory] = useState<'سلفة' | 'قبض' | 'مصروفات' | 'دعم مالي' | 'مشتريات' | 'مسحوبات'>('سلفة');
+  // --- Financial Form State ---
+  const [finCategory, setFinCategory] = useState<'سلفة' | 'قبض' | 'مصروفات' | 'دعم مالي' | 'مشتريات' | 'مسحوبات' | ''>('');
   const [availableItems, setAvailableItems] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState('');
   const [customItem, setCustomItem] = useState('');
@@ -33,7 +34,7 @@ export default function FinancialAndHROperationsPage() {
   // --- HR Form State ---
   const [hrDate, setHrDate] = useState(new Date().toISOString().split('T')[0]);
   const [hrEmployeeId, setHrEmployeeId] = useState('');
-  const [hrType, setHrType] = useState<'خصم' | 'مكافأة' | 'طلب إذن' | 'طلب إجازة'>('مكافأة');
+  const [hrType, setHrType] = useState<'خصم' | 'مكافأة' | 'طلب إذن' | 'طلب إجازة' | ''>('');
   const [hrHours, setHrHours] = useState('1.00');
   const [hrNotes, setHrNotes] = useState('');
 
@@ -52,16 +53,17 @@ export default function FinancialAndHROperationsPage() {
       .then(d => {
         const active = getActiveUsers(d.users || []);
         setEmployees(active);
-        if (active.length > 0) {
-          setFinEmployeeId(active[0].id);
-          setHrEmployeeId(active[0].id);
-        }
       })
       .catch(console.error);
   }, []);
 
   // Fetch category items when finCategory changes
   useEffect(() => {
+    if (!finCategory) {
+      setAvailableItems([]);
+      setSelectedItem('');
+      return;
+    }
     fetch(`/api/categories?type=${encodeURIComponent(finCategory)}`)
       .then(r => r.json())
       .then(d => {
@@ -101,6 +103,14 @@ export default function FinancialAndHROperationsPage() {
   // Submit Financial Transaction
   const handleFinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!finCategory) {
+      showToast('برجاء اختيار التصنيف أولاً', 'error');
+      return;
+    }
+    if (['سلفة', 'قبض'].includes(finCategory) && !finEmployeeId) {
+      showToast('برجاء اختيار الموظف المعني أولاً', 'error');
+      return;
+    }
     const amt = parseFloat(finAmount);
     if (!amt || amt <= 0) {
       showToast('برجاء أدخال مبلغ صحيح أكبر من 0', 'error');
@@ -141,6 +151,14 @@ export default function FinancialAndHROperationsPage() {
   // Submit HR Request
   const handleHrSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hrEmployeeId) {
+      showToast('برجاء اختيار الموظف أولاً', 'error');
+      return;
+    }
+    if (!hrType) {
+      showToast('برجاء اختيار نوع الطلب أولاً', 'error');
+      return;
+    }
     const hrs = parseFloat(hrHours);
     if (!hrs || hrs <= 0) {
       showToast('برجاء إدخال عدد ساعات صحيح', 'error');
@@ -167,6 +185,7 @@ export default function FinancialAndHROperationsPage() {
       showToast(`تم تسجيل طلب (${hrType}) لـ ${hrs} ساعة بنجاح 🎉`);
       setHrHours('1.00');
       setHrNotes('');
+      setHrType('');
     } catch (err: any) {
       showToast(err.message, 'error');
     } finally {
@@ -281,12 +300,19 @@ export default function FinancialAndHROperationsPage() {
                   <select
                     value={selectedItem}
                     onChange={(e) => setSelectedItem(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                    disabled={!finCategory}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500 disabled:opacity-50"
                   >
-                    {availableItems.map((item) => (
-                      <option key={item.id} value={item.item_name}>{item.item_name}</option>
-                    ))}
-                    <option value="أخرى">أخرى (إدخال يدوي...)</option>
+                    {!finCategory ? (
+                      <option value="">اختر التصنيف أولاً...</option>
+                    ) : (
+                      <>
+                        {availableItems.map((item) => (
+                          <option key={item.id} value={item.item_name}>{item.item_name}</option>
+                        ))}
+                        <option value="أخرى">أخرى (إدخال يدوي...)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
@@ -316,6 +342,7 @@ export default function FinancialAndHROperationsPage() {
                     onChange={(e) => setFinEmployeeId(e.target.value)}
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
                   >
+                    <option value="">اختر الموظف...</option>
                     {employees.map((emp) => (
                       <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
                     ))}
@@ -439,6 +466,7 @@ export default function FinancialAndHROperationsPage() {
                     onChange={(e) => setHrEmployeeId(e.target.value)}
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
                   >
+                    <option value="">اختر الموظف...</option>
                     {employees.map((emp) => (
                       <option key={emp.id} value={emp.id}>{emp.name} ({emp.job_title || 'كاشير'})</option>
                     ))}
@@ -455,20 +483,22 @@ export default function FinancialAndHROperationsPage() {
                     { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
                     { key: 'طلب إذن', label: 'إذن مغادرة 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
                     { key: 'طلب إجازة', label: 'إجازة 🏖️', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-                  ].map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      onClick={() => setHrType(t.key as any)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                        hrType === t.key
-                          ? `${t.color} shadow-sm ring-2 ring-indigo-400`
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+                  ]
+                    .filter((t) => currentUser?.role === 'manager' || !['مكافأة', 'خصم'].includes(t.key))
+                    .map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setHrType(t.key as any)}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          hrType === t.key
+                            ? `${t.color} shadow-sm ring-2 ring-indigo-400`
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
                 </div>
               </div>
 

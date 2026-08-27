@@ -136,7 +136,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'برجاء ادخال النوع والمبلغ بشكل صحيح' }, { status: 400 });
     }
 
-    const txDate = date ? new Date(date) : new Date();
+    let txDate = new Date();
+    if (date) {
+      if (typeof date === 'string' && (date.includes('T') || date.includes(':'))) {
+        const d = new Date(date);
+        if (!isNaN(d.getTime())) {
+          txDate = d;
+        }
+      } else if (typeof date === 'string') {
+        const parts = date.split('-');
+        if (parts.length === 3) {
+          const yr = parseInt(parts[0], 10);
+          const mo = parseInt(parts[1], 10) - 1;
+          const dy = parseInt(parts[2], 10);
+          if (!isNaN(yr) && !isNaN(mo) && !isNaN(dy)) {
+            txDate.setFullYear(yr, mo, dy);
+          }
+        }
+      }
+    }
 
     // Target employee is ONLY relevant for advances & salary
     let employeeId = user.id;

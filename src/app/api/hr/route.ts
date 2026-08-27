@@ -75,7 +75,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'برجاء اختيار نوع الطلب وعدد الساعات بشكل صحيح' }, { status: 400 });
     }
 
-    const reqDate = date ? new Date(date) : new Date();
+    let reqDate = new Date();
+    if (date) {
+      if (typeof date === 'string' && (date.includes('T') || date.includes(':'))) {
+        const d = new Date(date);
+        if (!isNaN(d.getTime())) {
+          reqDate = d;
+        }
+      } else if (typeof date === 'string') {
+        const parts = date.split('-');
+        if (parts.length === 3) {
+          const yr = parseInt(parts[0], 10);
+          const mo = parseInt(parts[1], 10) - 1;
+          const dy = parseInt(parts[2], 10);
+          if (!isNaN(yr) && !isNaN(mo) && !isNaN(dy)) {
+            reqDate.setFullYear(yr, mo, dy);
+          }
+        }
+      }
+    }
 
     let employeeId = user.id;
     let employeeName = user.name;
