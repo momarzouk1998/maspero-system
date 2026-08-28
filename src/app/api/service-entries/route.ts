@@ -88,8 +88,9 @@ export async function POST(req: Request) {
     const today = new Date();
 
     let validServiceId: string | null = null;
+    let existingService = null;
     if (serviceId) {
-      const existingService = await db.services.findUnique({ where: { id: serviceId } });
+      existingService = await db.services.findUnique({ where: { id: serviceId } });
       if (existingService) {
         validServiceId = serviceId;
       }
@@ -99,6 +100,14 @@ export async function POST(req: Request) {
     const finalPaper = isNaN(parsedPaper) ? 0 : Math.max(0, parsedPaper);
 
     const result = await db.$transaction(async (tx: any) => {
+      let employeeCommission = 0;
+      let isCommString = "لا";
+      if (existingService && existingService.is_commissionable) {
+        const pct = Number(existingService.commission_percent || 0);
+        employeeCommission = numAmount * (pct / 100);
+        isCommString = "نعم";
+      }
+
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
@@ -115,6 +124,8 @@ export async function POST(req: Request) {
           employee_name: user.name,
           invoice_code: invoiceCode,
           timestamp: today,
+          employee_commission: employeeCommission,
+          is_commissionable: isCommString
         }
       });
 
@@ -207,6 +218,15 @@ export async function PUT(req: Request) {
         }
       }
 
+      let newEmployeeCommission = undefined;
+      if (entry.service_id) {
+        const service = await tx.services.findUnique({ where: { id: entry.service_id } });
+        if (service && service.is_commissionable) {
+          const pct = Number(service.commission_percent || 0);
+          newEmployeeCommission = numNewAmount * (pct / 100);
+        }
+      }
+
       return await tx.service_entries.update({
         where: { id },
         data: {
@@ -214,6 +234,7 @@ export async function PUT(req: Request) {
           notes: notes !== undefined ? notes : undefined,
           paper_count: paper_count !== undefined ? parseInt(paper_count) : undefined,
           face_type: face_type !== undefined ? face_type : undefined,
+          ...(newEmployeeCommission !== undefined ? { employee_commission: newEmployeeCommission } : {})
         }
       });
     });

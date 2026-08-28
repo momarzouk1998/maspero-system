@@ -178,6 +178,9 @@ export async function GET(req: Request) {
     categoryMap[cat].items.push(exp);
   });
 
+  // Wallets to exclude from totals
+  const excludedWalletNames = ['سحب فوري 1', 'سحب فوري 2', 'محفظة الصياد', 'الكوماندا'];
+
   // Split wallets by type
   const walletsByType = {
     محافظ: walletsList.filter((w: any) => w.wallet_type === 'محفظة'),
@@ -185,11 +188,17 @@ export async function GET(req: Request) {
     أدراج: walletsList.filter((w: any) => w.wallet_type === 'درج كاشير'),
   };
 
-  // Summary totals per type
+  // Summary totals per type (excluding specific wallets)
   const walletsTotals = {
-    محافظ: walletsByType.محافظ.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
-    ماكينات: walletsByType.ماكينات.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
-    أدراج: walletsByType.أدراج.reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+    محافظ: walletsByType.محافظ
+      .filter((w: any) => !excludedWalletNames.includes(w.wallet_name))
+      .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+    ماكينات: walletsByType.ماكينات
+      .filter((w: any) => !excludedWalletNames.includes(w.wallet_name))
+      .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
+    أدراج: walletsByType.أدراج
+      .filter((w: any) => !excludedWalletNames.includes(w.wallet_name))
+      .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0),
   };
 
   // Employee custody (wallet_balance) — active employees only

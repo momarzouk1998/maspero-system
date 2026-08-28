@@ -62,6 +62,15 @@ export async function PUT(req: Request) {
           }
         }
 
+        let newEmployeeCommission = undefined;
+        if (entry.service_id) {
+          const service = await tx.services.findUnique({ where: { id: entry.service_id } });
+          if (service && service.is_commissionable) {
+            const pct = Number(service.commission_percent || 0);
+            newEmployeeCommission = numNewAmount * (pct / 100);
+          }
+        }
+
         await tx.service_entries.update({
           where: { id },
           data: {
@@ -69,6 +78,7 @@ export async function PUT(req: Request) {
             ...(newCount !== undefined ? { paper_count: Number(newCount) } : {}),
             ...(newNotes !== undefined ? { notes: newNotes } : {}),
             ...(newFaceType !== undefined ? { face_type: newFaceType } : {}),
+            ...(newEmployeeCommission !== undefined ? { employee_commission: newEmployeeCommission } : {})
           }
         });
       }
