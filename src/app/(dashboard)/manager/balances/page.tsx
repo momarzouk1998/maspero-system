@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  ArrowRight, Banknote, Wallet, Building2, User, Users, Archive, RefreshCw
+  ArrowRight, Banknote, Wallet, Building2, User, Users, Archive, Zap, RefreshCw, AlertCircle
 } from 'lucide-react';
 
 export default function ManagerBalancesPage() {
@@ -34,25 +34,15 @@ export default function ManagerBalancesPage() {
     return formatted;
   };
 
+  const isExcludedFromTotal = (name: string) => {
+    if (!name) return false;
+    return name.includes('سحب فوري') || name.includes('الصياد') || name.includes('الكوماندا');
+  };
+
   const walletsTotals = data?.walletsTotals || { محافظ: 0, ماكينات: 0, أدراج: 0 };
   const walletsByType = data?.walletsByType || { محافظ: [], ماكينات: [], أدراج: [] };
   const employeeCustody = data?.employeeCustody || [];
   const totalEmployeeCustody = data?.totalEmployeeCustody || 0;
-
-  // Calculate totals excluding specific wallets
-  const excludedWalletNames = ['سحب فوري 1', 'سحب فوري 2', 'محفظة الصياد', 'الكوماندا'];
-  
-  const totalWalletsExcluded = walletsByType.محافظ
-    .filter((w: any) => excludedWalletNames.includes(w.wallet_name))
-    .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0);
-  
-  const totalMachinesExcluded = walletsByType.ماكينات
-    .filter((w: any) => excludedWalletNames.includes(w.wallet_name))
-    .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0);
-  
-  const totalDrawersExcluded = walletsByType.أدراج
-    .filter((w: any) => excludedWalletNames.includes(w.wallet_name))
-    .reduce((s: number, w: any) => s + Number(w.current_balance || 0), 0);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -85,6 +75,15 @@ export default function ManagerBalancesPage() {
         </button>
       </div>
 
+      {/* Notice Banner for Excluded Accounts */}
+      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3 shadow-sm">
+        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+        <div className="text-xs font-bold leading-relaxed">
+          <span className="font-extrabold text-amber-950">تنبيه المجموع الإجمالي: </span>
+          حسابات <span className="text-rose-700 font-extrabold underline decoration-rose-400 decoration-2">(سحب فوري 1 و 2)</span>، <span className="text-rose-700 font-extrabold underline decoration-rose-400 decoration-2">(محفظة الصياد)</span>، و <span className="text-rose-700 font-extrabold underline decoration-rose-400 decoration-2">(ماكينة الكوماندا)</span> غير مجمعة بالإجمالي ومُعلمة باللون الأحمر بالجدول إشارة لعدم جمعها.
+        </div>
+      </div>
+
       {loading ? (
         <div className="py-20 text-center text-slate-500">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-amber-600" />
@@ -102,23 +101,12 @@ export default function ManagerBalancesPage() {
                 </div>
                 <h3 className="font-bold text-sm text-slate-900">جدول أرصدة المحافظ والماكينات</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-extrabold font-mono text-indigo-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm dir-ltr">
-                  {formatNumberLocale(Number(walletsTotals.محافظ + walletsTotals.ماكينات), 'en-US')}
-                </span>
-                {totalWalletsExcluded + totalMachinesExcluded > 0 && (
-                  <span className="text-xs text-rose-600 font-medium">
-                    (-{formatNumberLocale(totalWalletsExcluded + totalMachinesExcluded)})
-                  </span>
-                )}
-              </div>
+              <span className="text-sm font-extrabold font-mono text-indigo-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm dir-ltr">
+                {formatNumberLocale(Number(walletsTotals.محافظ + walletsTotals.ماكينات), 'en-US')}
+              </span>
             </div>
 
             <div className="overflow-x-auto flex-1">
-              <div className="px-4 py-2 bg-rose-50 border-b border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
-                <span className="text-rose-600">⚠️</span>
-                <span>ملحوظة: المحافظ المميزة باللون الأحمر (سحب فوري 1، سحب فوري 2، محفظة الصياد، الكوماندا) لا يتم جمعها في الإجمالي</span>
-              </div>
               <table className="w-full text-center text-xs text-slate-700 table-fixed">
                 <tbody className="divide-y divide-slate-200 font-semibold">
                   {/* Sub-total 1: Wallets Header Row */}
@@ -138,17 +126,22 @@ export default function ManagerBalancesPage() {
 
                   {/* Wallet Rows */}
                   {walletsByType.محافظ.map((w: any) => {
-                    const isExcluded = excludedWalletNames.includes(w.wallet_name);
+                    const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
-                      <tr key={w.id} className={`hover:bg-slate-50 transition-colors ${isExcluded ? 'bg-rose-50/30' : ''}`}>
-                        <td className={`w-1/3 px-3 py-3 font-bold text-center ${isExcluded ? 'text-rose-700' : 'text-slate-900'}`}>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${isExcluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
-                            <span>{w.wallet_name}</span>
+                      <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
+                        <td className="w-1/3 px-3 py-3 font-bold text-slate-900 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
+                            <span className={excluded ? 'text-rose-700 font-extrabold' : ''}>{w.wallet_name}</span>
+                            {excluded && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
+                                غير مجمع
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td className="w-1/3 px-3 py-3 text-slate-600 font-medium text-center">{w.custodian_name || '-'}</td>
-                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${isExcluded ? 'text-rose-600' : (Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900')}`}>
+                        <td className={`w-1/3 px-3 py-3 font-medium text-center ${excluded ? 'text-rose-700' : 'text-slate-600'}`}>{w.custodian_name || '-'}</td>
+                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>
@@ -172,17 +165,22 @@ export default function ManagerBalancesPage() {
 
                   {/* Machine Rows */}
                   {walletsByType.ماكينات.map((w: any) => {
-                    const isExcluded = excludedWalletNames.includes(w.wallet_name);
+                    const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
-                      <tr key={w.id} className={`hover:bg-slate-50 transition-colors ${isExcluded ? 'bg-rose-50/30' : ''}`}>
-                        <td className={`w-1/3 px-3 py-3 font-bold text-center ${isExcluded ? 'text-rose-700' : 'text-slate-900'}`}>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${isExcluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
-                            <span>{w.wallet_name}</span>
+                      <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
+                        <td className="w-1/3 px-3 py-3 font-bold text-slate-900 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
+                            <span className={excluded ? 'text-rose-700 font-extrabold' : ''}>{w.wallet_name}</span>
+                            {excluded && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
+                                غير مجمع
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td className="w-1/3 px-3 py-3 text-slate-600 font-medium text-center">{w.custodian_name || '-'}</td>
-                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${isExcluded ? 'text-rose-600' : (Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900')}`}>
+                        <td className={`w-1/3 px-3 py-3 font-medium text-center ${excluded ? 'text-rose-700' : 'text-slate-600'}`}>{w.custodian_name || '-'}</td>
+                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>
@@ -203,23 +201,12 @@ export default function ManagerBalancesPage() {
                 </div>
                 <h3 className="font-bold text-sm text-slate-900">جدول النقدية (عهد الموظفين والأدراج)</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-extrabold font-mono text-emerald-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm dir-ltr">
-                  {formatNumberLocale(Number(totalEmployeeCustody + walletsTotals.أدراج), 'en-US')}
-                </span>
-                {totalDrawersExcluded > 0 && (
-                  <span className="text-xs text-rose-600 font-medium">
-                    (-{formatNumberLocale(totalDrawersExcluded)})
-                  </span>
-                )}
-              </div>
+              <span className="text-sm font-extrabold font-mono text-emerald-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm dir-ltr">
+                {formatNumberLocale(Number(totalEmployeeCustody + walletsTotals.أدراج), 'en-US')}
+              </span>
             </div>
 
             <div className="overflow-x-auto flex-1">
-              <div className="px-4 py-2 bg-rose-50 border-b border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
-                <span className="text-rose-600">⚠️</span>
-                <span>ملحوظة: المحافظ المميزة باللون الأحمر (سحب فوري 1، سحب فوري 2، محفظة الصياد، الكوماندا) لا يتم جمعها في الإجمالي</span>
-              </div>
               <table className="w-full text-center text-xs text-slate-700 table-fixed">
                 <tbody className="divide-y divide-slate-200 font-semibold">
                   {/* Sub-total 1: Employee Cash Custody Header Row */}
@@ -268,22 +255,19 @@ export default function ManagerBalancesPage() {
                   </tr>
 
                   {/* Drawer Rows */}
-                  {walletsByType.أدراج.map((w: any) => {
-                    const isExcluded = excludedWalletNames.includes(w.wallet_name);
-                    return (
-                      <tr key={w.id} className={`hover:bg-slate-50 transition-colors ${isExcluded ? 'bg-rose-50/30' : ''}`}>
-                        <td className={`w-1/2 px-3 py-3 font-bold text-center ${isExcluded ? 'text-rose-700' : 'text-slate-900'}`}>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${isExcluded ? 'bg-rose-500' : 'bg-amber-500'}`} />
-                            <span>{w.wallet_name}</span>
-                          </div>
-                        </td>
-                        <td className={`w-1/2 px-3 py-3 font-bold font-mono text-center text-sm ${isExcluded ? 'text-rose-600' : (Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900')}`}>
-                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {walletsByType.أدراج.map((w: any) => (
+                    <tr key={w.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="w-1/2 px-3 py-3 font-bold text-slate-900 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <span>{w.wallet_name}</span>
+                        </div>
+                      </td>
+                      <td className={`w-1/2 px-3 py-3 font-bold font-mono text-center text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        {formatNumberLocale(Number(w.current_balance), 'en-US')}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
