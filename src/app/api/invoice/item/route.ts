@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
+import { getServiceCommission } from '@/lib/service-utils';
 
 // Helper to check if item's employee has an active open shift
 async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null) {
@@ -62,14 +63,7 @@ export async function PUT(req: Request) {
           }
         }
 
-        let newEmployeeCommission = undefined;
-        if (entry.service_id) {
-          const service = await tx.services.findUnique({ where: { id: entry.service_id } });
-          if (service && service.is_commissionable) {
-            const pct = Number(service.commission_percent || 0);
-            newEmployeeCommission = numNewAmount * (pct / 100);
-          }
-        }
+        const { employeeCommission, isCommissionable } = await getServiceCommission(entry.service_id, entry.service_name, numNewAmount, tx);
 
         await tx.service_entries.update({
           where: { id },
@@ -78,7 +72,8 @@ export async function PUT(req: Request) {
             ...(newCount !== undefined ? { paper_count: Number(newCount) } : {}),
             ...(newNotes !== undefined ? { notes: newNotes } : {}),
             ...(newFaceType !== undefined ? { face_type: newFaceType } : {}),
-            ...(newEmployeeCommission !== undefined ? { employee_commission: newEmployeeCommission } : {})
+            employee_commission: employeeCommission,
+            is_commissionable: isCommissionable
           }
         });
       }

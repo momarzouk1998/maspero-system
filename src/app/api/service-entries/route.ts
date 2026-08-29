@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { checkSalesLock } from '@/lib/custody-lock';
+import { getServiceCommission } from '@/lib/service-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -87,33 +88,19 @@ export async function POST(req: Request) {
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
     const today = new Date();
 
-    let validServiceId: string | null = null;
-    let existingService = null;
-    if (serviceId) {
-      existingService = await db.services.findUnique({ where: { id: serviceId } });
-      if (existingService) {
-        validServiceId = serviceId;
-      }
-    }
-
     const parsedPaper = paperCount !== undefined && paperCount !== null ? parseInt(String(paperCount)) : 0;
     const finalPaper = isNaN(parsedPaper) ? 0 : Math.max(0, parsedPaper);
 
     const result = await db.$transaction(async (tx: any) => {
-      let employeeCommission = 0;
-      let isCommString = "لا";
-      if (existingService && existingService.is_commissionable) {
-        const pct = Number(existingService.commission_percent || 0);
-        employeeCommission = numAmount * (pct / 100);
-        isCommString = "نعم";
-      }
+      // Calculate service commission from services_catalog via helper
+      const { employeeCommission, isCommissionable } = await getServiceCommission(serviceId, serviceName, numAmount, tx);
 
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-          service_id: validServiceId,
+          service_id: serviceId || null,
           service_name: serviceName,
           paper_count: finalPaper,
           page_count: parseInt(String(pageCount)) || 1,
@@ -125,7 +112,7 @@ export async function POST(req: Request) {
           invoice_code: invoiceCode,
           timestamp: today,
           employee_commission: employeeCommission,
-          is_commissionable: isCommString
+          is_commissionable: isCommissionable
         }
       });
 
@@ -218,14 +205,7 @@ export async function PUT(req: Request) {
         }
       }
 
-      let newEmployeeCommission = undefined;
-      if (entry.service_id) {
-        const service = await tx.services.findUnique({ where: { id: entry.service_id } });
-        if (service && service.is_commissionable) {
-          const pct = Number(service.commission_percent || 0);
-          newEmployeeCommission = numNewAmount * (pct / 100);
-        }
-      }
+      const { employeeCommission, isCommissionable } = await getServiceCommission(entry.service_id, entry.service_name, numNewAmount, tx);
 
       return await tx.service_entries.update({
         where: { id },
@@ -234,7 +214,8 @@ export async function PUT(req: Request) {
           notes: notes !== undefined ? notes : undefined,
           paper_count: paper_count !== undefined ? parseInt(paper_count) : undefined,
           face_type: face_type !== undefined ? face_type : undefined,
-          ...(newEmployeeCommission !== undefined ? { employee_commission: newEmployeeCommission } : {})
+          employee_commission: employeeCommission,
+          is_commissionable: isCommissionable
         }
       });
     });
