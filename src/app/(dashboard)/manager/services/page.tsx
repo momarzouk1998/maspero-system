@@ -119,6 +119,26 @@ export default function ManagerServicesPage() {
     }
   };
 
+  const [recalculating, setRecalculating] = useState(false);
+
+  const handleRecalculateAll = async () => {
+    if (!confirm('هل تريد إعادة حساب وتطبيق العمولات على جميع المعاملات السابقة بناءً على النِسَب الحالية لجميع الخدمات؟')) return;
+    setRecalculating(true);
+    try {
+      const res = await fetch('/api/services', { method: 'PATCH' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'تم تحديث عمولات المعاملات السابقة بنجاح 🎉');
+      } else {
+        throw new Error(data.error || 'حدث خطأ أثناء إعادة الحساب');
+      }
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -140,13 +160,25 @@ export default function ManagerServicesPage() {
           </div>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>إضافة خدمة جديدة</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={handleRecalculateAll}
+            disabled={recalculating}
+            className="py-2.5 px-4 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="إعادة تطبيق وحساب عمولات جميع العمليات المسجلة سابقاً بالسيستم بناءً على نسب الخدمات الحالية"
+          >
+            <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
+            <span>تحديث عمولات المبيعات السابقة</span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            className="py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>إضافة خدمة جديدة</span>
+          </button>
+        </div>
       </div>
 
       {toast && (

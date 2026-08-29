@@ -96,10 +96,101 @@ export async function PUT(req: Request) {
       }
     });
 
+    // Auto-update past service entries for this service if commission settings were changed
+    if (is_commissionable !== undefined || commission_percent !== undefined || service_name !== undefined) {
+      const isComm = service.is_commissionable;
+      const pct = Number(service.commission_percent || 0);
+
+      const matchingEntries = await db.service_entries.findMany({
+        where: {
+          OR: [
+            { service_id: service.id },
+            { service_name: { equals: service.service_name, mode: 'insensitive' } },
+            { service_name: { contains: service.service_name, mode: 'insensitive' } }
+          ]
+        }
+      });
+
+      for (const entry of matchingEntries) {
+        const amt = Number(entry.amount || 0);
+        const newComm = (isComm && amt > 0) ? (amt * (pct / 100)) : 0;
+        const newCommStr = isComm ? 'نعم' : 'لا';
+
+        await db.service_entries.update({
+          where: { id: entry.id },
+          data: {
+            employee_commission: newComm,
+            is_commissionable: newCommStr,
+            service_id: service.id
+          }
+        });
+      }
+    }
+
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
     console.error('Services PUT Error:', error);
     return NextResponse.json({ error: 'حدث خطأ أثناء تعديل الخدمة' }, { status: 500 });
+  }
+}
+
+// PATCH: Recalculate commissions for ALL past recorded transactions against current services_catalog
+export async function PATCH() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'غير مصرح لغير المدير' }, { status: 403 });
+  }
+
+  try {
+    const catalog = await db.services_catalog.findMany({ where: { is_active: true } });
+    const allEntries = await db.service_entries.findMany();
+
+    let updatedCount = 0;
+
+    for (const entry of allEntries) {
+      const amount = Number(entry.amount || 0);
+      if (amount <= 0) continue;
+
+      let matched: any = null;
+      if (entry.service_id) {
+        matched = catalog.find(c => c.id === entry.service_id);
+      }
+      if (!matched && entry.service_name) {
+        const cleanName = entry.service_name.trim().toLowerCase();
+        matched = catalog.find(c => c.service_name.trim().toLowerCase() === cleanName);
+        if (!matched) {
+          matched = catalog.find(c => c.service_name && cleanName.includes(c.service_name.toLowerCase()));
+        }
+      }
+
+      if (matched && matched.is_commissionable) {
+        const pct = Number(matched.commission_percent || 0);
+        const expectedComm = amount * (pct / 100);
+
+        await db.service_entries.update({
+          where: { id: entry.id },
+          data: {
+            employee_commission: expectedComm,
+            is_commissionable: 'نعم',
+            service_id: matched.id
+          }
+        });
+        updatedCount++;
+      } else {
+        await db.service_entries.update({
+          where: { id: entry.id },
+          data: {
+            employee_commission: 0,
+            is_commissionable: 'لا'
+          }
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, updatedCount, message: `تم إعادة حساب عمولات ${updatedCount} معاملة سابقة بنجاح` });
+  } catch (error: any) {
+    console.error('Services PATCH Recalculate Error:', error);
+    return NextResponse.json({ error: 'حدث خطأ أثناء إعادة حساب العمليات' }, { status: 500 });
   }
 }
 
