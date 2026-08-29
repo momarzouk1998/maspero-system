@@ -392,6 +392,8 @@ export default function ServicesPage() {
                 <th className="px-4 py-3 whitespace-nowrap">الورق</th>
                 <th className="px-4 py-3 whitespace-nowrap">الوجه</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                <th className="px-4 py-3 whitespace-nowrap text-center">عمولة</th>
+                <th className="px-4 py-3 whitespace-nowrap text-center">قيمة العمولة</th>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
                 <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
@@ -401,14 +403,14 @@ export default function ServicesPage() {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-500">
+                  <td colSpan={11} className="text-center py-12 text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>جاري تحميل سجل الخدمات...</span>
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-500">
+                  <td colSpan={11} className="text-center py-12 text-slate-500">
                     لا توجد خدمات مسجلة تطابق التصفية الحالية
                   </td>
                 </tr>
@@ -436,6 +438,24 @@ export default function ServicesPage() {
                     </td>
                     <td className="px-4 py-3 font-bold text-emerald-700 font-mono whitespace-nowrap">
                       {formatNumberLocale(Number(item.amount), 'en-US')}
+                    </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        item.is_commissionable === 'نعم'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        {item.is_commissionable === 'نعم' ? 'نعم 💰' : 'لا'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-bold font-mono text-center text-xs whitespace-nowrap">
+                      {Number(item.employee_commission || 0) > 0 ? (
+                        <span className="text-amber-900 bg-amber-50/90 px-2.5 py-1 rounded-xl border border-amber-200 dir-ltr font-extrabold">
+                          +{formatNumberLocale(Number(item.employee_commission), 'en-US')}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-normal">0</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1">
