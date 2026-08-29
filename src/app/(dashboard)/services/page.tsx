@@ -30,7 +30,22 @@ export default function ServicesPage() {
   const [editPaperCount, setEditPaperCount] = useState('');
   const [editFaceType, setEditFaceType] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editIsCommissionable, setEditIsCommissionable] = useState<'نعم' | 'لا'>('لا');
+  const [editCommissionPercent, setEditCommissionPercent] = useState('0');
+  const [editEmployeeCommission, setEditEmployeeCommission] = useState('0');
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (editingItem) {
+      if (editIsCommissionable === 'نعم') {
+        const amt = parseFloat(editAmount) || 0;
+        const pct = parseFloat(editCommissionPercent) || 0;
+        setEditEmployeeCommission((amt * (pct / 100)).toFixed(2));
+      } else {
+        setEditEmployeeCommission('0');
+      }
+    }
+  }, [editAmount, editCommissionPercent, editIsCommissionable, editingItem]);
 
   const [treeData, setTreeData] = useState<any>(null);
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
@@ -142,6 +157,16 @@ export default function ServicesPage() {
     setEditPaperCount(item.paper_count.toString());
     setEditFaceType(item.face_type || 'وجه واحد');
     setEditNotes(item.notes || '');
+
+    const isComm = item.is_commissionable === 'نعم';
+    setEditIsCommissionable(isComm ? 'نعم' : 'لا');
+
+    const commAmt = Number(item.employee_commission || 0);
+    const totalAmt = Number(item.amount || 0);
+    const calculatedPct = (isComm && totalAmt > 0) ? Math.round((commAmt / totalAmt) * 100).toString() : '20';
+
+    setEditCommissionPercent(calculatedPct);
+    setEditEmployeeCommission(commAmt.toString());
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -158,16 +183,22 @@ export default function ServicesPage() {
           amount: parseFloat(editAmount),
           paper_count: parseInt(editPaperCount),
           face_type: editFaceType,
-          notes: editNotes
+          notes: editNotes,
+          is_commissionable: editIsCommissionable,
+          commission_percent: parseFloat(editCommissionPercent || '0'),
+          employee_commission: parseFloat(editEmployeeCommission || '0')
         })
       });
 
       if (res.ok) {
         setEditingItem(null);
         fetchEntries(pagination.page);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'حدث خطأ أثناء حفظ التعديل');
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      alert(e.message || 'حدث خطأ أثناء حفظ التعديل');
     } finally {
       setEditSubmitting(false);
     }
@@ -580,17 +611,53 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">نوع الطباعة</label>
-                <select
-                  value={editFaceType}
-                  onChange={(e) => setEditFaceType(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-500"
-                >
-                  <option value="وجه واحد">وجه واحد</option>
-                  <option value="وجهين">وجهين</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3 border-t pt-3 border-slate-200">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">عمولة على الخدمة؟</label>
+                  <select
+                    value={editIsCommissionable}
+                    onChange={(e) => setEditIsCommissionable(e.target.value as 'نعم' | 'لا')}
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="نعم">نعم 💰</option>
+                    <option value="لا">لا</option>
+                  </select>
+                </div>
+
+                {editIsCommissionable === 'نعم' ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">نسبة العمولة (%)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={editCommissionPercent}
+                      onChange={(e) => setEditCommissionPercent(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold font-mono focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">قيمة العمولة</label>
+                    <input
+                      type="text"
+                      disabled
+                      value="0 ج"
+                      className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-400 text-xs font-mono font-bold"
+                    />
+                  </div>
+                )}
               </div>
+
+              {editIsCommissionable === 'نعم' && (
+                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-900">العمولة المحسوبة للموظف:</span>
+                  <span className="text-sm font-mono font-extrabold text-amber-900 dir-ltr">
+                    +{formatNumberLocale(Number(editEmployeeCommission), 'en-US')} ج
+                  </span>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظات</label>

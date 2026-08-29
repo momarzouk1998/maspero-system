@@ -187,7 +187,7 @@ export async function PUT(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { id, amount, notes, paper_count, face_type } = await req.json();
+    const { id, amount, notes, paper_count, face_type, is_commissionable, commission_percent, employee_commission } = await req.json();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
     const entry = await db.service_entries.findUnique({ where: { id } });
@@ -216,7 +216,28 @@ export async function PUT(req: Request) {
         }
       }
 
-      const { employeeCommission, isCommissionable } = await getServiceCommission(entry.service_id, entry.service_name, numNewAmount, tx);
+      let finalIsComm = 'لا';
+      let finalCommAmt = 0;
+
+      if (is_commissionable !== undefined) {
+        finalIsComm = (is_commissionable === 'نعم' || is_commissionable === true) ? 'نعم' : 'لا';
+        if (finalIsComm === 'نعم') {
+          if (employee_commission !== undefined && employee_commission !== null && !isNaN(Number(employee_commission))) {
+            finalCommAmt = Number(employee_commission);
+          } else if (commission_percent !== undefined && !isNaN(Number(commission_percent))) {
+            finalCommAmt = numNewAmount * (Number(commission_percent) / 100);
+          } else {
+            const commRes = await getServiceCommission(entry.service_id, entry.service_name, numNewAmount, tx);
+            finalCommAmt = commRes.employeeCommission;
+          }
+        } else {
+          finalCommAmt = 0;
+        }
+      } else {
+        const commRes = await getServiceCommission(entry.service_id, entry.service_name, numNewAmount, tx);
+        finalIsComm = commRes.isCommissionable;
+        finalCommAmt = commRes.employeeCommission;
+      }
 
       return await tx.service_entries.update({
         where: { id },
@@ -225,8 +246,8 @@ export async function PUT(req: Request) {
           notes: notes !== undefined ? notes : undefined,
           paper_count: paper_count !== undefined ? parseInt(paper_count) : undefined,
           face_type: face_type !== undefined ? face_type : undefined,
-          employee_commission: employeeCommission,
-          is_commissionable: isCommissionable
+          employee_commission: finalCommAmt,
+          is_commissionable: finalIsComm
         }
       });
     });
