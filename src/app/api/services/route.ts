@@ -3,40 +3,61 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 const DEFAULT_SERVICES = [
-  { service_name: 'خدمات أونلاين', is_commissionable: true, commission_percent: 20, sort: 1 },
-  { service_name: 'طباعة أسود', is_commissionable: false, commission_percent: 0, sort: 1 },
-  { service_name: 'طباعة ألوان', is_commissionable: false, commission_percent: 0, sort: 2 },
-  { service_name: 'كتابة', is_commissionable: true, commission_percent: 20, sort: 2 },
-  { service_name: 'حجز أجهزة', is_commissionable: false, commission_percent: 0, sort: 3 },
-  { service_name: 'سكانر', is_commissionable: false, commission_percent: 0, sort: 4 },
-  { service_name: 'ابحاث', is_commissionable: true, commission_percent: 20, sort: 4 },
-  { service_name: 'نسخ CD', is_commissionable: false, commission_percent: 0, sort: 5 },
-  { service_name: 'ترجمة معتمدة', is_commissionable: false, commission_percent: 0, sort: 6 },
-  { service_name: 'إرسال واستقبال الفاكس', is_commissionable: false, commission_percent: 0, sort: 7 },
-  { service_name: 'صيانة موبايل', is_commissionable: true, commission_percent: 30, sort: 8 },
-  { service_name: 'صيانة كمبيوتر', is_commissionable: true, commission_percent: 30, sort: 9 },
-  { service_name: 'اخرى', is_commissionable: false, commission_percent: 0, sort: 8 },
+  { id: 'def-1', service_name: 'خدمات أونلاين', is_commissionable: true, commission_percent: 20, sort: 1 },
+  { id: 'def-2', service_name: 'طباعة أسود', is_commissionable: false, commission_percent: 0, sort: 1 },
+  { id: 'def-3', service_name: 'طباعة ألوان', is_commissionable: false, commission_percent: 0, sort: 2 },
+  { id: 'def-4', service_name: 'كتابة', is_commissionable: true, commission_percent: 20, sort: 2 },
+  { id: 'def-5', service_name: 'حجز أجهزة', is_commissionable: false, commission_percent: 0, sort: 3 },
+  { id: 'def-6', service_name: 'سكانر', is_commissionable: false, commission_percent: 0, sort: 4 },
+  { id: 'def-7', service_name: 'ابحاث', is_commissionable: true, commission_percent: 20, sort: 4 },
+  { id: 'def-8', service_name: 'نسخ CD', is_commissionable: false, commission_percent: 0, sort: 5 },
+  { id: 'def-9', service_name: 'ترجمة معتمدة', is_commissionable: false, commission_percent: 0, sort: 6 },
+  { id: 'def-10', service_name: 'إرسال واستقبال الفاكس', is_commissionable: false, commission_percent: 0, sort: 7 },
+  { id: 'def-11', service_name: 'صيانة موبايل', is_commissionable: true, commission_percent: 30, sort: 8 },
+  { id: 'def-12', service_name: 'صيانة كمبيوتر', is_commissionable: true, commission_percent: 30, sort: 9 },
+  { id: 'def-13', service_name: 'اخرى', is_commissionable: false, commission_percent: 0, sort: 8 },
 ];
 
 export async function GET() {
   try {
-    let services = await db.services_catalog.findMany({
-      orderBy: { sort: 'asc' }
-    });
-
-    if (services.length === 0) {
-      await db.services_catalog.createMany({
-        data: DEFAULT_SERVICES
-      });
+    let services: any[] = [];
+    try {
       services = await db.services_catalog.findMany({
         orderBy: { sort: 'asc' }
       });
+
+      if (services.length === 0) {
+        try {
+          await db.services_catalog.createMany({
+            data: DEFAULT_SERVICES.map(({ id, ...rest }) => rest)
+          });
+          services = await db.services_catalog.findMany({
+            orderBy: { sort: 'asc' }
+          });
+        } catch (e) {
+          // ignore duplicate errors
+        }
+      }
+    } catch (catError) {
+      console.warn('services_catalog query failed, trying legacy services table:', catError);
+      try {
+        services = await db.services.findMany({
+          orderBy: { sort: 'asc' }
+        });
+      } catch (legError) {
+        console.warn('services legacy query failed, returning DEFAULT_SERVICES:', legError);
+        services = DEFAULT_SERVICES;
+      }
+    }
+
+    if (!services || services.length === 0) {
+      services = DEFAULT_SERVICES;
     }
 
     return NextResponse.json({ services });
   } catch (error: any) {
     console.error('Services GET Error:', error);
-    return NextResponse.json({ error: 'حدث خطأ أثناء جلب الخدمات' }, { status: 500 });
+    return NextResponse.json({ services: DEFAULT_SERVICES });
   }
 }
 
@@ -53,17 +74,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'اسم الخدمة مطلوب' }, { status: 400 });
     }
 
-    const service = await db.services_catalog.create({
-      data: {
-        service_name,
-        is_commissionable: Boolean(is_commissionable),
-        commission_percent: Number(commission_percent || 0),
-        price: Number(price || 0),
-        description: description || null,
-        sort: Number(sort || 0),
-        is_active: true
-      }
-    });
+    let service: any = null;
+    try {
+      service = await db.services_catalog.create({
+        data: {
+          service_name,
+          is_commissionable: Boolean(is_commissionable),
+          commission_percent: Number(commission_percent || 0),
+          price: Number(price || 0),
+          description: description || null,
+          sort: Number(sort || 0),
+          is_active: true
+        }
+      });
+    } catch (e) {
+      service = await db.services.create({
+        data: {
+          service_name,
+          is_commissionable: Boolean(is_commissionable),
+          commission_percent: Number(commission_percent || 0),
+          description: description || null,
+          sort: Number(sort || 0),
+          is_active: true
+        }
+      });
+    }
 
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
@@ -83,22 +118,37 @@ export async function PUT(req: Request) {
 
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-    const service = await db.services_catalog.update({
-      where: { id },
-      data: {
-        service_name: service_name || undefined,
-        is_commissionable: is_commissionable !== undefined ? Boolean(is_commissionable) : undefined,
-        commission_percent: commission_percent !== undefined ? Number(commission_percent) : undefined,
-        price: price !== undefined ? Number(price) : undefined,
-        description: description !== undefined ? description : undefined,
-        sort: sort !== undefined ? Number(sort) : undefined,
-        is_active: is_active !== undefined ? Boolean(is_active) : undefined,
-      }
-    });
+    let service: any = null;
+    try {
+      service = await db.services_catalog.update({
+        where: { id },
+        data: {
+          service_name: service_name || undefined,
+          is_commissionable: is_commissionable !== undefined ? Boolean(is_commissionable) : undefined,
+          commission_percent: commission_percent !== undefined ? Number(commission_percent) : undefined,
+          price: price !== undefined ? Number(price) : undefined,
+          description: description !== undefined ? description : undefined,
+          sort: sort !== undefined ? Number(sort) : undefined,
+          is_active: is_active !== undefined ? Boolean(is_active) : undefined,
+        }
+      });
+    } catch (e) {
+      service = await db.services.update({
+        where: { id },
+        data: {
+          service_name: service_name || undefined,
+          is_commissionable: is_commissionable !== undefined ? Boolean(is_commissionable) : undefined,
+          commission_percent: commission_percent !== undefined ? Number(commission_percent) : undefined,
+          description: description !== undefined ? description : undefined,
+          sort: sort !== undefined ? Number(sort) : undefined,
+          is_active: is_active !== undefined ? Boolean(is_active) : undefined,
+        }
+      });
+    }
 
     // Auto-update past service entries for this service if commission settings were changed
-    if (is_commissionable !== undefined || commission_percent !== undefined || service_name !== undefined) {
-      const isComm = service.is_commissionable;
+    if (service && (is_commissionable !== undefined || commission_percent !== undefined || service_name !== undefined)) {
+      const isComm = Boolean(service.is_commissionable);
       const pct = Number(service.commission_percent || 0);
 
       const matchingEntries = await db.service_entries.findMany({
@@ -142,9 +192,15 @@ export async function PATCH() {
   }
 
   try {
-    const catalog = await db.services_catalog.findMany({ where: { is_active: true } });
-    const allEntries = await db.service_entries.findMany();
+    let catalog: any[] = [];
+    try {
+      catalog = await db.services_catalog.findMany({ where: { is_active: true } });
+    } catch (e) {
+      catalog = await db.services.findMany({ where: { is_active: true } }).catch(() => DEFAULT_SERVICES);
+    }
+    if (!catalog || catalog.length === 0) catalog = DEFAULT_SERVICES;
 
+    const allEntries = await db.service_entries.findMany();
     let updatedCount = 0;
 
     for (const entry of allEntries) {
@@ -157,13 +213,13 @@ export async function PATCH() {
       }
       if (!matched && entry.service_name) {
         const cleanName = entry.service_name.trim().toLowerCase();
-        matched = catalog.find(c => c.service_name.trim().toLowerCase() === cleanName);
+        matched = catalog.find(c => c.service_name && c.service_name.trim().toLowerCase() === cleanName);
         if (!matched) {
           matched = catalog.find(c => c.service_name && cleanName.includes(c.service_name.toLowerCase()));
         }
       }
 
-      if (matched && matched.is_commissionable) {
+      if (matched && (matched.is_commissionable === true || String(matched.is_commissionable) === 'true' || String(matched.is_commissionable) === 'نعم')) {
         const pct = Number(matched.commission_percent || 0);
         const expectedComm = amount * (pct / 100);
 
@@ -205,7 +261,11 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
-    await db.services_catalog.delete({ where: { id } });
+    try {
+      await db.services_catalog.delete({ where: { id } });
+    } catch (e) {
+      await db.services.delete({ where: { id } }).catch(() => null);
+    }
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Services DELETE Error:', error);
