@@ -95,12 +95,23 @@ export async function POST(req: Request) {
       // Calculate service commission from services_catalog via helper
       const { employeeCommission, isCommissionable, matchedServiceId } = await getServiceCommission(serviceId, serviceName, numAmount, tx);
 
+      // Verify if matchedServiceId exists in legacy services table to prevent foreign key constraint violation
+      let validFkId: string | null = null;
+      if (matchedServiceId) {
+        try {
+          const sExists = await tx.services.findUnique({ where: { id: matchedServiceId } });
+          if (sExists) validFkId = matchedServiceId;
+        } catch (e) {
+          validFkId = null;
+        }
+      }
+
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-          service_id: matchedServiceId || null,
+          service_id: validFkId,
           service_name: serviceName,
           paper_count: finalPaper,
           page_count: parseInt(String(pageCount)) || 1,
