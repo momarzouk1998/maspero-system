@@ -1,19 +1,22 @@
 import { db } from '@/lib/db';
 
+const isUuid = (str: string | null | undefined): boolean =>
+  typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 export async function getServiceCommission(
   serviceId?: string | null,
   serviceName?: string | null,
   amount: number = 0,
   tx: any = db
-): Promise<{ employeeCommission: number; isCommissionable: string; commissionPercent: number }> {
+): Promise<{ employeeCommission: number; isCommissionable: string; commissionPercent: number; matchedServiceId: string | null }> {
   if (amount <= 0) {
-    return { employeeCommission: 0, isCommissionable: 'لا', commissionPercent: 0 };
+    return { employeeCommission: 0, isCommissionable: 'لا', commissionPercent: 0, matchedServiceId: isUuid(serviceId) ? serviceId! : null };
   }
 
   let foundService: any = null;
 
-  // 1. Search by serviceId in services_catalog
-  if (serviceId) {
+  // 1. Search by serviceId in services_catalog if it is a valid UUID
+  if (isUuid(serviceId)) {
     try {
       foundService = await tx.services_catalog.findUnique({ where: { id: serviceId } });
     } catch (e) {
@@ -74,15 +77,25 @@ export async function getServiceCommission(
     }
   }
 
+  const validServiceId = (foundService && isUuid(foundService.id))
+    ? foundService.id
+    : (isUuid(serviceId) ? serviceId! : null);
+
   if (foundService && (foundService.is_commissionable === true || String(foundService.is_commissionable) === 'true' || String(foundService.is_commissionable) === 'نعم')) {
     const pct = Number(foundService.commission_percent || 0);
     const comm = amount * (pct / 100);
     return {
       employeeCommission: comm,
       isCommissionable: 'نعم',
-      commissionPercent: pct
+      commissionPercent: pct,
+      matchedServiceId: validServiceId
     };
   }
 
-  return { employeeCommission: 0, isCommissionable: 'لا', commissionPercent: 0 };
+  return {
+    employeeCommission: 0,
+    isCommissionable: 'لا',
+    commissionPercent: 0,
+    matchedServiceId: validServiceId
+  };
 }

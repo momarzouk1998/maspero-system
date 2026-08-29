@@ -93,14 +93,14 @@ export async function POST(req: Request) {
 
     const result = await db.$transaction(async (tx: any) => {
       // Calculate service commission from services_catalog via helper
-      const { employeeCommission, isCommissionable } = await getServiceCommission(serviceId, serviceName, numAmount, tx);
+      const { employeeCommission, isCommissionable, matchedServiceId } = await getServiceCommission(serviceId, serviceName, numAmount, tx);
 
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
           date: today,
           month: `${today.getFullYear()} ${today.getMonth() + 1}`,
-          service_id: serviceId || null,
+          service_id: matchedServiceId || null,
           service_name: serviceName,
           paper_count: finalPaper,
           page_count: parseInt(String(pageCount)) || 1,
