@@ -423,8 +423,8 @@ export default function ServicesPage() {
                 <th className="px-4 py-3 whitespace-nowrap">الورق</th>
                 <th className="px-4 py-3 whitespace-nowrap">الوجه</th>
                 <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
-                <th className="px-4 py-3 whitespace-nowrap text-center">عمولة</th>
-                <th className="px-4 py-3 whitespace-nowrap text-center">قيمة العمولة</th>
+                <th className="px-4 py-3 whitespace-nowrap text-center">عمولة الموظف</th>
+                <th className="px-4 py-3 whitespace-nowrap text-center">قيمة عمولة الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">الموظف</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ</th>
                 <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>

@@ -368,7 +368,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                   <th className="px-4 py-3 whitespace-nowrap">عدد الورق</th>
                   <th className="px-4 py-3 whitespace-nowrap">النوع</th>
                   <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
-                  <th className="px-4 py-3 whitespace-nowrap">العمولة</th>
+                  <th className="px-4 py-3 whitespace-nowrap">عمولة الموظف</th>
                   <th className="px-4 py-3 whitespace-nowrap">الوقت</th>
                 </tr>
               </thead>

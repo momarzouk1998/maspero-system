@@ -124,7 +124,7 @@ export default function EmployeePayrollReportPage() {
                   <th className="px-3 py-3 whitespace-nowrap">خصم س</th>
                   <th className="px-3 py-3 whitespace-nowrap">صافي س</th>
                   <th className="px-3 py-3 whitespace-nowrap">قيمة س</th>
-                  <th className="px-3 py-3 whitespace-nowrap">عمولة</th>
+                  <th className="px-3 py-3 whitespace-nowrap">عمولة الموظف</th>
                   <th className="px-3 py-3 whitespace-nowrap text-amber-800">سلف</th>
                   <th className="px-3 py-3 whitespace-nowrap text-emerald-800">قبض</th>
                   <th className="px-3 py-3 whitespace-nowrap text-center bg-indigo-50 text-indigo-900 font-bold">المستحق</th>

@@ -897,7 +897,7 @@ export default function ShiftsHistoryPage() {
                             <th className="p-2">عدد الورق</th>
                             <th className="p-2">النوع</th>
                             <th className="p-2">المبلغ</th>
-                            <th className="p-2">العمولة</th>
+                            <th className="p-2">عمولة الموظف</th>
                             <th className="p-2">الوقت</th>
                           </tr>
                         </thead>
