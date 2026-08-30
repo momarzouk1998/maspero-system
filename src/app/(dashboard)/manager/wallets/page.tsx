@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Wallet, Cpu, Archive, Edit3, Plus, Trash2, CheckCircle2, AlertCircle, 
-  RefreshCw, X, ArrowRight, ShieldCheck, Phone
+  RefreshCw, X, ArrowRight, Settings2, Save, Percent
 } from 'lucide-react';
 import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
 
@@ -25,12 +25,17 @@ export default function ManagerWalletsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // ── إعداد نسبة خصم مشتريات فوري ────────────────────────────
+  const [fawryRate, setFawryRate] = useState<string>('1.8');
+  const [fawryRateSaving, setFawryRateSaving] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [wRes, uRes] = await Promise.all([
+      const [wRes, uRes, sRes] = await Promise.all([
         fetch('/api/wallets'),
-        fetch('/api/users')
+        fetch('/api/users'),
+        fetch('/api/settings?key=fawry_purchase_deduction_rate'),
       ]);
 
       if (wRes.ok) {
@@ -40,6 +45,12 @@ export default function ManagerWalletsPage() {
       if (uRes.ok) {
         const uData = await uRes.json();
         setUsers(getActiveUsers(uData.users || []));
+      }
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        if (sData.value !== null && sData.value !== undefined) {
+          setFawryRate(String(sData.value));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -55,6 +66,29 @@ export default function ManagerWalletsPage() {
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleSaveFawryRate = async () => {
+    const num = parseFloat(fawryRate);
+    if (isNaN(num) || num < 0 || num > 100) {
+      showToast('القيمة يجب أن تكون رقماً بين 0 و 100', 'error');
+      return;
+    }
+    setFawryRateSaving(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'fawry_purchase_deduction_rate', value: num }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'حدث خطأ');
+      showToast(`تم حفظ نسبة الخصم (${num}%) بنجاح ✅`);
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setFawryRateSaving(false);
+    }
   };
 
   const openAddModal = () => {
@@ -174,6 +208,70 @@ export default function ManagerWalletsPage() {
           </div>
         </div>
       )}
+
+      {/* ── إعدادات ماكينة فوري ──────────────────────────────── */}
+      <div className="glass-panel p-5 rounded-3xl border border-amber-200 bg-amber-50/40 space-y-3">
+        <div className="flex items-center gap-2">
+          <Settings2 className="w-5 h-5 text-amber-600" />
+          <h2 className="text-sm font-bold text-slate-900">إعدادات ماكينة فوري — سحب مشتريات (كريدت)</h2>
+        </div>
+
+        <p className="text-xs text-slate-500 leading-relaxed">
+          عمليات نوع <strong className="text-amber-700">مشتريات</strong> على ماكينات سحب فوري تُخصم الشبكة نسبةً من المبلغ قبل إيداعه في الماكينة.
+          هذه النسبة تُطبَّق تلقائياً على <strong>رصيد الماكينة</strong> والعمولة المحتسبة، ما يجعل مطابقة الرصيد صحيحة والأرباح حقيقية.
+        </p>
+
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex-1 min-w-[160px] max-w-[240px]">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              نسبة خصم الشبكة <span className="text-slate-400 font-normal">(% من المبلغ)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={fawryRate}
+                onChange={(e) => setFawryRate(e.target.value)}
+                className="w-full p-2.5 pl-8 bg-white border border-amber-300 rounded-xl text-slate-900 font-mono text-sm font-bold focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-300"
+              />
+              <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" />
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveFawryRate}
+            disabled={fawryRateSaving}
+            className="py-2.5 px-5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+          >
+            {fawryRateSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span>حفظ النسبة</span>
+          </button>
+
+          {/* معاينة حية */}
+          {(() => {
+            const r = parseFloat(fawryRate);
+            if (isNaN(r) || r <= 0) return null;
+            const ex = 1000;
+            const cost = ex * (r / 100);
+            const net = ex - cost;
+            const commExample = 30;
+            const realComm = commExample - cost;
+            return (
+              <div className="flex-1 min-w-[220px] bg-white border border-amber-200 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+                <p className="font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                  <span>📊</span> معاينة على مثال 1000 جنيه:
+                </p>
+                <div className="flex justify-between"><span>خصم الشبكة:</span><span className="font-mono text-red-600 font-bold">- {cost.toFixed(2)} ج</span></div>
+                <div className="flex justify-between"><span>يُضاف لرصيد الماكينة:</span><span className="font-mono text-emerald-700 font-bold">{net.toFixed(2)} ج</span></div>
+                <div className="border-t border-amber-100 pt-1 flex justify-between"><span>عمولة {commExample}ج → ربح صافي:</span><span className="font-mono text-blue-700 font-bold">{realComm.toFixed(2)} ج</span></div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+      {/* ─────────────────────────────────────────────────────── */}
 
       {/* Wallets & Machines Simple Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
