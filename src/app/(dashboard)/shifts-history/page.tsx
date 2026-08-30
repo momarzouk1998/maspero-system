@@ -925,8 +925,6 @@ export default function ShiftsHistoryPage() {
                     </div>
                   )}
                 </div>
-                  )}
-                </div>
 
                 {/* Wallet Transactions Table */}
                 <div className="space-y-2">
