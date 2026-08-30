@@ -149,7 +149,9 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
           <span className="text-lg font-black font-mono text-blue-900 block">
             {formatNumberLocale(summary.totalServicesAmount, 'en-US')} ج
           </span>
-          <span className="text-[10px] text-blue-700 font-semibold block">عدد الورق: {summary.totalPaperCount} ورقة</span>
+          <span className="text-[10px] text-blue-700 font-semibold block">
+            عدد الورق: {summary.totalPaperCount} ورقة | عمولات: {formatNumberLocale(summary.totalServiceCommission || 0, 'en-US')} ج
+          </span>
         </div>
 
         {/* Train Tickets */}
@@ -366,6 +368,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                   <th className="px-4 py-3 whitespace-nowrap">عدد الورق</th>
                   <th className="px-4 py-3 whitespace-nowrap">النوع</th>
                   <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
+                  <th className="px-4 py-3 whitespace-nowrap">العمولة</th>
                   <th className="px-4 py-3 whitespace-nowrap">الوقت</th>
                 </tr>
               </thead>
@@ -376,6 +379,15 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                     <td className="px-4 py-3 font-mono font-bold whitespace-nowrap">{svc.paper_count || svc.page_count || 1}</td>
                     <td className="px-4 py-3 font-semibold whitespace-nowrap">{svc.face_type || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-blue-700 whitespace-nowrap">{formatNumberLocale(Number(svc.amount || 0), 'en-US')} ج</td>
+                    <td className="px-4 py-3 font-mono font-bold text-amber-800 whitespace-nowrap">
+                      {Number(svc.employee_commission || 0) > 0 ? (
+                        <span className="text-amber-900 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                          +{formatNumberLocale(Number(svc.employee_commission || 0), 'en-US')} ج
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">0 ج</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US') : '-'}</td>
                   </tr>
                 ))}

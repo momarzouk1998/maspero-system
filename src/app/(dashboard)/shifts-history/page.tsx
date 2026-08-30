@@ -849,7 +849,9 @@ export default function ShiftsHistoryPage() {
                     <span className="text-base font-extrabold font-mono text-blue-900 block">
                       {formatNumber(Number(auditData?.summary?.totalServicesAmount || 0))} ج
                     </span>
-                    <span className="text-[10px] text-blue-600 block">عدد الورق: {auditData?.summary?.totalPaperCount || 0} ورقة</span>
+                    <span className="text-[10px] text-blue-600 block">
+                      عدد الورق: {auditData?.summary?.totalPaperCount || 0} ورقة | عمولات: {formatNumber(Number(auditData?.summary?.totalServiceCommission || 0))} ج
+                    </span>
                   </div>
 
                   <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-1">
@@ -895,6 +897,7 @@ export default function ShiftsHistoryPage() {
                             <th className="p-2">عدد الورق</th>
                             <th className="p-2">النوع</th>
                             <th className="p-2">المبلغ</th>
+                            <th className="p-2">العمولة</th>
                             <th className="p-2">الوقت</th>
                           </tr>
                         </thead>
@@ -905,12 +908,23 @@ export default function ShiftsHistoryPage() {
                               <td className="p-2 font-mono">{svc.paper_count || svc.page_count || 1}</td>
                               <td className="p-2">{svc.face_type || '-'}</td>
                               <td className="p-2 font-mono font-bold text-blue-700">{formatNumber(Number(svc.amount))} ج</td>
+                              <td className="p-2 font-mono font-bold text-amber-800">
+                                {Number(svc.employee_commission || 0) > 0 ? (
+                                  <span className="text-amber-900 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                                    +{formatNumber(Number(svc.employee_commission))} ج
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">0 ج</span>
+                                )}
+                              </td>
                               <td className="p-2 text-slate-500 font-mono">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US') : '-'}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+                  )}
+                </div>
                   )}
                 </div>
 

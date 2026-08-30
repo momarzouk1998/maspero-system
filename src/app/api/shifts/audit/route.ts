@@ -102,6 +102,7 @@ export async function GET(req: Request) {
     // Aggregate totals
     const totalServicesAmount = services.reduce((sum, s) => sum + Number(s.amount || 0), 0);
     const totalPaperCount = services.reduce((sum, s) => sum + Number(s.paper_count || s.page_count || 1), 0);
+    const totalServiceCommission = services.reduce((sum, s) => sum + Number(s.employee_commission || 0), 0);
 
     const totalTicketsAmount = tickets.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const totalTicketCommission = tickets.reduce((sum, t) => sum + Number((t as any).ticket_commission || 0), 0);
@@ -122,6 +123,7 @@ export async function GET(req: Request) {
       summary: {
         totalServicesAmount,
         totalPaperCount,
+        totalServiceCommission,
         totalTicketsAmount,
         totalTicketsCount,
         totalTicketCommission,
