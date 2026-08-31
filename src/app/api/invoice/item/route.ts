@@ -196,7 +196,6 @@ export async function DELETE(req: Request) {
 
     await db.$transaction(async (tx) => {
       if (type === 'service') {
-        if (!hasPermission(user, 'services', 'delete')) throw new Error('ليس لديك صلاحية حذف خدمات الطباعة');
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
 
@@ -204,6 +203,8 @@ export async function DELETE(req: Request) {
         if (user.role !== 'manager') {
           if (entry.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
           if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        } else if (isCompleted && !hasPermission(user, 'services', 'delete')) {
+          throw new Error('ليس لديك صلاحية حذف خدمات الطباعة المكتملة');
         }
 
         const shiftOpen = await isEmployeeShiftOpen(entry.employee_id, entry.timestamp);
@@ -215,7 +216,6 @@ export async function DELETE(req: Request) {
         await tx.service_entries.delete({ where: { id } });
       }
       else if (type === 'ticket') {
-        if (!hasPermission(user, 'tickets', 'delete')) throw new Error('ليس لديك صلاحية حذف التذاكر');
         const ticket = await tx.train_ticket_bookings.findUnique({ where: { id } });
         if (!ticket) throw new Error('العنصر غير موجود');
 
@@ -223,6 +223,8 @@ export async function DELETE(req: Request) {
         if (user.role !== 'manager') {
           if (ticket.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
           if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        } else if (isCompleted && !hasPermission(user, 'tickets', 'delete')) {
+          throw new Error('ليس لديك صلاحية حذف التذاكر المكتملة');
         }
 
         const shiftOpen = await isEmployeeShiftOpen(ticket.employee_id, ticket.timestamp);
@@ -234,7 +236,6 @@ export async function DELETE(req: Request) {
         await tx.train_ticket_bookings.delete({ where: { id } });
       }
       else if (type === 'wallet') {
-        if (!hasPermission(user, 'charge_history', 'delete')) throw new Error('ليس لديك صلاحية حذف العمليات المالية والشحن');
         const trans = await tx.wallet_transactions.findUnique({ where: { id } });
         if (!trans) throw new Error('العنصر غير موجود');
 
@@ -242,13 +243,14 @@ export async function DELETE(req: Request) {
         if (user.role !== 'manager') {
           if (trans.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
           if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+        } else if (isCompleted && !hasPermission(user, 'charge_history', 'delete')) {
+          throw new Error('ليس لديك صلاحية حذف العمليات المالية والشحن المكتملة');
         }
 
         const shiftOpen = await isEmployeeShiftOpen(trans.employee_id, trans.timestamp);
 
         if (shiftOpen) {
           const totalAmount = Number(trans.amount) + Number(trans.wallet_commission || 0);
-          const externalWallet = trans.wallet_id ? await tx.external_wallets.findUnique({ where: { id: trans.wallet_id } }) : null;
 
           if (trans.transaction_type === 'إيداع') {
             if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, -totalAmount, tx);

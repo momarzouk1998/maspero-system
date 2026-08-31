@@ -126,12 +126,19 @@ export default function POSPage() {
     if (!confirm('حذف هذا العنصر؟')) return;
     setRefreshing(true);
     try {
-      await fetch('/api/invoice/item', {
+      const res = await fetch('/api/invoice/item', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, type }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'حدث خطأ أثناء حذف العنصر');
+        return;
+      }
       if (activeInvoiceCode) fetchInvoice(activeInvoiceCode);
+    } catch (err: any) {
+      alert(err.message || 'حدث خطأ أثناء حذف العنصر');
     } finally { setRefreshing(false); }
   };
 
@@ -269,8 +276,10 @@ export default function POSPage() {
   const openSvcPopup = (svc: any) => {
     setSvcPopup(svc);
     setSvcFace('وجه واحد');
-    setSvcPaper(0);
-    setSvcAmt(0);
+    const isPrintSvc = svc.service_name?.includes('طباعة');
+    setSvcPaper(isPrintSvc ? 0 : 1);
+    const initialPrice = Number(svc.initial_price || svc.price || svc.amount || 0);
+    setSvcAmt(initialPrice);
     setSvcNotes('');
   };
 
@@ -936,7 +945,7 @@ export default function POSPage() {
             ) : (
               activeInvoice.items.map((item) => (
                 <div key={item.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-3 flex gap-3 relative group hover:border-slate-300 transition-colors"
+                  className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-2.5 relative hover:border-slate-300 transition-colors shadow-sm"
                 >
                   <div className={`p-2 rounded-xl h-fit shrink-0 ${item.type === 'service' ? 'bg-blue-100 text-blue-600' :
                     item.type === 'ticket' ? 'bg-purple-100 text-purple-600' :
@@ -946,32 +955,36 @@ export default function POSPage() {
                       item.type === 'ticket' ? <Train className="w-4 h-4" /> :
                         <Wallet className="w-4 h-4" />}
                   </div>
+
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate">{item.name}</h4>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono">
+                    <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{item.name}</h4>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 font-mono">
                       <span>× {item.count}</span>
                       <span>·</span>
                       <span>{item.price} ج</span>
                     </div>
                   </div>
-                  <div className={`shrink-0 font-bold font-mono text-sm ${item.total < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+
+                  <div className={`shrink-0 font-bold font-mono text-xs sm:text-sm ${item.total < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                     {item.total < 0 ? `-${formatNumber(Math.abs(item.total))}` : formatNumber(item.total)} ج
                   </div>
-                  {/* زرار تعديل */}
-                  <button
-                    onClick={() => openEditItem(item)}
-                    className="absolute -top-1.5 left-5 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex cursor-pointer"
-                    title="تعديل البند"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                  </button>
-                  {/* زرار حذف */}
-                  <button
-                    onClick={() => handleDeleteItem(item.id, item.type)}
-                    className="absolute -top-1.5 -left-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow hidden group-hover:flex"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => openEditItem(item)}
+                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                      title="تعديل البند"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteItem(item.id, item.type)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      title="حذف البند"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
