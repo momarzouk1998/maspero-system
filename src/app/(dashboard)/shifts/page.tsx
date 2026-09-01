@@ -72,6 +72,12 @@ export default function ShiftsPage() {
   const [depositNotesInput, setDepositNotesInput] = useState('');
   const [depositSubmitting, setDepositSubmitting] = useState(false);
 
+  // Modal State for Adjust Wallet/Machine Balance (زيادة/تعديل رصيد)
+  const [adjustBalanceItem, setAdjustBalanceItem] = useState<any | null>(null);
+  const [adjustBalanceInput, setAdjustBalanceInput] = useState<string>('');
+  const [adjustBalanceNotes, setAdjustBalanceNotes] = useState('');
+  const [adjustBalanceSubmitting, setAdjustBalanceSubmitting] = useState(false);
+
   // Deliver All Modal state
   const [deliverAllModalOpen, setDeliverAllModalOpen] = useState(false);
   const [deliverAllDrawerId, setDeliverAllDrawerId] = useState('');
@@ -278,6 +284,45 @@ export default function ShiftsPage() {
       showToast(err.message, 'error');
     } finally {
       setDeliverSubmitting(false);
+    }
+  };
+
+  // Submit Adjust Balance (زيادة/خصم رصيد بدون تسليم عهدة)
+  const handleConfirmAdjustBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustBalanceItem) return;
+
+    const numNew = parseFloat(adjustBalanceInput);
+    if (isNaN(numNew)) {
+      showToast('برجاء كتابة الرصيد الجديد', 'error');
+      return;
+    }
+
+    setAdjustBalanceSubmitting(true);
+    try {
+      const res = await fetch('/api/custody/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'adjust_balance',
+          walletId: adjustBalanceItem.id,
+          newBalance: numNew,
+          notes: adjustBalanceNotes || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تعديل الرصيد');
+
+      showToast(data.message || 'تم تعديل الرصيد بنجاح ✅');
+      setAdjustBalanceItem(null);
+      setAdjustBalanceInput('');
+      setAdjustBalanceNotes('');
+      fetchShiftsAndCustody();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setAdjustBalanceSubmitting(false);
     }
   };
 
@@ -724,16 +769,29 @@ export default function ShiftsPage() {
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
-                        <button
-                          onClick={() => {
-                            setDeliverModalItem(item);
-                            setDeliverReceiverId('maspero');
-                            setActualBalanceInput('');
-                          }}
-                          className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
-                        >
-                          تسليم
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setAdjustBalanceItem(item);
+                              setAdjustBalanceInput(String(Number(item.actual_balance || item.current_balance || 0)));
+                              setAdjustBalanceNotes('');
+                            }}
+                            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
+                            title="زيادة أو تعديل الرصيد بدون تسليم العهدة"
+                          >
+                            زيادة رصيد
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeliverModalItem(item);
+                              setDeliverReceiverId('maspero');
+                              setActualBalanceInput('');
+                            }}
+                            className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
+                          >
+                            تسليم
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -803,12 +861,25 @@ export default function ShiftsPage() {
                     </td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       {isCustodyOfUser ? (
-                        <button
-                          onClick={() => setDeliverModalItem(item)}
-                          className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm"
-                        >
-                          تسليم
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setAdjustBalanceItem(item);
+                              setAdjustBalanceInput(String(Number(item.actual_balance || item.current_balance || 0)));
+                              setAdjustBalanceNotes('');
+                            }}
+                            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
+                            title="زيادة أو تعديل رصيد الماكينة بدون تسليم العهدة"
+                          >
+                            زيادة رصيد
+                          </button>
+                          <button
+                            onClick={() => setDeliverModalItem(item)}
+                            className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm"
+                          >
+                            تسليم
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -1253,6 +1324,87 @@ export default function ShiftsPage() {
           </form>
         </div>
       )}
+
+      {/* ADJUST BALANCE MODAL (زيادة/تعديل رصيد) */}
+      {adjustBalanceItem && (() => {
+        const currentBal = Number(adjustBalanceItem.actual_balance || adjustBalanceItem.current_balance || 0);
+        const newBal = parseFloat(adjustBalanceInput);
+        const delta = isNaN(newBal) ? 0 : newBal - currentBal;
+        return (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <form onSubmit={handleConfirmAdjustBalance} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span className="text-blue-600">💵</span>
+                  <span>زيادة / تعديل رصيد ({adjustBalanceItem.wallet_name})</span>
+                </h3>
+                <button type="button" onClick={() => { setAdjustBalanceItem(null); setAdjustBalanceInput(''); setAdjustBalanceNotes(''); }} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed">
+                استخدم هذه الشاشة عند إضافة كاش من عهدتك إلى الماكينة/المحفظة (زيادة رصيد) أو سحب كاش منها إلى يدك (خصم رصيد) — بدون تسليم العهدة لأي حد.
+              </div>
+
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <span className="text-xs font-bold text-amber-900">الرصيد الحالي:</span>
+                  <span className="font-mono text-sm font-bold text-amber-900">{formatNumber(currentBal)} ج</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">الرصيد الجديد (بعد التعديل) *</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    required
+                    autoFocus
+                    value={adjustBalanceInput}
+                    onChange={(e) => setAdjustBalanceInput(e.target.value)}
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-sm font-bold focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {!isNaN(newBal) && delta !== 0 && (
+                  <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between ${delta > 0 ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                    <span>{delta > 0 ? '⬆️ زيادة قدرها:' : '⬇️ خصم قدره:'}</span>
+                    <span className="font-mono">{formatNumber(Math.abs(delta))} ج</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات (اختياري)</label>
+                  <textarea
+                    rows={2}
+                    value={adjustBalanceNotes}
+                    onChange={(e) => setAdjustBalanceNotes(e.target.value)}
+                    placeholder="مثال: زيادة رصيد 1000 جنيه من الكاش"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="submit"
+                  disabled={adjustBalanceSubmitting || delta === 0 || isNaN(newBal)}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 disabled:opacity-50"
+                >
+                  {adjustBalanceSubmitting ? 'جاري الحفظ...' : 'تأكيد التعديل'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAdjustBalanceItem(null); setAdjustBalanceInput(''); setAdjustBalanceNotes(''); }}
+                  className="py-3 px-5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        );
+      })()}
 
       {/* DELIVER ALL TO MASPERO & DRAWER MODAL */}
       {deliverAllModalOpen && (

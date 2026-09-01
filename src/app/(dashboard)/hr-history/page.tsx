@@ -407,7 +407,7 @@ export default function HRHistoryPage() {
                 <th className="px-4 py-3 whitespace-nowrap">نوع الطلب</th>
                 <th className="px-4 py-3 whitespace-nowrap">عدد الساعات</th>
                 <th className="px-4 py-3 whitespace-nowrap">الحالة والموافقة</th>
-                <th className="px-4 py-3 whitespace-nowrap">مُنشئ الطلب</th>
+                <th className="px-4 py-3 whitespace-nowrap">من اكونت مين اتسجل</th>
                 <th className="px-4 py-3 whitespace-nowrap">الملاحظات</th>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
                 {(canUpdate || canDeletePerm || isManager) && <th className="px-4 py-3 text-center whitespace-nowrap">الإجراءات</th>}
@@ -468,7 +468,16 @@ export default function HRHistoryPage() {
                           <span>{item.approval === 'موافقة' ? 'معتمد ✔️' : item.approval === 'مرفوض' ? 'مرفوض ✖️' : 'قيد الانتظار ⏳'}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.created_by_name || '-'}</td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        {item.created_by_name ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">
+                            <User className="w-3 h-3" />
+                            {item.created_by_name}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">غير مسجّل</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-xs text-slate-600 max-w-[180px] truncate whitespace-nowrap" title={item.notes || ''}>
                         {item.notes || '-'}
                       </td>

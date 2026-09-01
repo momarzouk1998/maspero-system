@@ -171,7 +171,95 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { action, walletId, actualBalance, discrepancyReason, receiverId, amount, notes } = body;
+    const { action, walletId, actualBalance, discrepancyReason, receiverId, amount, notes, newBalance } = body;
+
+    // --- Action: Adjust wallet/machine balance while keeping custody ---
+    // Used when the cashier tops up (e.g. adds cash into a Fawry machine) or
+    // pulls cash out of the machine without handing custody to anyone.
+    // The delta flows through the cashier's personal cash custody so books stay balanced.
+    if (action === 'adjust_balance') {
+      if (!walletId) return NextResponse.json({ error: 'معرف العهدة مطلوب' }, { status: 400 });
+      if (newBalance === undefined || newBalance === null || newBalance === '') {
+        return NextResponse.json({ error: 'برجاء كتابة الرصيد الجديد' }, { status: 400 });
+      }
+
+      const item = await db.external_wallets.findUnique({ where: { id: walletId } });
+      if (!item) return NextResponse.json({ error: 'العهدة غير موجودة' }, { status: 404 });
+
+      const isDrawer = item.wallet_type === 'درج كاشير' || item.wallet_name.includes('درج');
+      if (isDrawer) {
+        return NextResponse.json({ error: 'تعديل الرصيد غير متاح للأدراج — استخدم إيداع/سحب' }, { status: 400 });
+      }
+
+      if (item.custodian_id !== user.id && user.role !== 'manager') {
+        return NextResponse.json({ error: 'أنت لست المرافق الحالي لهذه العهدة' }, { status: 403 });
+      }
+
+      const currentBal = Number(item.actual_balance || item.current_balance || 0);
+      const numNew = Number(newBalance);
+      if (isNaN(numNew)) return NextResponse.json({ error: 'قيمة الرصيد الجديد غير صحيحة' }, { status: 400 });
+
+      const delta = numNew - currentBal;
+      if (delta === 0) {
+        return NextResponse.json({ error: 'الرصيد الجديد مطابق للحالي — لا يوجد تغيير' }, { status: 400 });
+      }
+
+      const today = new Date();
+      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
+
+      // Guard: when topping up (delta > 0), cash comes out of the cashier's own custody.
+      // Make sure he actually has enough cash.
+      if (delta > 0) {
+        const dbUser = await db.users.findUnique({ where: { id: user.id } });
+        const empBal = Number(dbUser?.wallet_balance || 0);
+        if (empBal < delta) {
+          return NextResponse.json({
+            error: `عذراً، عهدة الكاش المتاحة لديك (${empBal}) لا تكفي لزيادة الرصيد بمبلغ ${delta}`
+          }, { status: 400 });
+        }
+      }
+
+      await db.$transaction(async (tx: any) => {
+        await tx.external_wallets.update({
+          where: { id: walletId },
+          data: {
+            current_balance: numNew,
+            actual_balance: numNew,
+          }
+        });
+
+        // Cashier's cash goes down by +delta on top-up, up by |delta| on drawdown
+        await tx.users.update({
+          where: { id: user.id },
+          data: { wallet_balance: { decrement: delta } }
+        });
+
+        await tx.wallet_transactions.create({
+          data: {
+            date: today,
+            transaction_month: monthStr,
+            time_str: today.toLocaleTimeString('en-US'),
+            wallet_id: walletId,
+            wallet_name: item.wallet_name,
+            transaction_type: delta > 0 ? 'زيادة رصيد' : 'خصم رصيد',
+            wallet_type: item.wallet_type,
+            amount: Math.abs(delta),
+            wallet_commission: 0,
+            employee_id: user.id,
+            employee_name: user.name,
+            description: notes || `${delta > 0 ? 'زيادة' : 'خصم'} رصيد (${item.wallet_name}) بمبلغ ${Math.abs(delta)} ج`,
+            timestamp: today
+          }
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: delta > 0
+          ? `تم زيادة رصيد (${item.wallet_name}) بمبلغ ${delta} ج ✅`
+          : `تم خصم ${Math.abs(delta)} ج من رصيد (${item.wallet_name}) ✅`
+      });
+    }
 
     // --- Action: Deliver Cash Custody to Drawer (Transfer Cash Custody to Drawer for next shift) ---
     if (action === 'deliver_to_drawer') {
