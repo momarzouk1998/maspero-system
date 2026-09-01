@@ -592,10 +592,16 @@ export default function POSPage() {
                   : svc.service_name?.includes('ألوان')
                     ? 'bg-amber-100 group-hover:bg-amber-200 text-amber-700'
                     : 'bg-blue-100 group-hover:bg-blue-200 text-blue-600';
+                const isCommissionable = svc.is_commissionable === true || svc.is_commissionable === 'نعم';
                 return (
                   <button key={svc.id} onClick={() => openSvcPopup(svc)}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
+                    className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
                   >
+                    {isCommissionable && (
+                      <span className="absolute top-1.5 left-1.5 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded-full leading-none">
+                        بعمولة
+                      </span>
+                    )}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${iconColor}`}>
                       <ServiceIcon name={svc.service_name} className="w-5 h-5" />
                     </div>
