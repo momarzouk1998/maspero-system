@@ -876,7 +876,18 @@ export default function POSPage() {
       </div>
 
       {/* ── RIGHT PANEL: INVOICE ──────────────────────────── */}
-      <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden`}>
+      <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden ${mobilePosView === 'invoice' ? 'fixed inset-0 z-50 md:relative md:z-auto bg-slate-50 md:bg-transparent safe-area-top safe-area-bottom' : ''}`}>
+
+        {/* Mobile Close Button */}
+        {mobilePosView === 'invoice' && (
+          <button
+            onClick={() => setMobilePosView('catalog')}
+            className="md:hidden flex items-center gap-2 px-4 py-3 bg-white border-b border-slate-200 text-slate-700 font-bold text-sm cursor-pointer"
+          >
+            <ArrowDownLeft className="w-5 h-5" />
+            <span>العودة للكتالوج</span>
+          </button>
+        )}
 
         {/* ── Invoice Tabs (open invoices) ──────────────── */}
         <div className="glass-panel p-2 rounded-2xl border border-slate-200">

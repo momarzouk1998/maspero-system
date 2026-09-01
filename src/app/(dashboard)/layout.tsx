@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -41,6 +41,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [pendingTransfers, setPendingTransfers] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
 
   const fetchUserAndPending = async () => {
     try {
@@ -84,6 +86,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       window.removeEventListener('focus', handleBalanceUpdate);
     };
   }, []);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
+  // Close drawer on ESC key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    }
+    if (isMobileMenuOpen) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isMobileMenuOpen]);
+
+  // Touch swipe handlers for mobile drawer
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchCurrentX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current !== null && touchCurrentX.current !== null) {
+      const deltaX = touchCurrentX.current - touchStartX.current;
+      // In RTL: swiping to the right (positive deltaX) slides drawer away to the right (closes it)
+      if (deltaX > 70) {
+        setIsMobileMenuOpen(false);
+      }
+    }
+    touchStartX.current = null;
+    touchCurrentX.current = null;
+  };
 
   const [logoutBlocked, setLogoutBlocked] = useState(false);
 
@@ -138,15 +182,104 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-all duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
-        />
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="absolute right-0 top-0 h-full w-[280px] max-w-[85vw] glass-panel shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-0 safe-area-top"
+          >
+            <div>
+              {/* Logo Header */}
+              <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-100/90">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                    <Image
+                      src="/maspero-logo.png"
+                      alt="Maspero Logo"
+                      width={28}
+                      height={28}
+                      className="object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h1 className="font-bold text-slate-900 text-sm leading-none">ماسـبيرو</h1>
+                    <p className="text-[10px] text-pink-600 font-semibold mt-0.5">لخدمات الطباعة والإنترنت</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                  aria-label="إغلاق القائمة"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-230px)]">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                        active
+                          ? 'bg-blue-100 text-blue-700 border border-blue-300 font-semibold shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-5 h-5 ${active ? 'text-blue-700' : 'text-slate-600'}`} />
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge && item.badge > 0 ? (
+                        <span className="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full animate-pulse">
+                          {item.badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-100 safe-area-bottom">
+              <PwaInstallButton />
+
+              <div className="glass-card p-3 rounded-xl flex items-center justify-between border border-slate-200">
+                <Link href="/profile" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                  <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-sm">
+                    {user?.name?.charAt(0) || 'م'}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
+                    <p className="text-[11px] text-blue-600 truncate font-semibold">
+                      {isManager ? 'مدير النظام' : 'موظف مبيعات'}
+                    </p>
+                  </div>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  title="تسجيل الخروج"
+                  className="text-slate-600 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
       )}
 
-      {/* Sidebar (Desktop + Mobile Drawer) */}
-      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} glass-panel border-l border-slate-200 flex flex-col justify-between fixed md:sticky top-0 h-screen z-50 transition-all duration-300 ${
-        isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
-      }`}>
+      {/* Desktop Sidebar */}
+      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} glass-panel border-l border-slate-200 flex flex-col justify-between hidden md:flex sticky top-0 h-screen z-50 transition-all duration-300`}>
         <div>
           {/* Logo Header */}
           <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-100/90">
@@ -171,7 +304,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Mobile Close Button */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
+              className="md:hidden text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+              aria-label="إغلاق القائمة"
             >
               <X className="w-6 h-6" />
             </button>
@@ -223,7 +357,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User Card & PWA Install Button bottom sidebar */}
-        <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-100">
+        <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-100 safe-area-bottom">
           {!isSidebarCollapsed && <PwaInstallButton />}
 
           <div className={`glass-card p-3 rounded-xl flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border border-slate-200`}>
@@ -269,15 +403,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-16 glass-panel border-b border-slate-200 px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+        <header className="h-16 glass-panel border-b border-slate-200 px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md safe-area-top">
           <div className="flex items-center gap-3">
             {/* Mobile 3-Bars Hamburger Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-slate-700 hover:text-slate-900 p-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
-              aria-label="فتح القائمة الجانبية"
+              className="md:hidden text-slate-700 hover:text-slate-900 p-2.5 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
+              aria-label={isMobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة الجانبية"}
             >
-              <Menu className="w-6 h-6" />
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
             <h2 className="text-sm font-semibold text-slate-600">
@@ -312,7 +446,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main View Area */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden max-w-full">
           {children}
         </main>
       </div>
