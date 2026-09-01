@@ -4,6 +4,11 @@ import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { getServiceCommission } from '@/lib/service-utils';
 
+async function getFawryPurchaseRate() {
+  const settings = await db.system_settings.findFirst({ where: { key: 'fawry_purchase_rate' } });
+  return settings ? parseFloat(settings.value) / 100 : 0.018;
+}
+
 // Helper to check if item's employee has an active open shift
 async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null) {
   if (!employeeId) return false;
