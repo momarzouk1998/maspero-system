@@ -325,9 +325,11 @@ model expenses {
   items         String?   @db.Text
   notes         String?   @db.Text
   amount        Decimal   @default(0) @db.Decimal(15, 2)
-  employee_id   String?   @db.Uuid
-  employee_name String?   @db.Text
-  back_amount   Decimal   @default(0) @db.Decimal(15, 2)
+  employee_id     String?   @db.Uuid
+  employee_name   String?   @db.Text
+  created_by_id   String?   @db.Uuid
+  created_by_name String?   @db.Text
+  back_amount     Decimal   @default(0) @db.Decimal(15, 2)
   timestamp     DateTime? @default(now()) @db.Timestamptz()
 
   employee      users?    @relation(fields: [employee_id], references: [id])

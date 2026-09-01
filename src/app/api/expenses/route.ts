@@ -234,6 +234,9 @@ export async function POST(req: Request) {
           amount: numAmount,
           employee_id: employeeId,
           employee_name: employeeName,
+          created_by_id: user.id,
+          created_by_name: user.name,
+          shift_cashier: user.name,
           timestamp: txDate,
         }
       });

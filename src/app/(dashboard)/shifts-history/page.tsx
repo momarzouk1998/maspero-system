@@ -974,12 +974,14 @@ export default function ShiftsHistoryPage() {
                       <span>💸 المصروفات والسلف بالشفت ({auditData?.details?.expenses?.length})</span>
                     </h4>
                     <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                      <table className="w-full text-right text-[11px] table-auto">
+                      <table className="w-full text-right text-[11px] table-auto min-w-[600px]">
                         <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                           <tr>
                             <th className="p-2">النوع الرئيسي</th>
                             <th className="p-2">طريقة الصرف</th>
                             <th className="p-2">المبلغ</th>
+                            <th className="p-2">الموظف المعني</th>
+                            <th className="p-2">من أكونت</th>
                             <th className="p-2">الملاحظات</th>
                             <th className="p-2">الوقت</th>
                           </tr>
@@ -990,6 +992,8 @@ export default function ShiftsHistoryPage() {
                               <td className="p-2 font-bold text-slate-900">{e.main_type}</td>
                               <td className="p-2">{e.expense_type || '-'}</td>
                               <td className="p-2 font-mono font-bold text-rose-700">{formatNumber(Number(e.amount))} ج</td>
+                              <td className="p-2 font-bold text-slate-800">{e.employee_name || '-'}</td>
+                              <td className="p-2 font-bold text-blue-700">{e.created_by_name || e.shift_cashier || e.employee_name || '-'}</td>
                               <td className="p-2 text-slate-600">{e.notes || '-'}</td>
                               <td className="p-2 text-slate-500 font-mono">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en-US') : '-'}</td>
                             </tr>
