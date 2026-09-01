@@ -523,16 +523,16 @@ export default function POSPage() {
       <div className={`flex-1 flex flex-col gap-3 min-w-0 ${mobilePosView === 'invoice' ? 'hidden md:flex' : 'flex'} md:overflow-y-auto`}>
 
         {/* Page title */}
-        <div className="glass-panel px-5 py-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
+        <div className="glass-panel px-4 py-3 rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-blue-600" />
-            <h1 className="text-lg font-bold text-slate-900">صفحة البيع</h1>
+            <Receipt className="w-4 h-4 md:w-5 md:h-5 text-blue-600 shrink-0" />
+            <h1 className="text-base md:text-lg font-bold text-slate-900">صفحة البيع</h1>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {/* Online Cashiers Summary */}
             {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <>
                 {custodyData.onlineCashiers.map((c: any) => (
                   <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -540,7 +540,7 @@ export default function POSPage() {
                     <span className="font-mono text-emerald-700">{c.balance}</span>
                   </div>
                 ))}
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -750,8 +750,8 @@ export default function POSPage() {
               المحافظ الإلكترونية
             </h3>
             {wallets.length > 0 ? (
-              <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                <table className="w-full text-right text-sm table-auto">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 -mx-1">
+                <table className="w-full text-right text-sm table-auto min-w-[520px]">
                   <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-2.5 whitespace-nowrap">المحفظة</th>
@@ -828,8 +828,8 @@ export default function POSPage() {
               الماكينات (فوري / بسطة / أمان)
             </h3>
             {machines.length > 0 ? (
-              <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                <table className="w-full text-right text-sm table-auto">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 -mx-1">
+                <table className="w-full text-right text-sm table-auto min-w-[380px]">
                   <thead className="bg-slate-100 text-slate-600 text-xs font-semibold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-2.5 whitespace-nowrap">الماكينة</th>
@@ -882,13 +882,13 @@ export default function POSPage() {
       </div>
 
       {/* ── RIGHT PANEL: INVOICE ──────────────────────────── */}
-      <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden ${mobilePosView === 'invoice' ? 'fixed inset-0 z-50 md:relative md:z-auto bg-slate-50 md:bg-transparent safe-area-top safe-area-bottom' : ''}`}>
+      <div className={`w-full md:w-[390px] shrink-0 flex flex-col gap-3 ${mobilePosView === 'catalog' ? 'hidden md:flex' : 'flex'} md:overflow-hidden ${mobilePosView === 'invoice' ? 'fixed inset-0 z-50 md:relative md:z-auto bg-slate-50 md:bg-transparent' : ''}`} style={mobilePosView === 'invoice' ? { paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' } : {}}>
 
-        {/* Mobile Close Button */}
+        {/* Mobile Back Button */}
         {mobilePosView === 'invoice' && (
           <button
             onClick={() => setMobilePosView('catalog')}
-            className="md:hidden flex items-center gap-2 px-4 py-3 bg-white border-b border-slate-200 text-slate-700 font-bold text-sm cursor-pointer"
+            className="md:hidden flex items-center gap-2 px-4 py-3.5 bg-white border-b border-slate-200 text-slate-700 font-bold text-sm cursor-pointer shrink-0"
           >
             <ArrowDownLeft className="w-5 h-5" />
             <span>العودة للكتالوج</span>
@@ -1046,12 +1046,10 @@ export default function POSPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════
-           POPUP: SERVICE
-      ══════════════════════════════════════════════════ */}
+      {/* POPUP: SERVICE */}
       {svcPopup && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
 
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
@@ -1164,12 +1162,10 @@ export default function POSPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════
-           POPUP: WALLET / MACHINE TRANSACTION
-      ══════════════════════════════════════════════════ */}
+      {/* POPUP: WALLET / MACHINE TRANSACTION */}
       {wltPopup && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300 overflow-y-auto max-h-[90vh]" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
 
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
@@ -1347,12 +1343,10 @@ export default function POSPage() {
         onClose={() => setShowKioskGuideModal(false)}
       />
 
-      {/* ══════════════════════════════════════════════════
-           MODAL: EDIT INVOICE ITEM (خدمة / تذكرة)
-      ══════════════════════════════════════════════════ */}
+      {/* MODAL: EDIT INVOICE ITEM */}
       {editItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl p-5 sm:p-6 space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300 overflow-y-auto max-h-[90vh]" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
 
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
@@ -1562,7 +1556,7 @@ export default function POSPage() {
 
       {/* Floating Sticky Bottom Cart Bar for Mobile */}
       {activeInvoice && activeInvoice.items.length > 0 && mobilePosView === 'catalog' && (
-        <div className="fixed bottom-3 inset-x-3 z-40 md:hidden animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-x-3 z-40 md:hidden animate-in slide-in-from-bottom duration-300" style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
           <button
             onClick={() => setMobilePosView('invoice')}
             className="w-full py-3 px-4 bg-slate-900 text-white rounded-2xl font-bold text-xs shadow-2xl flex items-center justify-between border border-slate-700 cursor-pointer"

@@ -209,66 +209,60 @@ export default function FinancialAndHROperationsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto safe-area-top">
-      {/* Simple Header Banner */}
-      <div className="glass-panel p-4 md:p-5 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
-          >
-            <ArrowRight className="w-4 h-4" />
-            <span>الرئيسية</span>
-          </Link>
+    <div className="space-y-4 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="glass-panel px-4 py-3.5 rounded-2xl border border-slate-200 flex items-center gap-3 shadow-sm">
+        <Link
+          href="/"
+          className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+        >
+          <ArrowRight className="w-4 h-4" />
+          <span className="hidden sm:inline">الرئيسية</span>
+        </Link>
 
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <Receipt className="w-6 h-6 text-emerald-600" />
-              <span>التعاملات المالية</span>
-            </h1>
-          </div>
-        </div>
+        <h1 className="text-base md:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <Receipt className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 shrink-0" />
+          <span>التعاملات المالية</span>
+        </h1>
       </div>
 
       {/* Toast Feedback */}
       {toast && (
-        <div className={`p-4 rounded-2xl border text-xs font-bold flex items-center justify-between transition-all ${
+        <div className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-between transition-all ${
           toast.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-800'
         }`}>
           <div className="flex items-center gap-2">
-            {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+            {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />}
             <span>{toast.text}</span>
           </div>
         </div>
       )}
 
-      {/* Disallowed Advance Static Warning Banner */}
+      {/* Advance blocked warning */}
       {finCategory === 'سلفة' && !allowAdvances && finEmployeeId && (
-        <div className="p-5 rounded-2xl border-2 border-red-300 bg-red-50 text-red-950 flex items-start gap-3.5 shadow-md max-w-6xl mx-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
-          <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
+        <div className="p-4 rounded-2xl border-2 border-red-300 bg-red-50 text-red-950 flex items-start gap-3 shadow-md animate-in fade-in slide-in-from-top-4 duration-300">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
             <h4 className="text-sm font-extrabold text-red-900">عفواً، هذا الموظف غير مسموح له بسحب سلفة.</h4>
-            <p className="text-xs font-bold text-red-700">برجاء التواصل مع المدير لتعديل الصلاحيات الممنوحة للموظف.</p>
+            <p className="text-xs font-bold text-red-700">برجاء التواصل مع المدير لتعديل الصلاحيات.</p>
           </div>
         </div>
       )}
 
-      {/* 2-Column Split Layout for Financials & HR (Equal Height) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* 2-col on lg, single col on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-stretch">
+
         {/* MODULE A: تسجيل الماليات */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col justify-between space-y-6 h-full">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
+        <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 flex flex-col justify-between space-y-4 md:space-y-6 h-full">
+          <div className="space-y-4 md:space-y-5">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-200">
+              <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
                 <span>تسجيل الماليات</span>
               </h2>
-              <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                تسجيل الماليات
-              </span>
             </div>
 
-            {/* Categories Selector Pills */}
+            {/* Category Pills — wrap freely */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-700">التصنيف *</label>
               <div className="flex flex-wrap gap-2">
@@ -286,7 +280,7 @@ export default function FinancialAndHROperationsPage() {
                     key={c.key}
                     type="button"
                     onClick={() => setFinCategory(c.key as any)}
-                    className={`py-2.5 px-4 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    className={`py-2 px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer active:scale-95 ${
                       finCategory === c.key
                         ? `${c.color} shadow-sm ring-2 ring-emerald-400`
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -298,9 +292,9 @@ export default function FinancialAndHROperationsPage() {
               </div>
             </div>
 
-            <form id="finForm" onSubmit={handleFinSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Date - ONLY SHOWN FOR MANAGERS (Item 11) */}
+            <form id="finForm" onSubmit={handleFinSubmit} className="space-y-3.5">
+              {/* Date (managers only) + Item — stacked on mobile, side-by-side on md */}
+              <div className={`grid gap-3 ${currentUser?.role === 'manager' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                 {currentUser?.role === 'manager' && (
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
@@ -309,19 +303,18 @@ export default function FinancialAndHROperationsPage() {
                       required
                       value={finDate}
                       onChange={(e) => setFinDate(e.target.value)}
-                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 )}
 
-                {/* Item / Statement Dropdown */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">البند / البيان *</label>
                   <select
                     value={selectedItem}
                     onChange={(e) => setSelectedItem(e.target.value)}
                     disabled={!finCategory}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500 disabled:opacity-50"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500 disabled:opacity-50"
                   >
                     {!finCategory ? (
                       <option value="">اختر التصنيف أولاً...</option>
@@ -337,7 +330,6 @@ export default function FinancialAndHROperationsPage() {
                 </div>
               </div>
 
-              {/* Custom Item Name if "أخرى" selected */}
               {selectedItem === 'أخرى' && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم البند المخصص *</label>
@@ -347,20 +339,19 @@ export default function FinancialAndHROperationsPage() {
                     value={customItem}
                     onChange={(e) => setCustomItem(e.target.value)}
                     placeholder="اكتب اسم البند هنا..."
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-emerald-500"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-bold focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               )}
 
-              {/* Target Employee - ONLY SHOWN FOR ADVANCE & SALARY */}
               {['سلفة', 'قبض'].includes(finCategory) && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني بالسلفة/القبض *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف المعني *</label>
                   <select
                     required
                     value={finEmployeeId}
                     onChange={(e) => setFinEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:border-emerald-500"
                   >
                     <option value="">اختر الموظف...</option>
                     {employees.map((emp) => (
@@ -370,14 +361,14 @@ export default function FinancialAndHROperationsPage() {
                 </div>
               )}
 
-              {/* Amount Stepper */}
+              {/* Amount stepper — full width on mobile */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">المبلغ المطلوب *</label>
-                <div className="flex items-center gap-2 max-w-md">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => adjustFinAmount(-50)}
-                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer active:scale-95"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -394,45 +385,38 @@ export default function FinancialAndHROperationsPage() {
                   <button
                     type="button"
                     onClick={() => adjustFinAmount(50)}
-                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات إضافية (اختياري)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات (اختياري)</label>
                 <input
                   type="text"
                   value={finNotes}
                   onChange={(e) => setFinNotes(e.target.value)}
                   placeholder="أدخل أي تفاصيل إضافية..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
-              {/* Monthly Salary Drawn Stats Display (Strict Privacy: Manager OR Target Employee Himself) */}
+              {/* Salary stats */}
               {['سلفة', 'قبض'].includes(finCategory) && (currentUser?.role === 'manager' || finEmployeeId === currentUser?.id) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200">
                   <div>
-                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">الراتب الأساسي:</span>
-                    <span className="text-sm font-bold font-mono text-slate-900">
-                      {formatNumberLocale(finStats.baseSalary, 'en-US')}
-                    </span>
+                    <span className="text-[11px] text-amber-800 font-semibold block mb-0.5">الراتب:</span>
+                    <span className="text-xs font-bold font-mono text-slate-900">{formatNumberLocale(finStats.baseSalary, 'en-US')}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">المسحوب خلال الشهر:</span>
-                    <span className="text-sm font-bold font-mono text-amber-900">
-                      {formatNumberLocale(finStats.totalDrawnThisMonth, 'en-US')}
-                    </span>
+                    <span className="text-[11px] text-amber-800 font-semibold block mb-0.5">المسحوب:</span>
+                    <span className="text-xs font-bold font-mono text-amber-900">{formatNumberLocale(finStats.totalDrawnThisMonth, 'en-US')}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-amber-800 font-semibold block mb-0.5">المتبقي من الراتب:</span>
-                    <span className="text-sm font-bold font-mono text-emerald-800">
-                      {formatNumberLocale(finStats.remainingSalary, 'en-US')}
-                    </span>
+                    <span className="text-[11px] text-amber-800 font-semibold block mb-0.5">المتبقي:</span>
+                    <span className="text-xs font-bold font-mono text-emerald-800">{formatNumberLocale(finStats.remainingSalary, 'en-US')}</span>
                   </div>
                 </div>
               )}
@@ -443,29 +427,25 @@ export default function FinancialAndHROperationsPage() {
             type="submit"
             form="finForm"
             disabled={submitting}
-            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4"
+            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4 active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            <span>حفظ وإضافة المعاملة المالية</span>
+            <span>حفظ المعاملة المالية</span>
           </button>
         </div>
 
         {/* MODULE B: الحوافز والخصومات */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col justify-between space-y-6 h-full">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b pb-4 border-slate-200">
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Gift className="w-5 h-5 text-indigo-600" />
+        <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 flex flex-col justify-between space-y-4 md:space-y-6 h-full">
+          <div className="space-y-4 md:space-y-5">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-200">
+              <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+                <Gift className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
                 <span>الحوافز والخصومات</span>
               </h2>
-              <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                الحوافز والخصومات
-              </span>
             </div>
 
-            <form id="hrForm" onSubmit={handleHrSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Date */}
+            <form id="hrForm" onSubmit={handleHrSubmit} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ *</label>
                   <input
@@ -473,18 +453,17 @@ export default function FinancialAndHROperationsPage() {
                     required
                     value={hrDate}
                     onChange={(e) => setHrDate(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
-                {/* Target Employee */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">الموظف *</label>
                   <select
                     required
                     value={hrEmployeeId}
                     onChange={(e) => setHrEmployeeId(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                    className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">اختر الموظف...</option>
                     {employees.map((emp) => (
@@ -494,10 +473,10 @@ export default function FinancialAndHROperationsPage() {
                 </div>
               </div>
 
-              {/* Request Type */}
+              {/* Request type pills */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الطلب *</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {[
                     { key: 'مكافأة', label: 'مكافأة 🎁', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                     { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
@@ -510,7 +489,7 @@ export default function FinancialAndHROperationsPage() {
                         key={t.key}
                         type="button"
                         onClick={() => setHrType(t.key as any)}
-                        className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        className={`py-2 px-3.5 rounded-xl text-xs font-bold border transition-all cursor-pointer active:scale-95 ${
                           hrType === t.key
                             ? `${t.color} shadow-sm ring-2 ring-indigo-400`
                             : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -522,14 +501,14 @@ export default function FinancialAndHROperationsPage() {
                 </div>
               </div>
 
-              {/* Hours Stepper */}
+              {/* Hours stepper */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">عدد الساعات *</label>
-                <div className="flex items-center gap-2 max-w-md">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => adjustHrHours(-0.5)}
-                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer active:scale-95"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -545,14 +524,13 @@ export default function FinancialAndHROperationsPage() {
                   <button
                     type="button"
                     onClick={() => adjustHrHours(0.5)}
-                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer"
+                    className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold border border-slate-300 shrink-0 cursor-pointer active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">السبب / الملاحظات (اختياري)</label>
                 <input
@@ -560,7 +538,7 @@ export default function FinancialAndHROperationsPage() {
                   value={hrNotes}
                   onChange={(e) => setHrNotes(e.target.value)}
                   placeholder="أدخل أسباب الخصم أو المكافأة..."
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </form>
@@ -570,7 +548,7 @@ export default function FinancialAndHROperationsPage() {
             type="submit"
             form="hrForm"
             disabled={submitting}
-            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4"
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all mt-4 active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>تسجيل طلب الحوافز/الإجازة</span>

@@ -403,40 +403,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-16 glass-panel border-b border-slate-200 px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md safe-area-top">
-          <div className="flex items-center gap-3">
-            {/* Mobile 3-Bars Hamburger Menu Button */}
+        <header className="h-14 md:h-16 glass-panel border-b border-slate-200 px-3 md:px-6 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md safe-area-top">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            {/* Mobile Hamburger */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-slate-700 hover:text-slate-900 p-2.5 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
+              className="md:hidden shrink-0 text-slate-700 hover:text-slate-900 p-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
               aria-label={isMobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة الجانبية"}
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            <h2 className="text-sm font-semibold text-slate-600">
-              أهلاً بك، <span className="text-slate-900 font-bold">{user?.name}</span>
+            <h2 className="text-xs md:text-sm font-semibold text-slate-600 truncate">
+              أهلاً، <span className="text-slate-900 font-bold">{user?.name?.split(' ')[0]}</span>
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Live Employee Wallet Balance Badge */}
+          <div className="flex items-center gap-2">
+            {/* Wallet Balance Badge — compact on mobile */}
             <Link href="/shifts">
-              <div className="glass-card px-3 md:px-4 py-2 rounded-xl flex items-center gap-2.5 border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer">
-                <Wallet className="w-4 h-4 text-emerald-700" />
-                <div className="text-xs">
-                  <span className="text-slate-600 block text-[10px]">عهدة الكاش</span>
-                  <span className="font-extrabold text-sm">{formatNumberLocale(Number(user?.wallet_balance || 0), 'en-US')}</span>
+              <div className="flex items-center gap-1.5 md:gap-2.5 px-2.5 md:px-4 py-1.5 md:py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer">
+                <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-700 shrink-0" />
+                <div className="text-xs leading-tight">
+                  <span className="text-slate-500 hidden md:block text-[10px]">عهدة الكاش</span>
+                  <span className="font-extrabold text-xs md:text-sm font-mono">{formatNumberLocale(Number(user?.wallet_balance || 0), 'en-US')}</span>
                 </div>
               </div>
             </Link>
 
-            {/* Pending P2P Transfers Notification Badge */}
+            {/* Pending Transfers Badge */}
             <Link href="/shifts">
-              <div className="relative p-2.5 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors">
+              <div className="relative p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors">
                 <ArrowLeftRight className="w-4 h-4 text-emerald-600" />
                 {pendingTransfers > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce shadow-md">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-500 text-white text-[9px] md:text-[10px] font-bold flex items-center justify-center animate-bounce shadow-md">
                     {pendingTransfers}
                   </span>
                 )}
@@ -446,7 +446,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main View Area */}
-        <main className="flex-1 p-3 sm:p-4 md:p-8 overflow-y-auto min-w-0">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-y-auto min-w-0">
           {children}
         </main>
       </div>

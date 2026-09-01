@@ -488,47 +488,48 @@ export default function ShiftsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header (Light Mode) */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2 mb-1">
-            <Clock className="w-7 h-7 text-blue-600" />
-            <span>إدارة الشفتات والعهدة</span>
+      {/* Page Header */}
+      <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-lg md:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Clock className="w-5 h-5 md:w-7 md:h-7 text-blue-600 shrink-0" />
+            <span>الشفتات والعهدة</span>
           </h1>
 
-          {/* Item 6 & 7: Online Cashiers Summary Bar (Brief & Concise, no EGP) */}
-          {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-              <span className="text-xs text-slate-500 font-semibold shrink-0">الموظفون المتاحون:</span>
-              {custodyData.onlineCashiers.map((c: any) => (
-                <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{c.name}:</span>
-                  <span className="font-mono text-emerald-700">{c.balance}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={openDeliverAllModal}
+              disabled={submitting}
+              className="py-2 px-3 md:px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <span>🏛️</span>
+              <span className="hidden sm:inline">تسليم جميع العهد لـ ماسـبيرو</span>
+              <span className="sm:hidden">تسليم الكل</span>
+            </button>
+
+            <Link
+              href="/rules"
+              className="p-2 md:py-2 md:px-4 bg-slate-100 hover:bg-slate-200 text-blue-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden md:inline">شرح القيود</span>
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Item 9: Single-Click Bulk Handover to Maspero Center */}
-          <button
-            onClick={openDeliverAllModal}
-            disabled={submitting}
-            className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            <span>🏛️ تسليم جميع العهد لـ ماسـبيرو (المركز)</span>
-          </button>
-
-          <Link
-            href="/rules"
-            className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-blue-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-2 transition-all shadow-sm"
-          >
-            <Info className="w-4 h-4" />
-            <span>شرح القيود والصلاحيات</span>
-          </Link>
-        </div>
+        {/* Online Cashiers */}
+        {custodyData?.onlineCashiers && custodyData.onlineCashiers.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-xs text-slate-500 font-semibold shrink-0">المتاحون:</span>
+            {custodyData.onlineCashiers.map((c: any) => (
+              <div key={c.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{c.name}:</span>
+                <span className="font-mono text-emerald-700">{c.balance}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Inline Feedback Toast Banner */}
@@ -557,11 +558,11 @@ export default function ShiftsPage() {
         </div>
       )}
 
-      {/* Active Shift Card & Peer Transfer Form (Equal Width & Height Layout) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch safe-area-top">
+      {/* Active Shift Card & Peer Transfer Form */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-stretch">
         
         {/* Active Shift Action Card */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
+        <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-600" />
@@ -671,8 +672,8 @@ export default function ShiftsPage() {
           )}
         </div>
 
-        {/* Peer-to-Peer Cash Transfer Form (Equal Width & Height Layout) */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
+        {/* Peer-to-Peer Cash Transfer Form */}
+        <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 h-full flex flex-col justify-between space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <ArrowLeftRight className="w-5 h-5 text-emerald-600" />
             <span>تحويل نقدية مباشر لموظف آخر</span>
@@ -735,14 +736,14 @@ export default function ShiftsPage() {
       {/* ── CUSTODY TABLES (Wallets, Machines, Cash Drawers) ── */}
 
       {/* 1. WALLETS TABLE */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-blue-600" />
-          <span>جدول المحافظ الإلكترونية</span>
+      <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 space-y-3 md:space-y-4">
+        <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+          <Wallet className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+          <span>المحافظ الإلكترونية</span>
         </h2>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[600px]">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 -mx-1">
+          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[580px]">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">المحفظة</th>
@@ -829,14 +830,14 @@ export default function ShiftsPage() {
       </div>
 
       {/* 2. MACHINES TABLE */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-amber-600" />
-          <span>جدول المكن والخدمات</span>
+      <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 space-y-3 md:space-y-4">
+        <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+          <Cpu className="w-4 h-4 md:w-5 md:h-5 text-amber-600" />
+          <span>المكن والخدمات</span>
         </h2>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[500px]">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 -mx-1">
+          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[480px]">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">المكن</th>
@@ -917,14 +918,14 @@ export default function ShiftsPage() {
       </div>
 
       {/* 3. CASH DRAWERS TABLE */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-emerald-600" />
-          <span>جدول أدراج الكاشير</span>
+      <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 space-y-3 md:space-y-4">
+        <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+          <Wallet className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
+          <span>أدراج الكاشير</span>
         </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700 table-auto">
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[480px]">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">الدرج</th>
@@ -1000,15 +1001,15 @@ export default function ShiftsPage() {
         </div>
       </div>
 
-      {/* 4. PEER CASH TRANSFERS HISTORY TABLE (تحويلات النقدية بين الموظفين) */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <ArrowLeftRight className="w-5 h-5 text-emerald-600" />
-          <span>سجل تحويلات النقدية بين الموظفين</span>
+      {/* 4. PEER CASH TRANSFERS HISTORY TABLE */}
+      <div className="glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 space-y-3 md:space-y-4">
+        <h2 className="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+          <ArrowLeftRight className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
+          <span>تحويلات النقدية بين الموظفين</span>
         </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs text-slate-700 table-auto">
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[560px]">
             <thead className="bg-slate-100 text-slate-700 font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 whitespace-nowrap">التاريخ والوقت</th>
@@ -1119,10 +1120,10 @@ export default function ShiftsPage() {
         </div>
       </div>
 
-      {/* DISLIKE RECEIVE MODAL (For entering typed actual balance) */}
+      {/* DISLIKE RECEIVE MODAL */}
       {receiveModalItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmReceive} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <form onSubmit={handleConfirmReceive} className="bg-white w-full sm:max-w-md p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ThumbsDown className="w-5 h-5 text-red-600" />
@@ -1206,8 +1207,8 @@ export default function ShiftsPage() {
 
       {/* DELIVER CUSTODY TO CASH DRAWER MODAL */}
       {drawerDepositItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmDepositToDrawer} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <form onSubmit={handleConfirmDepositToDrawer} className="bg-white w-full sm:max-w-md p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ArrowLeftRight className="w-5 h-5 text-amber-600" />
@@ -1260,8 +1261,8 @@ export default function ShiftsPage() {
 
       {/* DELIVER CUSTODY MODAL */}
       {deliverModalItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmDeliver} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <form onSubmit={handleConfirmDeliver} className="bg-white w-full sm:max-w-md p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ArrowLeftRight className="w-5 h-5 text-amber-600" />
@@ -1332,10 +1333,10 @@ export default function ShiftsPage() {
         </div>
       )}
 
-      {/* ADJUST BALANCE MODAL (تعديل رصيد) */}
+      {/* ADJUST BALANCE MODAL */}
       {adjustBalanceItem && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmAdjustBalance} className="bg-white w-full max-w-md p-6 rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <form onSubmit={handleConfirmAdjustBalance} className="bg-white w-full sm:max-w-md p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl space-y-4 animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span className="text-blue-600">💵</span>
@@ -1403,10 +1404,10 @@ export default function ShiftsPage() {
         </div>
       )}
 
-      {/* DELIVER ALL TO MASPERO & DRAWER MODAL */}
+      {/* DELIVER ALL TO MASPERO MODAL */}
       {deliverAllModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 w-full sm:max-w-md space-y-4 border border-slate-200 shadow-2xl animate-in slide-in-from-bottom sm:fade-in sm:zoom-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
