@@ -382,7 +382,15 @@ export default function POSPage() {
     const numWltAmt = parseFloat(String(wltAmt)) || 0;
     const numWltComm = parseFloat(String(wltComm)) || 0;
 
-    if (!wltPopup || numWltAmt <= 0 || !activeInvoiceCode) return;
+    if (!wltPopup) return;
+    if (numWltAmt <= 0) {
+      alert('برجاء إدخال المبلغ');
+      return;
+    }
+    if (!activeInvoiceCode) {
+      alert('لا توجد فاتورة نشطة — برجاء إنشاء فاتورة جديدة أولاً');
+      return;
+    }
     const isKomandaCheck = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
     const isFawryCheck = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
     if (isKomandaCheck && !komandaProvider) {
@@ -394,8 +402,8 @@ export default function POSPage() {
       return;
     }
     setWltLoading(true);
-    const isKomanda = wltPopup.wallet_name?.includes('كوماندا') || wltPopup.wallet_name?.includes('الكوماندا');
-    const isFawryMachine = wltPopup.wallet_name === 'سحب فوري1' || wltPopup.wallet_name === 'سحب فوري2';
+    const isKomanda = isKomandaCheck;
+    const isFawryMachine = isFawryCheck;
     const finalDescription = isKomanda
       ? `[${komandaProvider}] ${wltNotes}`.trim()
       : isFawryMachine
@@ -403,7 +411,7 @@ export default function POSPage() {
       : wltNotes;
 
     try {
-      await fetch('/api/wallets', {
+      const res = await fetch('/api/wallets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -414,10 +422,19 @@ export default function POSPage() {
           fawry_type: isFawryMachine ? fawryWithdrawalType : undefined,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'حدث خطأ أثناء تسجيل العملية');
+        return;
+      }
       setWltPopup(null);
       fetchInvoice(activeInvoiceCode);
       setMobilePosView('invoice');
-    } finally { setWltLoading(false); }
+    } catch (err: any) {
+      alert(err.message || 'خطأ في الاتصال، برجاء المحاولة مرة أخرى');
+    } finally {
+      setWltLoading(false);
+    }
   };
 
   const handleFinishCurrentInvoice = () => {
