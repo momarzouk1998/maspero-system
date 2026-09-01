@@ -182,6 +182,11 @@ export async function POST(req: Request) {
       if (newBalance === undefined || newBalance === null || newBalance === '') {
         return NextResponse.json({ error: 'برجاء كتابة الرصيد الجديد' }, { status: 400 });
       }
+      // الملاحظات إجبارية — لتوضيح سبب الضبط عند المراجعة
+      const trimmedNotes = String(notes || '').trim();
+      if (trimmedNotes.length < 3) {
+        return NextResponse.json({ error: 'يجب توضيح سبب ضبط الرصيد فى خانة الملاحظات' }, { status: 400 });
+      }
 
       const item = await db.external_wallets.findUnique({ where: { id: walletId } });
       if (!item) return NextResponse.json({ error: 'العهدة غير موجودة' }, { status: 404 });

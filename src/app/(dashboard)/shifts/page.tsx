@@ -287,7 +287,7 @@ export default function ShiftsPage() {
     }
   };
 
-  // Submit Adjust Balance (زيادة/خصم رصيد بدون تسليم عهدة)
+  // Submit Adjust Balance (ضبط رصيد بدون تسليم عهدة)
   const handleConfirmAdjustBalance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustBalanceItem) return;
@@ -295,6 +295,13 @@ export default function ShiftsPage() {
     const numNew = parseFloat(adjustBalanceInput);
     if (isNaN(numNew)) {
       showToast('برجاء كتابة الرصيد الجديد', 'error');
+      return;
+    }
+
+    // ملاحظات إجبارية — للمراجعة لاحقاً
+    const notes = adjustBalanceNotes.trim();
+    if (notes.length < 3) {
+      showToast('يجب توضيح سبب ضبط الرصيد فى خانة الملاحظات', 'error');
       return;
     }
 
@@ -307,7 +314,7 @@ export default function ShiftsPage() {
           action: 'adjust_balance',
           walletId: adjustBalanceItem.id,
           newBalance: numNew,
-          notes: adjustBalanceNotes || undefined
+          notes,
         })
       });
 
@@ -1332,7 +1339,7 @@ export default function ShiftsPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span className="text-blue-600">💵</span>
-                <span>تعديل رصيد ({adjustBalanceItem.wallet_name})</span>
+                <span>ضبط رصيد ({adjustBalanceItem.wallet_name})</span>
               </h3>
               <button type="button" onClick={() => { setAdjustBalanceItem(null); setAdjustBalanceInput(''); setAdjustBalanceNotes(''); }} className="p-1 text-slate-500 hover:text-slate-900 rounded-lg">
                 <X className="w-5 h-5" />
@@ -1362,24 +1369,27 @@ export default function ShiftsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">ملاحظات (اختياري)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">سبب الضبط / ملاحظات <span className="text-red-600">*</span></label>
                 <textarea
                   rows={2}
+                  required
+                  minLength={3}
                   value={adjustBalanceNotes}
                   onChange={(e) => setAdjustBalanceNotes(e.target.value)}
-                  placeholder="مثال: تعديل رصيد بعد الجرد"
+                  placeholder="مثال: تسوية بعد الجرد / إيداع نقدى / تحويل من رقم آخر"
                   className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 resize-none"
                 />
+                <p className="text-[10.5px] text-slate-500 mt-1">يجب توضيح سبب تغيير الرصيد للمراجعة لاحقاً.</p>
               </div>
             </div>
 
             <div className="flex gap-3 pt-3 border-t border-slate-200">
               <button
                 type="submit"
-                disabled={adjustBalanceSubmitting || adjustBalanceInput === ''}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 disabled:opacity-50"
+                disabled={adjustBalanceSubmitting || adjustBalanceInput === '' || adjustBalanceNotes.trim().length < 3}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {adjustBalanceSubmitting ? 'جاري الحفظ...' : 'تأكيد التعديل'}
+                {adjustBalanceSubmitting ? 'جاري الحفظ...' : 'تأكيد ضبط الرصيد'}
               </button>
               <button
                 type="button"
