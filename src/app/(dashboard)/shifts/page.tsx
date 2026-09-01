@@ -36,6 +36,7 @@ export default function ShiftsPage() {
     pendingHandovers: any[];
     onlineCashiers?: any[];
     myCustodyBalance?: number;
+    assignedWalletIds?: string[];
   }>({
     isUserShiftActive: false,
     isMorningOrSoloShift: true,
