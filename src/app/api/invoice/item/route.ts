@@ -250,27 +250,40 @@ export async function DELETE(req: Request) {
         const shiftOpen = await isEmployeeShiftOpen(trans.employee_id, trans.timestamp);
 
         if (shiftOpen) {
-          const totalAmount = Number(trans.amount) + Number(trans.wallet_commission || 0);
+          const numAmount = Number(trans.amount || 0);
+          const numCommission = Number(trans.wallet_commission || 0);
+
+          const isFawryPurchase = trans.fawry_type === 'مشتريات' && trans.transaction_type === 'سحب';
+          let actualMachineAmount = numAmount;
+          if (isFawryPurchase) {
+            const rate = await getFawryPurchaseRate();
+            actualMachineAmount = numAmount - (numAmount * rate);
+          }
+
+          const externalWallet = trans.wallet_id ? await tx.external_wallets.findUnique({ where: { id: trans.wallet_id } }) : null;
+          const isDrawer = externalWallet ? (externalWallet.wallet_type === 'درج كاشير' || externalWallet.wallet_name.includes('درج')) : false;
 
           if (trans.transaction_type === 'إيداع') {
-            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, -totalAmount, tx);
+            const depositCashChange = isDrawer ? numAmount : (numAmount + numCommission);
+            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, -depositCashChange, tx);
             if (trans.wallet_id) {
               await tx.external_wallets.update({
                 where: { id: trans.wallet_id },
                 data: {
-                  current_balance: { increment: Number(trans.amount) },
-                  actual_balance: { increment: Number(trans.amount) }
+                  current_balance: { increment: actualMachineAmount },
+                  actual_balance: { increment: actualMachineAmount }
                 }
               });
             }
           } else if (trans.transaction_type === 'سحب') {
-            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, totalAmount, tx);
+            const withdrawCashChange = isDrawer ? numAmount : (numAmount - numCommission);
+            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, withdrawCashChange, tx);
             if (trans.wallet_id) {
               await tx.external_wallets.update({
                 where: { id: trans.wallet_id },
                 data: {
-                  current_balance: { decrement: Number(trans.amount) },
-                  actual_balance: { decrement: Number(trans.amount) }
+                  current_balance: { decrement: actualMachineAmount },
+                  actual_balance: { decrement: actualMachineAmount }
                 }
               });
             }

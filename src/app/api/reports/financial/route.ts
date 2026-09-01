@@ -19,7 +19,15 @@ export async function GET(req: Request) {
 
   const now = new Date();
   const startDate = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), 1);
-  const endDate = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  startDate.setHours(0, 0, 0, 0);
+
+  let endDate: Date;
+  if (endDateStr) {
+    endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  }
 
   // 1. Fetch Financial Metrics via Prisma Aggregations
   const [
@@ -221,7 +229,7 @@ export async function GET(req: Request) {
       const empId = emp.id;
 
       // Aggregates per employee in date range
-      const [shiftsAgg, hrBonusAgg, hrDeductAgg, serviceCommAgg, advancesAgg, salaryPaidAgg] = await Promise.all([
+      const [shiftsAgg, hrBonusAgg, hrDeductAgg, serviceCommAgg, ticketCommAgg, advancesAgg, salaryPaidAgg] = await Promise.all([
         db.shifts.aggregate({
           where: { employee_id: empId, shift_date: { gte: startDate, lte: endDate } },
           _sum: { total_hours: true }
@@ -237,6 +245,10 @@ export async function GET(req: Request) {
         db.service_entries.aggregate({
           where: { employee_id: empId, date: { gte: startDate, lte: endDate } },
           _sum: { employee_commission: true }
+        }),
+        db.train_ticket_bookings.aggregate({
+          where: { employee_id: empId, date: { gte: startDate, lte: endDate } },
+          _sum: { ticket_commission: true }
         }),
         db.expenses.aggregate({
           where: { employee_id: empId, main_type: 'سلفة', date: { gte: startDate, lte: endDate } },
@@ -260,7 +272,7 @@ export async function GET(req: Request) {
       const finalHours = (achievedHours + bonusHours) - deductedHours;
       const hoursValue = hourlyRate * finalHours;
 
-      const employeeCommission = Number(serviceCommAgg._sum.employee_commission || 0);
+      const employeeCommission = Number(serviceCommAgg._sum.employee_commission || 0) + Number(ticketCommAgg._sum.ticket_commission || 0);
       const totalAdvances = Number(advancesAgg._sum.amount || 0);
       const totalSalaryPaid = Number(salaryPaidAgg._sum.amount || 0);
 

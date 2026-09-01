@@ -592,10 +592,16 @@ export default function POSPage() {
                   : svc.service_name?.includes('ألوان')
                     ? 'bg-amber-100 group-hover:bg-amber-200 text-amber-700'
                     : 'bg-blue-100 group-hover:bg-blue-200 text-blue-600';
+                const isCommissionableSvc = Boolean(svc.is_commissionable || (svc.commission_percent && svc.commission_percent > 0));
                 return (
                   <button key={svc.id} onClick={() => openSvcPopup(svc)}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group`}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 ${cardColor} hover:shadow-md transition-all text-center group relative`}
                   >
+                    {isCommissionableSvc && (
+                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                        بعمولة
+                      </span>
+                    )}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${iconColor}`}>
                       <ServiceIcon name={svc.service_name} className="w-5 h-5" />
                     </div>
@@ -715,7 +721,7 @@ export default function POSPage() {
                   </div>
                   <button
                     onClick={handleAddTicket}
-                    disabled={tktLoading || tktPrice <= 0}
+                    disabled={tktLoading || (tktPrice + tktComm) <= 0}
                     className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${tktType === 'قطار'
                       ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
                       : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'

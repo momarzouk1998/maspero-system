@@ -90,8 +90,8 @@ export default function ManagerReportsPage() {
     if (!metrics) return;
     setSavingArchive(true);
     try {
-      const now = new Date();
-      const currentMonthStr = `${now.getFullYear()} ${now.getMonth() + 1}`;
+      const reportDate = startDate ? new Date(startDate) : new Date();
+      const currentMonthStr = `${reportDate.getFullYear()} ${reportDate.getMonth() + 1}`;
       
       const payload = {
         month: currentMonthStr,
