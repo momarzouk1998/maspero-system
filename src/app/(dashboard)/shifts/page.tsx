@@ -756,6 +756,7 @@ export default function ShiftsPage() {
             <tbody className="divide-y divide-slate-200">
               {custodyData.wallets.map((item: any) => {
                 const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+                const isAssignedToOther = !isCustodyOfUser && (custodyData.assignedWalletIds || []).includes(item.id);
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
@@ -800,6 +801,10 @@ export default function ShiftsPage() {
                             تسليم
                           </button>
                         </div>
+                      ) : isAssignedToOther ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold rounded-lg">
+                          🔒 عند {item.custodian_name?.split(' ')[0] || 'موظف'}
+                        </span>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -849,6 +854,7 @@ export default function ShiftsPage() {
             <tbody className="divide-y divide-slate-200">
               {custodyData.machines.map((item: any) => {
                 const isCustodyOfUser = item.custodian_id === activeShift?.employee_id;
+                const isAssignedToOther = !isCustodyOfUser && (custodyData.assignedWalletIds || []).includes(item.id);
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
@@ -888,6 +894,10 @@ export default function ShiftsPage() {
                             تسليم
                           </button>
                         </div>
+                      ) : isAssignedToOther ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold rounded-lg">
+                          🔒 عند {item.custodian_name?.split(' ')[0] || 'موظف'}
+                        </span>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <button
