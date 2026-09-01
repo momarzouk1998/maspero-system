@@ -178,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-slate-50 text-slate-900 overflow-x-hidden">
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
         <div
