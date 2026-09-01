@@ -28,12 +28,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 });
     }
 
-    // Verify current password
+    // Verify current password (bcrypt, plus legacy plaintext fallback for
+    // AppSheet-imported users who have not yet rotated their password).
     let isCurrentValid = await bcrypt.compare(currentPassword, fullUser.password_hash);
     if (!isCurrentValid && fullUser.password_hash === currentPassword) {
-      isCurrentValid = true;
-    }
-    if (!isCurrentValid && (currentPassword === '123456' || currentPassword === 'Maspero2026!')) {
       isCurrentValid = true;
     }
 

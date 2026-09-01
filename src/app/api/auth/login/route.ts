@@ -33,30 +33,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'اسم المستخدم أو رقم الهاتف غير موجود' }, { status: 401 });
     }
 
-    // Flexible password validation:
+    // Password validation:
     // 1. bcrypt comparison with stored hash
-    // 2. Direct match with plain text hash/password from AppSheet CSV
-    // 3. Fallback master passwords: "123456", "Maspero2026!"
+    // 2. Legacy plaintext fallback for AppSheet-imported users who never rotated
+    //    their password. Auto-rehashed on first successful legacy login.
     let isValidPassword = false;
+    let needsRehash = false;
     try {
       isValidPassword = await bcrypt.compare(trimmedPass, user.password_hash);
     } catch (e) {
       isValidPassword = false;
     }
 
-    if (!isValidPassword) {
-      if (user.password_hash === trimmedPass) {
-        isValidPassword = true;
-      } else if (!user.password_hash || user.password_hash === '123456' || user.password_hash === '1234' || !user.password_hash.startsWith('$2')) {
-        if (trimmedPass === '123456' || trimmedPass === 'Maspero2026!') {
-          isValidPassword = true;
-        }
-      }
+    if (!isValidPassword && user.password_hash === trimmedPass) {
+      isValidPassword = true;
+      needsRehash = true;
     }
 
     if (!isValidPassword) {
       console.log(`[LOGIN_FAIL] Password mismatch for user: "${user.name}" (${user.phone})`);
       return NextResponse.json({ error: 'كلمة المرور غير صحيحة' }, { status: 401 });
+    }
+
+    if (needsRehash) {
+      try {
+        const newHash = await bcrypt.hash(trimmedPass, 10);
+        await db.users.update({ where: { id: user.id }, data: { password_hash: newHash } });
+      } catch (e) {
+        console.error('[LOGIN] auto-rehash failed', e);
+      }
     }
 
     console.log(`[LOGIN_SUCCESS] User "${user.name}" (${user.role}) logged in successfully.`);

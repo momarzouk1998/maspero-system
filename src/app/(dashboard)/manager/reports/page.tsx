@@ -88,13 +88,22 @@ export default function ManagerReportsPage() {
 
   const handleSaveMonthArchive = async () => {
     if (!metrics) return;
+
+    // نحدد الشهر من فلتر التاريخ اللي اختاره المستخدم (تاريخ البداية)،
+    // وليس من تاريخ اليوم — علشان لو المدير عامل فلتر شهر 7 يحفظ باسم شهر 7 مش شهر 9.
+    const monthSource = startDate ? new Date(startDate) : new Date();
+    const currentMonthStr = `${monthSource.getFullYear()} ${monthSource.getMonth() + 1}`;
+
+    if (!confirm(`سيتم حفظ/تحديث تقرير شهر (${currentMonthStr}) في الأرشيف. هل تريد المتابعة؟`)) {
+      return;
+    }
+
     setSavingArchive(true);
     try {
-      const reportDate = startDate ? new Date(startDate) : new Date();
-      const currentMonthStr = `${reportDate.getFullYear()} ${reportDate.getMonth() + 1}`;
-      
       const payload = {
         month: currentMonthStr,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         wallet_commission: metrics.walletCommission || 0,
         tickets_commission: metrics.ticketCommission || 0,
         machine_withdrawal_commission: metrics.machineWithdrawlCommission || 0,

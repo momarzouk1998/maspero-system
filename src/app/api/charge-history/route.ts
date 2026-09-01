@@ -120,15 +120,7 @@ export async function DELETE(req: Request) {
     const numAmount = Number(txItem.amount || 0);
     const numCommission = Number(txItem.wallet_commission || 0);
 
-    const isFawryPurchase = txItem.fawry_type === 'مشتريات' && txItem.transaction_type === 'سحب';
-    let actualMachineAmount = numAmount;
-    if (isFawryPurchase) {
-      const settings = await db.system_settings.findFirst({ where: { key: 'fawry_purchase_rate' } });
-      const rate = settings ? parseFloat(settings.value) / 100 : 0.018;
-      actualMachineAmount = numAmount - (numAmount * rate);
-    }
-
-    const machineBalanceChange = txItem.transaction_type === 'إيداع' ? -actualMachineAmount : actualMachineAmount;
+    const balanceChange = txItem.transaction_type === 'إيداع' ? -numAmount : numAmount;
 
     const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
     const employeeCashChange = isDrawer
@@ -141,8 +133,8 @@ export async function DELETE(req: Request) {
         await tx.external_wallets.update({
           where: { id: txItem.wallet_id },
           data: {
-            current_balance: { increment: -machineBalanceChange },
-            actual_balance: { increment: -machineBalanceChange }
+            current_balance: { increment: -balanceChange },
+            actual_balance: { increment: -balanceChange }
           }
         });
       }

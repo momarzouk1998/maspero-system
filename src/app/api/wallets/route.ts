@@ -1,22 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
-
-/** جلب نسبة خصم مشتريات فوري من الإعدادات مع fallback = 1.8% */
-async function getFawryPurchaseRate(): Promise<number> {
-  try {
-    const row = await db.system_settings.findUnique({
-      where: { key: 'fawry_purchase_deduction_rate' },
-    });
-    if (row) {
-      const parsed = parseFloat(row.value);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) return parsed / 100;
-    }
-  } catch {
-    // الجدول مش موجود بعد أو خطأ → fallback
-  }
-  return 0.018; // 1.8% default
-}
+import { getFawryPurchaseRate, computeWalletDeltas } from '@/lib/fawry-utils';
 
 const TYPE_SORT_ORDER: Record<string, number> = {
   'محفظة': 1,
@@ -156,26 +141,18 @@ export async function POST(req: Request) {
     const today = new Date();
     const invoiceCode = invoice_code || Math.random().toString(36).substring(2, 10);
 
-    // ── خصم مشتريات فوري ──────────────────────────────────────
-    // عمليات نوع "مشتريات" على ماكينات سحب فوري تُخصم منها نسبة
-    // قبل إضافتها لرصيد الماكينة (المبلغ الفعلي الوارد = amount × (1 - rate))
-    // والعمولة الحقيقية = commission - (amount × rate)
-    const isFawryPurchase =
-      fawry_type === 'مشتريات' && transactionType === 'سحب';
-
-    let actualMachineAmount = numAmount;
-    let realCommission = numCommission;
-
-    if (isFawryPurchase) {
-      const rate = await getFawryPurchaseRate();
-      const machineCost = numAmount * rate;           // مثال: 1000 × 0.018 = 18
-      actualMachineAmount = numAmount - machineCost;  // 982
-      realCommission = numCommission - machineCost;   // 30 - 18 = 12
-      if (realCommission < 0) realCommission = 0;
-    }
-    // ──────────────────────────────────────────────────────────
-
-    const balanceChange = transactionType === 'إيداع' ? -actualMachineAmount : actualMachineAmount;
+    // ── حساب موحد لتغيرات الرصيد (بيتعامل تلقائياً مع خصم مشتريات فوري) ──
+    const fawryRate = await getFawryPurchaseRate();
+    const deltas = computeWalletDeltas({
+      amount: numAmount,
+      commission: numCommission,
+      transactionType,
+      fawryType: fawry_type,
+      walletType: wallet.wallet_type,
+      walletName: wallet.wallet_name,
+      fawryPurchaseRate: fawryRate,
+    });
+    const balanceChange = deltas.externalDelta;
     const currentBal = Number(wallet.current_balance || 0);
     const newBal = currentBal + balanceChange;
 
@@ -217,17 +194,12 @@ export async function POST(req: Request) {
         }
       });
 
-      const isDrawer = wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج');
-      const employeeCashChange = isDrawer
-        ? (transactionType === 'إيداع' ? -numAmount : numAmount)
-        : (transactionType === 'إيداع' ? (numAmount + numCommission) : -(numAmount - numCommission));
-        // ملاحظة: عهدة الكاشير تعتمد على numCommission الأصلية (ما دفعه العميل فعلاً)
-        // وليس realCommission — الفرق هو تكلفة الماكينة التي تُطرح من رصيدها مباشرة
-
+      // عهدة الكاشير تعتمد على العمولة الأصلية (ما دفعه العميل فعلاً)
+      // وليس realCommission — الفرق هو تكلفة الماكينة التي تُطرح من رصيدها مباشرة
       await tx.users.update({
         where: { id: user.id },
         data: {
-          wallet_balance: { increment: employeeCashChange }
+          wallet_balance: { increment: deltas.employeeCashDelta }
         }
       });
 

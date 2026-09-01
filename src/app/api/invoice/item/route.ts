@@ -3,11 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { getServiceCommission } from '@/lib/service-utils';
-
-async function getFawryPurchaseRate() {
-  const settings = await db.system_settings.findFirst({ where: { key: 'fawry_purchase_rate' } });
-  return settings ? parseFloat(settings.value) / 100 : 0.018;
-}
+import { getFawryPurchaseRate, computeWalletDeltas } from '@/lib/fawry-utils';
 
 // Helper to check if item's employee has an active open shift
 async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null) {
@@ -132,20 +128,30 @@ export async function PUT(req: Request) {
         if (shiftOpen) {
           const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
 
-          const oldBalanceChange = txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount;
-          const newBalanceChange = targetTxType === 'إيداع' ? -numNewAmount : numNewAmount;
-          const diffExternal = newBalanceChange - oldBalanceChange;
+          const targetFawryType = newFawryType !== undefined ? newFawryType : txItem.fawry_type;
+          const fawryRate = await getFawryPurchaseRate(tx);
 
-          const isDrawer = wallet ? (wallet.wallet_type === 'درج كاشير' || wallet.wallet_name.includes('درج')) : false;
-          const oldEmployeeCash = isDrawer
-            ? (txItem.transaction_type === 'إيداع' ? -oldAmount : oldAmount)
-            : (txItem.transaction_type === 'إيداع' ? (oldAmount + oldCommission) : -(oldAmount - oldCommission));
+          const oldDeltas = computeWalletDeltas({
+            amount: oldAmount,
+            commission: oldCommission,
+            transactionType: txItem.transaction_type,
+            fawryType: txItem.fawry_type,
+            walletType: wallet?.wallet_type || '',
+            walletName: wallet?.wallet_name,
+            fawryPurchaseRate: fawryRate,
+          });
+          const newDeltas = computeWalletDeltas({
+            amount: numNewAmount,
+            commission: numNewCommission,
+            transactionType: targetTxType,
+            fawryType: targetFawryType,
+            walletType: wallet?.wallet_type || '',
+            walletName: wallet?.wallet_name,
+            fawryPurchaseRate: fawryRate,
+          });
 
-          const newEmployeeCash = isDrawer
-            ? (targetTxType === 'إيداع' ? -numNewAmount : numNewAmount)
-            : (targetTxType === 'إيداع' ? (numNewAmount + numNewCommission) : -(numNewAmount - numNewCommission));
-
-          const diffEmployeeCash = newEmployeeCash - oldEmployeeCash;
+          const diffExternal = newDeltas.externalDelta - oldDeltas.externalDelta;
+          const diffEmployeeCash = newDeltas.employeeCashDelta - oldDeltas.employeeCashDelta;
 
           if (diffExternal !== 0 && txItem.wallet_id) {
             await tx.external_wallets.update({
@@ -255,43 +261,31 @@ export async function DELETE(req: Request) {
         const shiftOpen = await isEmployeeShiftOpen(trans.employee_id, trans.timestamp);
 
         if (shiftOpen) {
-          const numAmount = Number(trans.amount || 0);
-          const numCommission = Number(trans.wallet_commission || 0);
+          const wallet = trans.wallet_id ? await tx.external_wallets.findUnique({ where: { id: trans.wallet_id } }) : null;
+          const fawryRate = await getFawryPurchaseRate(tx);
 
-          const isFawryPurchase = trans.fawry_type === 'مشتريات' && trans.transaction_type === 'سحب';
-          let actualMachineAmount = numAmount;
-          if (isFawryPurchase) {
-            const rate = await getFawryPurchaseRate();
-            actualMachineAmount = numAmount - (numAmount * rate);
+          // نحسب نفس التغيرات اللي حصلت وقت الإنشاء، ونعكسها بالسالب
+          const deltas = computeWalletDeltas({
+            amount: Number(trans.amount),
+            commission: Number(trans.wallet_commission || 0),
+            transactionType: trans.transaction_type,
+            fawryType: trans.fawry_type,
+            walletType: wallet?.wallet_type || '',
+            walletName: wallet?.wallet_name,
+            fawryPurchaseRate: fawryRate,
+          });
+
+          if (trans.employee_id) {
+            await WalletService.adjustEmployeeWallet(trans.employee_id, -deltas.employeeCashDelta, tx);
           }
-
-          const externalWallet = trans.wallet_id ? await tx.external_wallets.findUnique({ where: { id: trans.wallet_id } }) : null;
-          const isDrawer = externalWallet ? (externalWallet.wallet_type === 'درج كاشير' || externalWallet.wallet_name.includes('درج')) : false;
-
-          if (trans.transaction_type === 'إيداع') {
-            const depositCashChange = isDrawer ? numAmount : (numAmount + numCommission);
-            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, -depositCashChange, tx);
-            if (trans.wallet_id) {
-              await tx.external_wallets.update({
-                where: { id: trans.wallet_id },
-                data: {
-                  current_balance: { increment: actualMachineAmount },
-                  actual_balance: { increment: actualMachineAmount }
-                }
-              });
-            }
-          } else if (trans.transaction_type === 'سحب') {
-            const withdrawCashChange = isDrawer ? numAmount : (numAmount - numCommission);
-            if (trans.employee_id) await WalletService.adjustEmployeeWallet(trans.employee_id, withdrawCashChange, tx);
-            if (trans.wallet_id) {
-              await tx.external_wallets.update({
-                where: { id: trans.wallet_id },
-                data: {
-                  current_balance: { decrement: actualMachineAmount },
-                  actual_balance: { decrement: actualMachineAmount }
-                }
-              });
-            }
+          if (trans.wallet_id) {
+            await tx.external_wallets.update({
+              where: { id: trans.wallet_id },
+              data: {
+                current_balance: { increment: -deltas.externalDelta },
+                actual_balance: { increment: -deltas.externalDelta }
+              }
+            });
           }
         }
 
