@@ -207,18 +207,6 @@ export async function POST(req: Request) {
       const today = new Date();
       const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
 
-      // Guard: when topping up (delta > 0), cash comes out of the cashier's own custody.
-      // Make sure he actually has enough cash.
-      if (delta > 0) {
-        const dbUser = await db.users.findUnique({ where: { id: user.id } });
-        const empBal = Number(dbUser?.wallet_balance || 0);
-        if (empBal < delta) {
-          return NextResponse.json({
-            error: `عذراً، عهدة الكاش المتاحة لديك (${empBal}) لا تكفي لزيادة الرصيد بمبلغ ${delta}`
-          }, { status: 400 });
-        }
-      }
-
       await db.$transaction(async (tx: any) => {
         await tx.external_wallets.update({
           where: { id: walletId },
@@ -226,12 +214,6 @@ export async function POST(req: Request) {
             current_balance: numNew,
             actual_balance: numNew,
           }
-        });
-
-        // Cashier's cash goes down by +delta on top-up, up by |delta| on drawdown
-        await tx.users.update({
-          where: { id: user.id },
-          data: { wallet_balance: { decrement: delta } }
         });
 
         await tx.wallet_transactions.create({
@@ -247,7 +229,7 @@ export async function POST(req: Request) {
             wallet_commission: 0,
             employee_id: user.id,
             employee_name: user.name,
-            description: notes || `${delta > 0 ? 'زيادة' : 'خصم'} رصيد (${item.wallet_name}) بمبلغ ${Math.abs(delta)} ج`,
+            description: notes || `تعديل رصيد (${item.wallet_name}): من ${currentBal} إلى ${numNew} ج`,
             timestamp: today
           }
         });
