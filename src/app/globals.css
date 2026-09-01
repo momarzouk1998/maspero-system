@@ -139,7 +139,7 @@ button, a {
 
   /* Tables need a minimum width so they overflow and become scrollable */
   .overflow-x-auto > table {
-    min-width: 560px !important;
+    min-width: 800px !important;
   }
 }
 
@@ -156,6 +156,13 @@ button, a {
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
+  }
+
+  /* Ensure modal tables also scroll */
+  .overflow-x-auto > table,
+  div[class*='modal'] .overflow-x-auto > table,
+  [role='dialog'] .overflow-x-auto > table {
+    min-width: 800px !important;
   }
 }
 
