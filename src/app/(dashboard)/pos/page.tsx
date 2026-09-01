@@ -471,12 +471,13 @@ export default function POSPage() {
   const TabBtn = ({ id, label, icon: Icon, color }: any) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all ${activeTab === id
+      className={`flex-1 py-2.5 px-1.5 sm:px-3 rounded-xl flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold transition-all active:scale-95 ${activeTab === id
         ? `${color} text-white shadow-md`
         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
         }`}
     >
-      <Icon className="w-4 h-4" /><span>{label}</span>
+      <Icon className="w-4 h-4 shrink-0" />
+      <span className="truncate">{label}</span>
     </button>
   );
 
@@ -547,22 +548,22 @@ export default function POSPage() {
 
         {/* Sales Lock Red Alert Warning Banner */}
         {custodyData?.isSalesLocked && (
-          <div className="p-4 rounded-2xl border border-red-300 bg-red-50 text-red-800 flex items-center justify-between gap-3 shadow-sm">
-            <div className="flex items-center gap-2 text-xs leading-relaxed font-bold">
-              <Lock className="w-5 h-5 text-red-600 shrink-0 animate-bounce" />
+          <div className="p-3.5 rounded-2xl border border-red-300 bg-red-50 text-red-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shadow-sm">
+            <div className="flex items-start gap-2 text-xs leading-relaxed font-bold">
+              <Lock className="w-4 h-4 text-red-600 shrink-0 animate-bounce mt-0.5" />
               <span>⚠️ المبيعات مقفولة حالياً: {custodyData.lockReason}</span>
             </div>
             <Link
               href="/shifts"
-              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-all shrink-0"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-all shrink-0 active:scale-95"
             >
-              صفحة الشفتات والعهدة 🚀
+              🚀 صفحة الشفتات والعهدة
             </Link>
           </div>
         )}
 
         {/* Tabs */}
-        <div className={`flex gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
+        <div className={`grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200 ${custodyData?.isSalesLocked ? 'pointer-events-none opacity-50 select-none' : ''}`}>
           <TabBtn id="services" label="الخدمات" icon={Printer} color="bg-blue-600" />
           <TabBtn id="tickets" label="التذاكر" icon={Train} color="bg-purple-600" />
           <TabBtn id="wallets" label="المحافظ" icon={Wallet} color="bg-emerald-600" />
