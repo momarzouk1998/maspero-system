@@ -256,9 +256,9 @@ export default function ShiftsHistoryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 safe-area-top">
       {/* Title */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -465,7 +465,7 @@ export default function ShiftsHistoryPage() {
 
         {/* Shifts Table & Pagination (Flex-1) */}
         <div className="flex-1 space-y-4 min-w-0">
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+          <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
             {/* Bulk Action Bar */}
             {selectedIds.length > 0 && (
               <div className="p-3.5 bg-cyan-50 border border-cyan-200 rounded-2xl flex items-center justify-between animate-in fade-in">
@@ -484,7 +484,7 @@ export default function ShiftsHistoryPage() {
               </div>
             )}
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm text-slate-700 table-auto">
+              <table className="w-full text-right text-sm text-slate-700 table-auto min-w-[800px]">
                 <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                   <tr>
                     <th className="px-3 py-3 w-10 text-center">

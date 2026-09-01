@@ -99,4 +99,19 @@
   .text-[10px], .text-[11px] {
     font-size: 12px !important;
   }
+
+  /* Improve small clickable elements */
+  .w-3, .w-4, .h-3, .h-4 {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  /* Ensure all interactive elements have proper touch targets */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+  }
 }

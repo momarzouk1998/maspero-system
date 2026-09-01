@@ -155,9 +155,9 @@ export default function HRHistoryPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto safe-area-top">
       {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -392,7 +392,7 @@ export default function HRHistoryPage() {
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm text-slate-700 table-auto">
+          <table className="w-full text-right text-sm text-slate-700 table-auto min-w-[700px]">
             <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
               <tr>
                 <th className="px-3 py-3 w-10 text-center">

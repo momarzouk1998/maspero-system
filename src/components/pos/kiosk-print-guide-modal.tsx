@@ -30,8 +30,8 @@ export function KioskPrintGuideModal({ isOpen, onClose }: KioskPrintGuideModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto safe-area-top safe-area-bottom">
+      <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in duration-200 modal-mobile-full">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 p-6 text-white flex items-center justify-between relative">

@@ -209,9 +209,9 @@ export default function FinancialAndHROperationsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto safe-area-top">
       {/* Simple Header Banner */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-sm">
+      <div className="glass-panel p-4 md:p-5 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
           <Link
             href="/"

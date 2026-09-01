@@ -635,9 +635,9 @@ export default function ExpensesHistoryPage() {
           )}
 
           {/* Table Container */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
+          <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 space-y-4 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm text-slate-700 table-auto">
+              <table className="w-full text-right text-sm text-slate-700 table-auto min-w-[700px]">
                 <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                   <tr>
                     {canDelete && (

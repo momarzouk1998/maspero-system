@@ -195,9 +195,9 @@ export default function HandoverHistoryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 safe-area-top">
       {/* Header */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -425,7 +425,7 @@ export default function HandoverHistoryPage() {
           )}
 
           <div className="overflow-x-auto glass-panel rounded-3xl border border-slate-200 pb-3">
-            <table className="w-full text-right text-sm text-slate-700 table-auto">
+            <table className="w-full text-right text-sm text-slate-700 table-auto min-w-[800px]">
               <thead className="bg-slate-100 text-slate-700 text-xs font-semibold uppercase border-b border-slate-200">
                 <tr>
                   {currentUser?.role === 'manager' && (
