@@ -178,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900 overflow-x-hidden">
+    <div className="h-screen flex bg-slate-50 text-slate-900">
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
         <div
@@ -446,7 +446,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main View Area */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-y-auto min-w-0">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden min-w-0">
           {children}
         </main>
       </div>
