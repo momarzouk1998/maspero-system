@@ -777,9 +777,9 @@ export default function ShiftsPage() {
                               setAdjustBalanceNotes('');
                             }}
                             className="py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
-                            title="زيادة أو تعديل الرصيد بدون تسليم العهدة"
+                            title="ضبط الرصيد بدون تسليم العهدة"
                           >
-                            زيادة رصيد
+                            ضبط رصيد
                           </button>
                           <button
                             onClick={() => {
@@ -869,9 +869,9 @@ export default function ShiftsPage() {
                               setAdjustBalanceNotes('');
                             }}
                             className="py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer"
-                            title="زيادة أو تعديل رصيد الماكينة بدون تسليم العهدة"
+                            title="ضبط رصيد الماكينة بدون تسليم العهدة"
                           >
-                            زيادة رصيد
+                            ضبط رصيد
                           </button>
                           <button
                             onClick={() => setDeliverModalItem(item)}

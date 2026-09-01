@@ -691,8 +691,8 @@ export default function InvoicesHistoryPage() {
                   {/* Items Breakdown Table */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-slate-700">عناصر الفاتورة ({drawerData.items.length}):</h4>
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                      <table className="w-full text-right text-xs text-slate-700 table-auto">
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+                      <table className="w-full text-right text-xs text-slate-700 table-auto min-w-[500px]">
                         <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                           <tr>
                             <th className="px-3 py-2.5 whitespace-nowrap">الخدمة / المنتج</th>

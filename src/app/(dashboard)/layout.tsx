@@ -446,7 +446,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main View Area */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden max-w-full">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 overflow-y-auto min-w-0">
           {children}
         </main>
       </div>

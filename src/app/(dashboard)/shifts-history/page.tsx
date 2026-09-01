@@ -890,7 +890,7 @@ export default function ShiftsHistoryPage() {
                     <p className="text-slate-400 text-[11px]">لا توجد خدمات مسجلة خلال هذا الشفت</p>
                   ) : (
                     <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                      <table className="w-full text-right text-[11px] table-auto">
+                      <table className="w-full text-right text-[11px] table-auto min-w-[500px]">
                         <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                           <tr>
                             <th className="p-2">الخدمة</th>
@@ -935,7 +935,7 @@ export default function ShiftsHistoryPage() {
                     <p className="text-slate-400 text-[11px]">لا توجد حركات محافظ مسجلة خلال هذا الشفت</p>
                   ) : (
                     <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                      <table className="w-full text-right text-[11px] table-auto">
+                      <table className="w-full text-right text-[11px] table-auto min-w-[500px]">
                         <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                           <tr>
                             <th className="p-2">المحفظة/الماكينة</th>
