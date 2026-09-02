@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     const currentBal = Number(wallet.current_balance || 0);
     const newBal = currentBal + balanceChange;
 
-    const isExemptFromNegative = (wallet.wallet_name.includes('الصياد') || wallet.wallet_name.includes('الكوماندا')) && transactionType === 'إيداع';
+    const isExemptFromNegative = wallet.wallet_name.includes('الصياد') || wallet.wallet_name.includes('الكوماندا');
 
     // PREVENT NEGATIVE BALANCE CONSTRAINT FOR WALLETS, MACHINES & DRAWERS
     if (newBal < 0 && !isExemptFromNegative) {

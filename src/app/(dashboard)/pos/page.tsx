@@ -36,7 +36,7 @@ export default function POSPage() {
     const code = generateCode();
     const num = invoiceCounter;
     setInvoiceCounter(n => n + 1);
-    const invLabel = label ?? `فاتورة ${num}`;
+    const invLabel = label ?? `${num}`;
     const inv: OpenInvoice = { code, label: invLabel, items: [], total: 0 };
     setOpenInvoices(prev => [...prev, inv]);
     setActiveInvoiceCode(code);
@@ -67,7 +67,7 @@ export default function POSPage() {
         if (data.openInvoices && data.openInvoices.length > 0) {
           const loadedInvs: OpenInvoice[] = data.openInvoices.map((inv: any, idx: number) => ({
             code: inv.invoice_number,
-            label: `فاتورة ${idx + 1}`,
+            label: `${idx + 1}`,
             items: [],
             total: Number(inv.total_invoice || 0)
           }));
