@@ -335,8 +335,7 @@ export default function ShiftsPage() {
   };
 
   const openDeliverAllModal = () => {
-    const firstDrawer = custodyData?.drawers?.[0]?.id || '';
-    setDeliverAllDrawerId(firstDrawer);
+    setDeliverAllDrawerId('');
     setDeliverAllModalOpen(true);
   };
 
