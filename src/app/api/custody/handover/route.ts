@@ -221,21 +221,22 @@ export async function POST(req: Request) {
           }
         });
 
-        await tx.wallet_transactions.create({
+        // بيتسجل في سجل التسليم والتسلم (مش سجل الشحن) عشان يفضل سجل الشحن للبيع الحقيقي بس،
+        // وبيتحط تلقائيًا تحت "الرجاء المراجعة" لأن أي تعديل يدوي فيه فرق بالتعريف.
+        await tx.wallet_custody_handovers.create({
           data: {
-            date: today,
-            transaction_month: monthStr,
-            time_str: today.toLocaleTimeString('en-US'),
             wallet_id: walletId,
             wallet_name: item.wallet_name,
-            transaction_type: delta > 0 ? 'زيادة رصيد' : 'خصم رصيد',
-            wallet_type: item.wallet_type,
-            amount: Math.abs(delta),
-            wallet_commission: 0,
-            employee_id: user.id,
-            employee_name: user.name,
-            description: notes || `تعديل رصيد (${item.wallet_name}): من ${currentBal} إلى ${numNew} ج`,
-            timestamp: today
+            sender_id: user.id,
+            sender_name: user.name,
+            balance_at_time: currentBal,
+            expected_balance: currentBal,
+            actual_balance: numNew,
+            difference: delta,
+            status: 'ACCEPTED',
+            review_status: 'الرجاء المراجعة',
+            discrepancy_reason: notes,
+            created_at: today,
           }
         });
       });

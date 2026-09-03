@@ -317,7 +317,7 @@ export async function PUT(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   try {
-    const { id, mainType, items, amount, notes } = await req.json();
+    const { id, mainType, expenseType, items, amount, notes } = await req.json();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
     const exp = await db.expenses.findUnique({ where: { id } });
@@ -356,7 +356,7 @@ export async function PUT(req: Request) {
         where: { id },
         data: {
           main_type: targetMainType,
-          expense_type: targetMainType,
+          expense_type: expenseType !== undefined ? expenseType : targetMainType,
           items: items !== undefined ? items : undefined,
           amount: numNewAmount,
           notes: notes !== undefined ? notes : undefined,
