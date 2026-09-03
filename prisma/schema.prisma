@@ -216,7 +216,8 @@ model wallet_transactions {
   transaction_type  String    @db.VarChar(50) // "سحب" | "إيداع"
   wallet_type       String?   @db.VarChar(50) // "محفظة" | "ماكينة"
   amount            Decimal   @default(0) @db.Decimal(15, 2)
-  wallet_commission Decimal   @default(0) @db.Decimal(15, 2)
+  wallet_commission Decimal   @default(0) @db.Decimal(15, 2) // العمولة الخام اللي دفعها العميل (يُستخدم في حساب الفاتورة/العهدة/الحذف)
+  net_commission    Decimal   @default(0) @db.Decimal(15, 2) // العمولة الصافية بعد خصم تكلفة ماكينة فوري 1.8% (تُستخدم في تقارير العمولات)
   description       String?   @db.Text
   employee_id       String?   @db.Uuid
   employee_name     String?   @db.VarChar(200)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
+import { getFawryPurchaseRate, isFawryPurchase } from '@/lib/fawry-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -189,6 +190,9 @@ export async function PUT(req: Request) {
     const numNewAmount = amount !== undefined ? Number(amount) : Number(txItem.amount || 0);
     const numNewCommission = wallet_commission !== undefined ? Number(wallet_commission) : Number(txItem.wallet_commission || 0);
     const targetTxType = transaction_type || txItem.transaction_type;
+    const fawryRate = await getFawryPurchaseRate();
+    const machineCost = isFawryPurchase(txItem.fawry_type, targetTxType) ? numNewAmount * fawryRate : 0;
+    const newNetCommission = Math.max(numNewCommission - machineCost, 0);
 
     await db.$transaction(async (tx) => {
       if (isShiftOpen) {
@@ -235,6 +239,7 @@ export async function PUT(req: Request) {
         data: {
           amount: numNewAmount,
           wallet_commission: numNewCommission,
+          net_commission: newNetCommission,
           transaction_type: targetTxType,
           description: description !== undefined ? description : undefined,
         }

@@ -123,13 +123,12 @@ export async function PUT(req: Request) {
         const oldAmount = Number(txItem.amount || 0);
         const oldCommission = Number(txItem.wallet_commission || 0);
         const numNewCommission = newCommission !== undefined ? Number(newCommission) : oldCommission;
+        const targetFawryType = newFawryType !== undefined ? newFawryType : txItem.fawry_type;
+        const fawryRate = await getFawryPurchaseRate(tx);
 
         // If shift is open, adjust balances
         if (shiftOpen) {
           const wallet = txItem.wallet_id ? await tx.external_wallets.findUnique({ where: { id: txItem.wallet_id } }) : null;
-
-          const targetFawryType = newFawryType !== undefined ? newFawryType : txItem.fawry_type;
-          const fawryRate = await getFawryPurchaseRate(tx);
 
           const oldDeltas = computeWalletDeltas({
             amount: oldAmount,
@@ -168,11 +167,21 @@ export async function PUT(req: Request) {
           }
         }
 
+        const netDeltas = computeWalletDeltas({
+          amount: numNewAmount,
+          commission: numNewCommission,
+          transactionType: targetTxType,
+          fawryType: targetFawryType,
+          walletType: '',
+          fawryPurchaseRate: fawryRate,
+        });
+
         await tx.wallet_transactions.update({
           where: { id },
           data: {
             amount: numNewAmount,
             wallet_commission: numNewCommission,
+            net_commission: netDeltas.realCommission,
             transaction_type: targetTxType,
             ...(newKomandaProvider !== undefined ? { comanda_type: newKomandaProvider } : {}),
             ...(newFawryType !== undefined ? { fawry_type: newFawryType } : {}),
