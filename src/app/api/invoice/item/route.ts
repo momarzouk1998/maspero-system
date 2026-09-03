@@ -114,7 +114,9 @@ export async function PUT(req: Request) {
         const isCompleted = await isInvoiceCompleted(txItem.invoice_code);
         if (user.role !== 'manager') {
           if (txItem.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
-          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          if (isCompleted && !hasPermission(user, 'charge_history', 'update')) {
+            throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          }
         }
 
         const shiftOpen = await isEmployeeShiftOpen(txItem.employee_id, txItem.timestamp);
@@ -262,9 +264,9 @@ export async function DELETE(req: Request) {
         const isCompleted = await isInvoiceCompleted(trans.invoice_code);
         if (user.role !== 'manager') {
           if (trans.employee_id !== user.id) throw new Error('غير مصرح بحذف هذا العنصر');
-          if (isCompleted) throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
-        } else if (isCompleted && !hasPermission(user, 'charge_history', 'delete')) {
-          throw new Error('ليس لديك صلاحية حذف العمليات المالية والشحن المكتملة');
+          if (isCompleted && !hasPermission(user, 'charge_history', 'delete')) {
+            throw new Error('لا يمكن الحذف بعد إنهاء الفاتورة');
+          }
         }
 
         const shiftOpen = await isEmployeeShiftOpen(trans.employee_id, trans.timestamp);

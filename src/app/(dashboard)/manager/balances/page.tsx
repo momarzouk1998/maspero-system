@@ -107,11 +107,11 @@ export default function ManagerBalancesPage() {
             </div>
 
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-center text-xs text-slate-700 table-fixed">
+              <table className="w-full text-center text-xs text-slate-700">
                 <tbody className="divide-y divide-slate-200 font-semibold">
                   {/* Sub-total 1: Wallets Header Row */}
                   <tr className="bg-indigo-50/90 border-y border-indigo-200">
-                    <td colSpan={3} className="px-4 py-2.5 bg-indigo-50/90 text-indigo-950 font-extrabold">
+                    <td colSpan={2} className="px-4 py-2.5 bg-indigo-50/90 text-indigo-950 font-extrabold">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Wallet className="w-4 h-4 text-indigo-650" />
@@ -129,19 +129,19 @@ export default function ManagerBalancesPage() {
                     const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
                       <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="w-1/3 px-3 py-3 font-bold text-slate-900 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <td className="px-3 py-3 text-right">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
-                            <span className={excluded ? 'text-rose-700 font-extrabold' : ''}>{w.wallet_name}</span>
+                            <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
                             {excluded && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
                                 غير مجمع
                               </span>
                             )}
                           </div>
+                          <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
                         </td>
-                        <td className={`w-1/3 px-3 py-3 font-medium text-center ${excluded ? 'text-rose-700' : 'text-slate-600'}`}>{w.custodian_name || '-'}</td>
-                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <td className={`w-24 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>
@@ -150,7 +150,7 @@ export default function ManagerBalancesPage() {
 
                   {/* Sub-total 2: Machines Header Row */}
                   <tr className="bg-slate-100 border-y border-slate-300">
-                    <td colSpan={3} className="px-4 py-2.5 bg-slate-100 text-slate-900 font-extrabold">
+                    <td colSpan={2} className="px-4 py-2.5 bg-slate-100 text-slate-900 font-extrabold">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-slate-700" />
@@ -168,19 +168,19 @@ export default function ManagerBalancesPage() {
                     const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
                       <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="w-1/3 px-3 py-3 font-bold text-slate-900 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <td className="px-3 py-3 text-right">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
-                            <span className={excluded ? 'text-rose-700 font-extrabold' : ''}>{w.wallet_name}</span>
+                            <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
                             {excluded && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
                                 غير مجمع
                               </span>
                             )}
                           </div>
+                          <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
                         </td>
-                        <td className={`w-1/3 px-3 py-3 font-medium text-center ${excluded ? 'text-rose-700' : 'text-slate-600'}`}>{w.custodian_name || '-'}</td>
-                        <td className={`w-1/3 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <td className={`w-24 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>

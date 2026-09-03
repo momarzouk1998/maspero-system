@@ -889,7 +889,11 @@ export default function ShiftsPage() {
                             ضبط رصيد
                           </button>
                           <button
-                            onClick={() => setDeliverModalItem(item)}
+                            onClick={() => {
+                              setDeliverModalItem(item);
+                              setDeliverReceiverId('maspero');
+                              setActualBalanceInput('');
+                            }}
                             className="py-1.5 px-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm"
                           >
                             تسليم

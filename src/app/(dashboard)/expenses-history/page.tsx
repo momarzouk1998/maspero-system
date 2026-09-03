@@ -86,6 +86,7 @@ export default function ExpensesHistoryPage() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editMainType, setEditMainType] = useState('مصروفات');
   const [editExpenseType, setEditExpenseType] = useState('نقدي');
+  const [editItems, setEditItems] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -232,6 +233,7 @@ export default function ExpensesHistoryPage() {
     setEditingItem(item);
     setEditMainType(item.main_type || 'مصروفات');
     setEditExpenseType(item.expense_type || 'نقدي');
+    setEditItems(item.items || '');
     setEditAmount((item.amount || 0).toString());
     setEditNotes(item.notes || '');
   };
@@ -249,6 +251,7 @@ export default function ExpensesHistoryPage() {
           id: editingItem.id,
           mainType: editMainType,
           expenseType: editExpenseType,
+          items: editItems,
           amount: parseFloat(editAmount),
           notes: editNotes
         })
@@ -656,6 +659,7 @@ export default function ExpensesHistoryPage() {
                       </th>
                     )}
                     <th className="px-4 py-3 whitespace-nowrap">طريقة الصرف</th>
+                    <th className="px-4 py-3 whitespace-nowrap">البند</th>
                     <th className="px-4 py-3 whitespace-nowrap">المبلغ</th>
                     <th className="px-4 py-3 whitespace-nowrap">الشهر</th>
                     <th className="px-4 py-3 whitespace-nowrap">الموظف المعني</th>
@@ -668,14 +672,14 @@ export default function ExpensesHistoryPage() {
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={(canDelete ? 1 : 0) + 7 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
+                      <td colSpan={(canDelete ? 1 : 0) + 8 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
                         <span>جاري تحميل سجل المصروفات...</span>
                       </td>
                     </tr>
                   ) : expenses.length === 0 ? (
                     <tr>
-                      <td colSpan={(canDelete ? 1 : 0) + 7 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
+                      <td colSpan={(canDelete ? 1 : 0) + 8 + (canUpdate || canDelete ? 1 : 0)} className="text-center py-12 text-slate-500">
                         لا توجد مصروفات مسجلة تطابق التصفية
                       </td>
                     </tr>
@@ -703,6 +707,7 @@ export default function ExpensesHistoryPage() {
                             {item.expense_type || 'نقدي'}
                           </span>
                         </td>
+                        <td className="px-4 py-3 text-xs font-bold text-slate-700 whitespace-nowrap">{item.items || '-'}</td>
                         <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base whitespace-nowrap">
                           {formatNumberLocale(Number(item.amount), 'en-US')}
                         </td>
@@ -823,6 +828,17 @@ export default function ExpensesHistoryPage() {
                   <option value="محفظة">محفظة إلكترونية</option>
                   <option value="خزينة">خزينة رئيسية</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">البند</label>
+                <input
+                  type="text"
+                  value={editItems}
+                  onChange={(e) => setEditItems(e.target.value)}
+                  placeholder="مثال: شحن كهرباء"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-rose-500"
+                />
               </div>
 
               <div>
