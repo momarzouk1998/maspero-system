@@ -1499,7 +1499,7 @@ export default function POSPage() {
               {/* العمولة — عمليات المحافظ فقط */}
               {editItem.type === 'wallet' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">عمولتنا *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">عمولتنا (اللي دفعها العميل) *</label>
                   <input
                     type="number"
                     step="0.25"
@@ -1508,6 +1508,17 @@ export default function POSPage() {
                     onChange={e => setEditCommission(e.target.value)}
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-lg focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                   />
+                </div>
+              )}
+
+              {editItem.type === 'wallet' && editFawryType === 'مشتريات' && (
+                <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <span className="text-[11px] font-bold text-emerald-700">
+                    العمولة الصافية بعد خصم عمولة ماكينة فوري (1.8%) — تُحسب تلقائياً عند الحفظ
+                  </span>
+                  <span className="text-xs font-mono font-extrabold text-emerald-800">
+                    {(Math.max((parseFloat(editCommission || '0')) - (parseFloat(editAmount || '0') * 0.018), 0)).toFixed(2)}
+                  </span>
                 </div>
               )}
 
