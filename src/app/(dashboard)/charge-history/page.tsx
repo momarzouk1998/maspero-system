@@ -183,72 +183,61 @@ export default function ChargeHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel px-4 py-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+        {/* Row 1: back + title */}
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm shrink-0"
           >
             <ArrowRight className="w-4 h-4" />
-            <span>الرئيسية</span>
+            <span className="hidden sm:inline">الرئيسية</span>
           </Link>
 
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Zap className="w-6 h-6 text-amber-600" />
-              <span>سجل عمليات الشحن</span>
-            </h1>
-          </div>
+          <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Zap className="w-5 h-5 md:w-6 md:h-6 text-amber-600 shrink-0" />
+            <span>سجل عمليات الشحن</span>
+          </h1>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
+        {/* Row 2: search + sort toggle + filter — wraps on very small screens */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث بالماكينة، الموظف، رقم الفاتورة..."
-              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 w-64"
+              placeholder="بحث بالماكينة، الموظف..."
+              className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
             />
           </div>
 
-          {/* Sorting Mode Toggle */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+          {/* Sort toggle — icon-only on mobile */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold shrink-0">
             <button
               type="button"
               onClick={() => setSortBy('type')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                sortBy === 'type'
-                  ? 'bg-amber-600 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 font-semibold'
-              }`}
-              title="تجميع الإيداع معاً والسحب معاً تحت بعضهما"
+              className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${sortBy === 'type' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600'}`}
+              title="حسب النوع (إيداع/سحب)"
             >
-              🏷️ حسب النوع (إيداع/سحب)
+              <span className="hidden sm:inline">🏷️ النوع</span>
+              <span className="sm:hidden">🏷️</span>
             </button>
             <button
               type="button"
               onClick={() => setSortBy('date')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                sortBy === 'date'
-                  ? 'bg-amber-600 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 font-semibold'
-              }`}
-              title="ترتيب المعاملات حسب الوقت والتاريخ"
+              className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${sortBy === 'date' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600'}`}
+              title="حسب التاريخ"
             >
-              📅 حسب التاريخ
+              <span className="hidden sm:inline">📅 التاريخ</span>
+              <span className="sm:hidden">📅</span>
             </button>
           </div>
 
           <button
             onClick={() => setIsFilterOpen(true)}
-            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
-              hasActiveFilters
-                ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20'
-                : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-            }`}
+            className={`py-2.5 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shrink-0 active:scale-95 ${hasActiveFilters ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20' : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'}`}
           >
             <Filter className="w-4 h-4" />
             <span>تصفية</span>

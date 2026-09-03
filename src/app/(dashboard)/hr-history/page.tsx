@@ -155,51 +155,36 @@ export default function HRHistoryPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto safe-area-top">
+    <div className="space-y-4 max-w-7xl mx-auto">
       {/* Header Banner */}
-      <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel px-4 py-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+        {/* Row 1: back + title + new request button */}
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm shrink-0"
           >
             <ArrowRight className="w-4 h-4" />
-            <span>الرئيسية</span>
+            <span className="hidden sm:inline">الرئيسية</span>
           </Link>
 
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Gift className="w-7 h-7 text-indigo-600" />
-              <span>سجل الحوافز والخصومات</span>
-            </h1>
-          </div>
+          <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-2 flex-1 min-w-0">
+            <Gift className="w-5 h-5 md:w-6 md:h-6 text-indigo-600 shrink-0" />
+            <span className="truncate">سجل الحوافز والخصومات</span>
+          </h1>
+
+          <Link
+            href="/expenses"
+            className="py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
+          >
+            <Gift className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">تسجيل طلب جديد</span>
+            <span className="sm:hidden">جديد</span>
+          </Link>
         </div>
 
-        <Link
-          href="/expenses"
-          className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all self-start md:self-auto"
-        >
-          <Gift className="w-4 h-4" />
-          <span>تسجيل طلب جديد</span>
-        </Link>
-      </div>
-
-      {/* Message Banner */}
-      {message && (
-        <div className={`p-4 rounded-2xl border text-xs font-bold flex items-center justify-between ${
-          message.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-800'
-        }`}>
-          <div className="flex items-center gap-2">
-            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertTriangle className="w-4 h-4 text-red-600" />}
-            <span>{message.text}</span>
-          </div>
-          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-700">إغلاق</button>
-        </div>
-      )}
-
-      {/* Controls & Filtering */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        {/* Row 2: status tabs + employee select + search */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* Status Tabs */}
           {[
             { key: 'ALL', label: 'الكل' },
@@ -210,7 +195,7 @@ export default function HRHistoryPage() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all border ${
+              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
                 statusFilter === tab.key
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -220,12 +205,12 @@ export default function HRHistoryPage() {
             </button>
           ))}
 
-          {/* Filter Employee dropdown for Manager */}
+          {/* Employee dropdown (manager only) */}
           {currentUser?.role === 'manager' && (
             <select
               value={filterEmployeeId}
               onChange={(e) => setFilterEmployeeId(e.target.value)}
-              className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none"
+              className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none max-w-[140px]"
             >
               <option value="">جميع الموظفين</option>
               {employees.map(e => (
@@ -233,19 +218,33 @@ export default function HRHistoryPage() {
               ))}
             </select>
           )}
-        </div>
 
-        <div className="relative w-full md:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث بالموظف أو نوع الطلب..."
-            className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-indigo-500"
-          />
+          {/* Search — grows to fill remaining space */}
+          <div className="relative flex-1 min-w-[120px]">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالموظف أو نوع الطلب..."
+              className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Message Banner */}
+      {message && (
+        <div className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-between ${
+          message.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />}
+            <span>{message.text}</span>
+          </div>
+          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-700 shrink-0 mr-2">إغلاق</button>
+        </div>
+      )}
 
       {/* Main Container: Collapsible Tree Sidebar + HR Table */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">

@@ -265,40 +265,39 @@ export default function InvoicesHistoryPage() {
   return (
     <div className="space-y-6 relative safe-area-top">
       {/* Header */}
-      <div className="glass-panel p-4 md:p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel px-4 py-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+        {/* Row 1: back + title */}
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm"
+            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-all shadow-sm shrink-0"
           >
             <ArrowRight className="w-4 h-4" />
-            <span>الرئيسية</span>
+            <span className="hidden sm:inline">الرئيسية</span>
           </Link>
 
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
-              <span>سجل الفواتير</span>
-            </h1>
-          </div>
+          <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 shrink-0" />
+            <span>سجل الفواتير</span>
+          </h1>
         </div>
 
-        {/* Filters & Search */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
+        {/* Row 2: search + filter */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث برقم الفاتورة أو الموظف..."
-              className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 w-64"
+              className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
             />
           </div>
 
           <button
             onClick={() => setIsFilterOpen(true)}
-            className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+            className={`py-2.5 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all shrink-0 active:scale-95 ${
               hasActiveFilters
                 ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                 : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
