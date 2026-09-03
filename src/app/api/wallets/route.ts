@@ -175,7 +175,7 @@ export async function POST(req: Request) {
           transaction_type: transactionType,
           wallet_type: wallet.wallet_type,
           amount: numAmount,
-          wallet_commission: deltas.realCommission,
+          wallet_commission: numCommission,
           description: description || null,
           employee_id: user.id,
           employee_name: user.name,

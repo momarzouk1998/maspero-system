@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getFawryPurchaseRate, isFawryPurchase } from '@/lib/fawry-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -65,9 +66,10 @@ export async function GET(req: Request) {
       _sum: { wallet_commission: true }
     }),
     // Machine Withdrawal Commissions (wallet_type = "ماكينة", transaction_type = "سحب")
-    db.wallet_transactions.aggregate({
+    // نجيب الصفوف كاملة (مش aggregate) عشان نخصم تكلفة ماكينة فوري (1.8%) من عمليات المشتريات
+    db.wallet_transactions.findMany({
       where: { wallet_type: 'ماكينة', transaction_type: 'سحب', date: { gte: startDate, lte: endDate } },
-      _sum: { wallet_commission: true }
+      select: { amount: true, wallet_commission: true, fawry_type: true }
     }),
     // Machine Deposits (wallet_type = "ماكينة", transaction_type = "إيداع")
     db.wallet_transactions.aggregate({
@@ -124,7 +126,13 @@ export async function GET(req: Request) {
   const ticketCount = Number(ticketCountAggregate._sum.item_count || 0);
 
   const walletCommission = Number(walletCommissions._sum.wallet_commission || 0);
-  const machineWithdrawlCommission = Number(machineWithdrawlCommissions._sum.wallet_commission || 0);
+  const fawryRate = await getFawryPurchaseRate();
+  const machineWithdrawlCommission = machineWithdrawlCommissions.reduce((sum: number, w: any) => {
+    const amt = Number(w.amount || 0);
+    const comm = Number(w.wallet_commission || 0);
+    const machineCost = isFawryPurchase(w.fawry_type, 'سحب') ? amt * fawryRate : 0;
+    return sum + Math.max(comm - machineCost, 0);
+  }, 0);
   const machineDeposits = Number(machineDepositsAggregate._sum.amount || 0);
   const machineWithdrawl = Number(machineWithdrawlsAggregate._sum.amount || 0);
   const machineDepositsCommission = (machineDeposits * machineCommissionRate) / 1000; // نسبة قابلة للتعديل

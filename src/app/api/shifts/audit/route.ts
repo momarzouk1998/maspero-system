@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getFawryPurchaseRate, isFawryPurchase } from '@/lib/fawry-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -110,7 +111,13 @@ export async function GET(req: Request) {
 
     const walletDeposits = walletTx.filter(w => w.transaction_type === 'إيداع').reduce((sum, w) => sum + Number(w.amount || 0), 0);
     const walletWithdrawals = walletTx.filter(w => w.transaction_type === 'سحب').reduce((sum, w) => sum + Number(w.amount || 0), 0);
-    const walletCommissions = walletTx.reduce((sum, w) => sum + Number(w.wallet_commission || 0), 0);
+    const fawryRate = await getFawryPurchaseRate();
+    const walletCommissions = walletTx.reduce((sum, w) => {
+      const amt = Number(w.amount || 0);
+      const comm = Number(w.wallet_commission || 0);
+      const machineCost = isFawryPurchase(w.fawry_type, w.transaction_type) ? amt * fawryRate : 0;
+      return sum + Math.max(comm - machineCost, 0);
+    }, 0);
 
     const totalExpenses = expenses.filter(e => e.main_type === 'مصروفات' || e.expense_type === 'مصروفات').reduce((sum, e) => sum + Number(e.amount || 0), 0);
     const totalAdvances = expenses.filter(e => e.main_type === 'سلفة' || e.expense_type === 'سلفة' || e.main_type === 'قبض' || e.expense_type === 'قبض').reduce((sum, e) => sum + Number(e.amount || 0), 0);
