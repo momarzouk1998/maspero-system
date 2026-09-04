@@ -129,7 +129,7 @@ export default function ManagerBalancesPage() {
                     const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
                       <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="px-3 py-3 text-right">
+                        <td className="w-3/5 px-4 py-3 text-right">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
                             <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
@@ -141,7 +141,7 @@ export default function ManagerBalancesPage() {
                           </div>
                           <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
                         </td>
-                        <td className={`w-24 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>
@@ -168,7 +168,7 @@ export default function ManagerBalancesPage() {
                     const excluded = isExcludedFromTotal(w.wallet_name);
                     return (
                       <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="px-3 py-3 text-right">
+                        <td className="w-3/5 px-4 py-3 text-right">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
                             <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
@@ -180,7 +180,7 @@ export default function ManagerBalancesPage() {
                           </div>
                           <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
                         </td>
-                        <td className={`w-24 px-3 py-3 font-bold font-mono text-center text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </td>
                       </tr>
@@ -207,7 +207,7 @@ export default function ManagerBalancesPage() {
             </div>
 
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-center text-xs text-slate-700 table-fixed">
+              <table className="w-full text-center text-xs text-slate-700">
                 <tbody className="divide-y divide-slate-200 font-semibold">
                   {/* Sub-total 1: Employee Cash Custody Header Row */}
                   <tr className="bg-emerald-50/90 border-y border-emerald-200">
@@ -227,13 +227,13 @@ export default function ManagerBalancesPage() {
                   {/* Employee Rows */}
                   {employeeCustody.map((emp: any) => (
                     <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="w-1/2 px-3 py-3 font-bold text-slate-900 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="w-3/5 px-4 py-3 font-bold text-slate-900 text-right">
+                        <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                           <span>{emp.name}</span>
                         </div>
                       </td>
-                      <td className={`w-1/2 px-3 py-3 font-bold font-mono text-center text-sm ${emp.walletBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                      <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${emp.walletBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                         {formatNumberLocale(Number(emp.walletBalance), 'en-US')}
                       </td>
                     </tr>
@@ -257,13 +257,13 @@ export default function ManagerBalancesPage() {
                   {/* Drawer Rows */}
                   {walletsByType.أدراج.map((w: any) => (
                     <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="w-1/2 px-3 py-3 font-bold text-slate-900 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="w-3/5 px-4 py-3 font-bold text-slate-900 text-right">
+                        <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                           <span>{w.wallet_name}</span>
                         </div>
                       </td>
-                      <td className={`w-1/2 px-3 py-3 font-bold font-mono text-center text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                      <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                         {formatNumberLocale(Number(w.current_balance), 'en-US')}
                       </td>
                     </tr>

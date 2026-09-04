@@ -266,45 +266,54 @@ export async function DELETE(req: Request) {
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+  const rawId = searchParams.get('id');
 
-  if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+  if (!rawId) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+
+  if (!hasPermission(user, 'expenses', 'delete')) {
+    return NextResponse.json({ error: 'ليس لديك صلاحية حذف المصروفات. تواصل مع المدير.' }, { status: 403 });
+  }
+
+  const ids = rawId.split(',').map(s => s.trim()).filter(Boolean);
+  if (ids.length === 0) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
 
   try {
-    const exp = await db.expenses.findUnique({ where: { id } });
-    if (!exp) return NextResponse.json({ error: 'المعاملة غير موجودة' }, { status: 404 });
-
-    const activeShift = exp.employee_id ? await db.shifts.findFirst({
-      where: { employee_id: exp.employee_id, end_time: null }
-    }) : null;
-
-    const isShiftOpen = Boolean(activeShift);
-
-    if (!hasPermission(user, 'expenses', 'delete')) {
-      return NextResponse.json({ error: 'ليس لديك صلاحية حذف المصروفات. تواصل مع المدير.' }, { status: 403 });
-    }
-    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
-      return NextResponse.json({ error: 'لا يمكن الحذف خارج الشفت المفتوح الخاص بك' }, { status: 403 });
-    }
-
-    const numAmount = Number(exp.amount || 0);
-
+    let deletedCount = 0;
     await db.$transaction(async (tx: any) => {
-      if (isShiftOpen && exp.employee_id) {
-        // Reverse expense cash impact:
-        // 'دعم مالي' previously added cash -> reverse by subtracting
-        // other expense types previously subtracted cash -> reverse by adding back
-        if (exp.main_type === 'دعم مالي') {
-          await WalletService.adjustEmployeeWallet(exp.employee_id, -numAmount, tx);
-        } else {
-          await WalletService.adjustEmployeeWallet(exp.employee_id, numAmount, tx);
-        }
-      }
+      for (const singleId of ids) {
+        const exp = await tx.expenses.findUnique({ where: { id: singleId } });
+        if (!exp) continue;
 
-      await tx.expenses.delete({ where: { id } });
+        const activeShift = exp.employee_id ? await tx.shifts.findFirst({
+          where: { employee_id: exp.employee_id, end_time: null }
+        }) : null;
+
+        const isShiftOpen = Boolean(activeShift);
+
+        if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+          continue;
+        }
+
+        const numAmount = Number(exp.amount || 0);
+
+        if (isShiftOpen && exp.employee_id) {
+          if (exp.main_type === 'دعم مالي') {
+            await WalletService.adjustEmployeeWallet(exp.employee_id, -numAmount, tx);
+          } else {
+            await WalletService.adjustEmployeeWallet(exp.employee_id, numAmount, tx);
+          }
+        }
+
+        await tx.expenses.delete({ where: { id: singleId } });
+        deletedCount++;
+      }
     });
 
-    return NextResponse.json({ success: true, message: 'تم حذف المعاملة المالية وعكس عهدة الكاش بنجاح' });
+    if (deletedCount === 0) {
+      return NextResponse.json({ error: 'لم يتم حذف أي معاملة. تأكد من الصلاحيات أو أن المعاملة غير موجودة' }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, message: `تم حذف (${deletedCount}) معاملة مالية وعكس عهدة الكاش بنجاح` });
   } catch (error: any) {
     console.error('Delete Expense Error:', error);
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف المعاملة' }, { status: 500 });

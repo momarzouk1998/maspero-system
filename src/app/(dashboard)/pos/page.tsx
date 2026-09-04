@@ -276,8 +276,7 @@ export default function POSPage() {
   const openSvcPopup = (svc: any) => {
     setSvcPopup(svc);
     setSvcFace('وجه واحد');
-    const isPrintSvc = svc.service_name?.includes('طباعة');
-    setSvcPaper(isPrintSvc ? 0 : 1);
+    setSvcPaper(0);
     const initialPrice = Number(svc.initial_price || svc.price || svc.amount || 0);
     setSvcAmt(initialPrice);
     setSvcNotes('');
@@ -739,7 +738,7 @@ export default function POSPage() {
                   </div>
                   <button
                     onClick={handleAddTicket}
-                    disabled={tktLoading || tktPrice <= 0}
+                    disabled={tktLoading || tktPrice < 0}
                     className={`flex items-center gap-2 px-5 py-2.5 font-bold text-sm rounded-xl text-white disabled:opacity-50 transition-all shadow-md ${tktType === 'قطار'
                       ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-200'
                       : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-200'
