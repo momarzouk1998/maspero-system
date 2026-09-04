@@ -91,7 +91,7 @@ export default function ManagerBalancesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-          {/* Table 1: Wallets & Machines Table */}
+          {/* Card 1: Wallets & Machines Table */}
           <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col">
             {/* Header Banner - Light Theme */}
             <div className="p-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
@@ -106,92 +106,128 @@ export default function ManagerBalancesPage() {
               </span>
             </div>
 
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-center text-xs text-slate-700">
-                <tbody className="divide-y divide-slate-200 font-semibold">
-                  {/* Sub-total 1: Wallets Header Row */}
-                  <tr className="bg-indigo-50/90 border-y border-indigo-200">
-                    <td colSpan={2} className="px-4 py-2.5 bg-indigo-50/90 text-indigo-950 font-extrabold">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Wallet className="w-4 h-4 text-indigo-650" />
-                          <span>إجمالي المحافظ الإلكترونية ({walletsByType.محافظ.length} محفظة)</span>
-                        </div>
-                        <span className="font-mono text-indigo-900 text-sm font-extrabold dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
+            <div className="flex-1 w-full divide-y divide-slate-200">
+              {/* Sub-total 1: Wallets Header Row */}
+              <div className="px-4 py-2.5 bg-indigo-50/90 text-indigo-950 font-extrabold flex items-center justify-between border-b border-indigo-200">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs">إجمالي المحافظ الإلكترونية ({walletsByType.محافظ.length} محفظة)</span>
+                </div>
+                <span className="font-mono text-indigo-900 text-sm font-extrabold dir-ltr bg-white/80 px-2 py-0.5 rounded-lg border border-indigo-200">
+                  {formatNumberLocale(Number(walletsTotals.محافظ), 'en-US')}
+                </span>
+              </div>
 
-                  {/* Wallet Rows */}
-                  {walletsByType.محافظ.map((w: any) => {
-                    const excluded = isExcludedFromTotal(w.wallet_name);
-                    return (
-                      <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="w-3/5 px-4 py-3 text-right">
+              {/* Wallet Rows */}
+              <div className="divide-y divide-slate-100">
+                {walletsByType.محافظ.map((w: any) => {
+                  const excluded = isExcludedFromTotal(w.wallet_name);
+                  return (
+                    <div
+                      key={w.id}
+                      className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${
+                        excluded ? 'bg-rose-50/70 hover:bg-rose-100/70' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
+                        <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-indigo-500'}`} />
-                            <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
+                            <span className={`font-bold text-sm ${excluded ? 'text-rose-700 font-extrabold' : 'text-slate-900'}`}>
+                              {w.wallet_name}
+                            </span>
                             {excluded && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
                                 غير مجمع
                               </span>
                             )}
                           </div>
-                          <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
-                        </td>
-                        <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
-                        </td>
-                      </tr>
-                    );
-                  })}
-
-                  {/* Sub-total 2: Machines Header Row */}
-                  <tr className="bg-slate-100 border-y border-slate-300">
-                    <td colSpan={2} className="px-4 py-2.5 bg-slate-100 text-slate-900 font-extrabold">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-slate-700" />
-                          <span>إجمالي ماكينات الدفع ({walletsByType.ماكينات.length} ماكينة)</span>
+                          {w.custodian_name && (
+                            <span className={`text-[11px] font-medium block mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>
+                              {w.custodian_name}
+                            </span>
+                          )}
                         </div>
-                        <span className="font-mono text-slate-900 text-sm font-extrabold dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')}
+                      </div>
+
+                      <div className="shrink-0">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg font-mono font-bold text-sm dir-ltr ${
+                          excluded
+                            ? 'bg-rose-100 text-rose-700 border border-rose-200 font-black'
+                            : Number(w.current_balance) < 0
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                              : 'bg-slate-100 text-slate-900 border border-slate-200'
+                        }`}>
+                          {formatNumberLocale(Number(w.current_balance), 'en-US')}
                         </span>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  );
+                })}
+              </div>
 
-                  {/* Machine Rows */}
-                  {walletsByType.ماكينات.map((w: any) => {
-                    const excluded = isExcludedFromTotal(w.wallet_name);
-                    return (
-                      <tr key={w.id} className={`transition-colors ${excluded ? 'bg-rose-50/70 border-y border-rose-100 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}>
-                        <td className="w-3/5 px-4 py-3 text-right">
+              {/* Sub-total 2: Machines Header Row */}
+              <div className="px-4 py-2.5 bg-slate-100 text-slate-900 font-extrabold flex items-center justify-between border-y border-slate-300">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-700" />
+                  <span className="text-xs">إجمالي ماكينات الدفع ({walletsByType.ماكينات.length} ماكينة)</span>
+                </div>
+                <span className="font-mono text-slate-900 text-sm font-extrabold dir-ltr bg-white px-2 py-0.5 rounded-lg border border-slate-300">
+                  {formatNumberLocale(Number(walletsTotals.ماكينات), 'en-US')}
+                </span>
+              </div>
+
+              {/* Machine Rows */}
+              <div className="divide-y divide-slate-100">
+                {walletsByType.ماكينات.map((w: any) => {
+                  const excluded = isExcludedFromTotal(w.wallet_name);
+                  return (
+                    <div
+                      key={w.id}
+                      className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${
+                        excluded ? 'bg-rose-50/70 hover:bg-rose-100/70' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
+                        <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${excluded ? 'bg-rose-500' : 'bg-slate-500'}`} />
-                            <span className={`font-bold text-slate-900 ${excluded ? 'text-rose-700 font-extrabold' : ''}`}>{w.wallet_name}</span>
+                            <span className={`font-bold text-sm ${excluded ? 'text-rose-700 font-extrabold' : 'text-slate-900'}`}>
+                              {w.wallet_name}
+                            </span>
                             {excluded && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold border border-rose-200">
                                 غير مجمع
                               </span>
                             )}
                           </div>
-                          <div className={`text-[10px] font-medium mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>{w.custodian_name || '-'}</div>
-                        </td>
-                        <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${excluded ? 'text-rose-600 font-black' : Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                          {w.custodian_name && (
+                            <span className={`text-[11px] font-medium block mt-0.5 ${excluded ? 'text-rose-700' : 'text-slate-500'}`}>
+                              {w.custodian_name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg font-mono font-bold text-sm dir-ltr ${
+                          excluded
+                            ? 'bg-rose-100 text-rose-700 border border-rose-200 font-black'
+                            : Number(w.current_balance) < 0
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                              : 'bg-slate-100 text-slate-900 border border-slate-200'
+                        }`}>
                           {formatNumberLocale(Number(w.current_balance), 'en-US')}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Table 2: Employee Cash Custody & Drawers Table */}
+          {/* Card 2: Employee Cash Custody & Drawers Table */}
           <div className="glass-panel rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col">
             {/* Header Banner - Light Theme */}
             <div className="p-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
@@ -206,70 +242,70 @@ export default function ManagerBalancesPage() {
               </span>
             </div>
 
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-center text-xs text-slate-700">
-                <tbody className="divide-y divide-slate-200 font-semibold">
-                  {/* Sub-total 1: Employee Cash Custody Header Row */}
-                  <tr className="bg-emerald-50/90 border-y border-emerald-200">
-                    <td colSpan={2} className="px-4 py-2.5 bg-emerald-50/90 text-emerald-950 font-extrabold">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-emerald-700" />
-                          <span>إجمالي عهدة الكاش للموظفين ({employeeCustody.length} موظف)</span>
-                        </div>
-                        <span className="font-mono text-emerald-900 text-sm font-extrabold dir-ltr">
-                          {formatNumberLocale(Number(totalEmployeeCustody), 'en-US')}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
+            <div className="flex-1 w-full divide-y divide-slate-200">
+              {/* Sub-total 1: Employee Cash Custody Header Row */}
+              <div className="px-4 py-2.5 bg-emerald-50/90 text-emerald-950 font-extrabold flex items-center justify-between border-b border-emerald-200">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-emerald-700" />
+                  <span className="text-xs">إجمالي عهدة الكاش للموظفين ({employeeCustody.length} موظف)</span>
+                </div>
+                <span className="font-mono text-emerald-900 text-sm font-extrabold dir-ltr bg-white/80 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  {formatNumberLocale(Number(totalEmployeeCustody), 'en-US')}
+                </span>
+              </div>
 
-                  {/* Employee Rows */}
-                  {employeeCustody.map((emp: any) => (
-                    <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="w-3/5 px-4 py-3 font-bold text-slate-900 text-right">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                          <span>{emp.name}</span>
-                        </div>
-                      </td>
-                      <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${emp.walletBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              {/* Employee Rows */}
+              <div className="divide-y divide-slate-100">
+                {employeeCustody.map((emp: any) => (
+                  <div key={emp.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="font-bold text-sm text-slate-900">{emp.name}</span>
+                    </div>
+                    <div className="shrink-0">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg font-mono font-bold text-sm dir-ltr ${
+                        emp.walletBalance < 0 
+                          ? 'bg-rose-50 text-rose-600 border border-rose-200' 
+                          : 'bg-slate-100 text-slate-900 border border-slate-200'
+                      }`}>
                         {formatNumberLocale(Number(emp.walletBalance), 'en-US')}
-                      </td>
-                    </tr>
-                  ))}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                  {/* Sub-total 2: Cashier Drawers Header Row */}
-                  <tr className="bg-amber-50/90 border-y border-amber-200">
-                    <td colSpan={2} className="px-4 py-2.5 bg-amber-50/90 text-amber-950 font-extrabold">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Archive className="w-4 h-4 text-amber-700" />
-                          <span>إجمالي أدراج الكاشير ({walletsByType.أدراج.length} درج)</span>
-                        </div>
-                        <span className="font-mono text-amber-900 text-sm font-extrabold dir-ltr">
-                          {formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
+              {/* Sub-total 2: Cashier Drawers Header Row */}
+              <div className="px-4 py-2.5 bg-amber-50/90 text-amber-950 font-extrabold flex items-center justify-between border-y border-amber-200">
+                <div className="flex items-center gap-2">
+                  <Archive className="w-4 h-4 text-amber-700" />
+                  <span className="text-xs">إجمالي أدراج الكاشير ({walletsByType.أدراج.length} درج)</span>
+                </div>
+                <span className="font-mono text-amber-900 text-sm font-extrabold dir-ltr bg-white px-2 py-0.5 rounded-lg border border-amber-200">
+                  {formatNumberLocale(Number(walletsTotals.أدراج), 'en-US')}
+                </span>
+              </div>
 
-                  {/* Drawer Rows */}
-                  {walletsByType.أدراج.map((w: any) => (
-                    <tr key={w.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="w-3/5 px-4 py-3 font-bold text-slate-900 text-right">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                          <span>{w.wallet_name}</span>
-                        </div>
-                      </td>
-                      <td className={`w-2/5 px-4 py-3 font-bold font-mono text-left dir-ltr text-sm ${Number(w.current_balance) < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              {/* Drawer Rows */}
+              <div className="divide-y divide-slate-100">
+                {walletsByType.أدراج.map((w: any) => (
+                  <div key={w.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                      <span className="font-bold text-sm text-slate-900">{w.wallet_name}</span>
+                    </div>
+                    <div className="shrink-0">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg font-mono font-bold text-sm dir-ltr ${
+                        Number(w.current_balance) < 0 
+                          ? 'bg-rose-50 text-rose-600 border border-rose-200' 
+                          : 'bg-slate-100 text-slate-900 border border-slate-200'
+                      }`}>
                         {formatNumberLocale(Number(w.current_balance), 'en-US')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
