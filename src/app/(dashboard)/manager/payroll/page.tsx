@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { 
   Users, Search, Calendar, RefreshCw, CheckCircle2, AlertTriangle, 
   ArrowRight, DollarSign, Clock, UserCheck, ShieldCheck, Coins,
-  Share2, MessageSquare, Printer, X, Eye, FileText
+  Share2, MessageSquare, Download, X, Eye, FileText
 } from 'lucide-react';
 import { formatNumber } from '@/lib/user-utils';
 
@@ -18,6 +18,36 @@ export default function EmployeePayrollReportPage() {
 
   // Selected Employee for Modal & Share
   const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadImage = async () => {
+    if (!selectedEmp) return;
+    const cardElement = document.getElementById('payroll-card');
+    if (!cardElement) return;
+
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(cardElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      const cleanName = (selectedEmp.name || 'موظف').trim().replace(/\s+/g, '_');
+      link.download = `مستحقات_${cleanName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Failed to download image:', err);
+      alert('حدث خطأ أثناء تحميل الصورة');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const fetchPayroll = async () => {
     setLoading(true);
@@ -248,9 +278,26 @@ export default function EmployeePayrollReportPage() {
               </button>
             </div>
 
-            {/* Printable/Exportable Employee Card */}
-            <div id="payroll-card" className="p-5 bg-gradient-to-br from-slate-50 to-indigo-50/30 rounded-2xl border border-slate-200 space-y-3.5 text-xs text-slate-800">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+            {/* Downloadable Employee Card */}
+            <div id="payroll-card" className="p-5 bg-white rounded-2xl border border-slate-200 space-y-3.5 text-xs text-slate-800 shadow-sm">
+              {/* Header inside the card for image export */}
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900 leading-tight">مركز ماسـبيرو</h4>
+                    <p className="text-[10px] text-slate-500">كشف حساب ومستحقات الموظف</p>
+                  </div>
+                </div>
+                <div className="text-left">
+                  <span className="font-extrabold text-sm text-indigo-700 block">{selectedEmp.name}</span>
+                  <span className="text-[10px] text-slate-500 block">{selectedEmp.jobTitle || 'موظف مبيعات'}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                 <span className="font-bold text-slate-700">🗓️ الفترة المالية:</span>
                 <span className="font-bold text-indigo-700 font-mono">
                   {startDate && endDate ? `${startDate} إلى ${endDate}` : 'الشهر الحالي'}
@@ -258,17 +305,17 @@ export default function EmployeePayrollReportPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-slate-500 block text-[11px]">الراتب الأساسي</span>
                   <span className="font-bold text-slate-900 font-mono text-sm">{formatNumber(selectedEmp.monthlySalary)} ج</span>
                 </div>
-                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-slate-500 block text-[11px]">سعر الساعة</span>
                   <span className="font-bold text-slate-900 font-mono text-sm">{formatNumber(selectedEmp.hourlyRate)} ج</span>
                 </div>
               </div>
 
-              <div className="space-y-1.5 bg-white p-3 rounded-xl border border-slate-200">
+              <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div className="flex justify-between">
                   <span className="text-slate-600">ساعات العمل الفعلية:</span>
                   <span className="font-mono font-bold text-slate-900">{selectedEmp.achievedHours} ساعة</span>
@@ -281,13 +328,13 @@ export default function EmployeePayrollReportPage() {
                   <span>خصومات ساعات:</span>
                   <span className="font-mono font-bold">-{selectedEmp.deductedHours} ساعة</span>
                 </div>
-                <div className="flex justify-between text-indigo-700 font-bold border-t border-slate-100 pt-1">
+                <div className="flex justify-between text-indigo-700 font-bold border-t border-slate-200 pt-1">
                   <span>صافي الساعات المستحقة:</span>
                   <span className="font-mono">{selectedEmp.finalHours} ساعة ({formatNumber(selectedEmp.hoursValue)} ج)</span>
                 </div>
               </div>
 
-              <div className="space-y-1.5 bg-white p-3 rounded-xl border border-slate-200">
+              <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div className="flex justify-between text-emerald-700">
                   <span>عمولة الموظف:</span>
                   <span className="font-mono font-bold">+{formatNumber(selectedEmp.employeeCommission)} ج</span>
@@ -304,8 +351,8 @@ export default function EmployeePayrollReportPage() {
 
               <div className={`p-3.5 rounded-xl border flex justify-between items-center ${
                 selectedEmp.netAccountDue >= 0 
-                  ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950' 
-                  : 'bg-red-100/80 border-red-300 text-red-950'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-950' 
+                  : 'bg-red-50 border-red-300 text-red-950'
               }`}>
                 <span className="font-extrabold text-sm">إجمالي الصافي المستحق:</span>
                 <span className="font-mono font-black text-lg">
@@ -327,11 +374,16 @@ export default function EmployeePayrollReportPage() {
               </a>
 
               <button
-                onClick={() => window.print()}
-                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-colors"
+                onClick={handleDownloadImage}
+                disabled={downloading}
+                className="py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
               >
-                <Printer className="w-4 h-4 text-slate-600" />
-                <span>طباعة</span>
+                {downloading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>تحميل صورة</span>
               </button>
             </div>
           </div>
