@@ -184,6 +184,13 @@ main {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
 }
 
+/* Mobile: extra bottom room so content clears the fixed bottom nav bar (md:hidden) */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* Utility classes for safe area */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);

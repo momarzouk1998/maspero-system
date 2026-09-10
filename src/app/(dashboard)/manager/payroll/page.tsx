@@ -33,14 +33,19 @@ export default function EmployeePayrollReportPage() {
         useCORS: true,
         backgroundColor: '#ffffff',
       });
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataUrl;
       const cleanName = (selectedEmp.name || 'موظف').trim().replace(/\s+/g, '_');
+      // blob: object URL بدل data: URL — متصفح Samsung Internet بيعترض تحميل data: بنافذة base64 خام
+      const blob: Blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+      });
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
       link.download = `مستحقات_${cleanName}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
     } catch (err) {
       console.error('Failed to download image:', err);
       alert('حدث خطأ أثناء تحميل الصورة');

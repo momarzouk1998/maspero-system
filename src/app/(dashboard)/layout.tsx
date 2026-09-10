@@ -31,6 +31,7 @@ import {
   User
 } from 'lucide-react';
 import PwaInstallButton from '@/components/pwa-install-button';
+import BottomNav from '@/components/bottom-nav';
 import { formatNumberLocale } from '@/lib/user-utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -450,6 +451,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation (additive — desktop keeps the sidebar) */}
+      <BottomNav pendingTransfers={pendingTransfers} />
 
       {/* LOGOUT BLOCKED MODAL (Item 5) */}
       {logoutBlocked && (
