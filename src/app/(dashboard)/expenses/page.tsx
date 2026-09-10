@@ -480,7 +480,7 @@ export default function FinancialAndHROperationsPage() {
                   {[
                     { key: 'مكافأة', label: 'مكافأة 🎁', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                     { key: 'خصم', label: 'خصم ⚠️', color: 'bg-red-100 text-red-800 border-red-300' },
-                    { key: 'طلب إذن', label: 'إذن مغادرة 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                    { key: 'طلب إذن', label: 'إذن 🚶', color: 'bg-amber-100 text-amber-800 border-amber-300' },
                     { key: 'طلب إجازة', label: 'إجازة 🏖️', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
                   ]
                     .filter((t) => currentUser?.role === 'manager' || !['مكافأة', 'خصم'].includes(t.key))

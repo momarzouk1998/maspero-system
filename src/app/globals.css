@@ -184,10 +184,13 @@ main {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
 }
 
-/* Mobile: extra bottom room so content clears the fixed bottom nav bar (md:hidden) */
+/* Mobile: extra bottom room so content clears the fixed bottom nav bar (md:hidden).
+   NOTE: <main> also carries Tailwind p-* utilities (higher specificity than this
+   element selector), so the real spacing is set via pb-* classes on <main> itself;
+   this rule is only a fallback for any <main> without those classes. */
 @media (max-width: 767px) {
   main {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
   }
 }
 
