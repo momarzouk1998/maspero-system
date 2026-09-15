@@ -279,6 +279,7 @@ model shifts {
   employee_name String?   @db.VarChar(200)
   start_time    DateTime? @db.Timestamptz()
   end_time      DateTime? @db.Timestamptz()
+  status        String    @default("مفتوح") @db.VarChar(20) // "مفتوح" | "مغلق"
   total_hours   Decimal   @default(0) @db.Decimal(8, 2)
   shift_note    String?   @db.Text
   timestamp     DateTime? @default(now()) @db.Timestamptz()

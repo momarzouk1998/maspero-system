@@ -112,13 +112,21 @@ export default function POSPage() {
   // ─── Print ───────────────────────────────────────────────
   const [showPrintHint, setShowPrintHint] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+  const [printingInvoiceSnapshot, setPrintingInvoiceSnapshot] = useState<OpenInvoice | null>(null);
 
   const handlePrint = (mode: 'cashier' | 'normal') => {
+    if (activeInvoice) {
+      setPrintingInvoiceSnapshot({
+        ...activeInvoice,
+        items: [...activeInvoice.items]
+      });
+    }
     document.body.classList.add(mode === 'cashier' ? 'cashier-print' : 'normal-print');
     setTimeout(() => {
       window.print();
       document.body.classList.remove(mode === 'cashier' ? 'cashier-print' : 'normal-print');
-    }, 100);
+      setPrintingInvoiceSnapshot(null);
+    }, 150);
   };
 
   // ─── Delete item ─────────────────────────────────────────
@@ -477,8 +485,19 @@ export default function POSPage() {
   };
 
   const handleFinishAndPrint = () => {
-    handlePrint('cashier');
-    handleFinishCurrentInvoice();
+    if (!activeInvoice || activeInvoice.items.length === 0) return;
+    const invSnapshot = {
+      ...activeInvoice,
+      items: [...activeInvoice.items]
+    };
+    setPrintingInvoiceSnapshot(invSnapshot);
+    document.body.classList.add('cashier-print');
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('cashier-print');
+      setPrintingInvoiceSnapshot(null);
+      handleFinishCurrentInvoice();
+    }, 150);
   };
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -1342,14 +1361,14 @@ export default function POSPage() {
       )}
 
       {/* Hidden print component */}
-      {activeInvoice && (
+      {(printingInvoiceSnapshot || activeInvoice) && (
         <InvoicePrint
           ref={printRef}
-          invoiceCode={activeInvoice.code}
+          invoiceCode={(printingInvoiceSnapshot || activeInvoice)!.code}
           timestamp={timestamp}
           employeeName={employeeName}
-          items={activeInvoice.items}
-          total={activeInvoice.total}
+          items={(printingInvoiceSnapshot || activeInvoice)!.items}
+          total={(printingInvoiceSnapshot || activeInvoice)!.total}
           isCashierPrint={isCashierPrint}
         />
       )}

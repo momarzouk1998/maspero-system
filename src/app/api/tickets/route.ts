@@ -124,7 +124,12 @@ export async function DELETE(req: Request) {
       where: { employee_id: ticket.employee_id, end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(activeShift);
+    const isShiftOpen = Boolean(
+      activeShift && (
+        (ticket.shift_id && activeShift.id && ticket.shift_id === activeShift.id) ||
+        (!ticket.shift_id && ticket.timestamp && activeShift.start_time && new Date(ticket.timestamp) >= new Date(activeShift.start_time))
+      )
+    );
 
     if (!hasPermission(user, 'tickets', 'delete')) {
       return NextResponse.json({ error: 'ليس لديك صلاحية حذف التذاكر. تواصل مع المدير.' }, { status: 403 });
@@ -163,7 +168,12 @@ export async function PUT(req: Request) {
       where: { employee_id: ticket.employee_id, end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(activeShift);
+    const isShiftOpen = Boolean(
+      activeShift && (
+        (ticket.shift_id && activeShift.id && ticket.shift_id === activeShift.id) ||
+        (!ticket.shift_id && ticket.timestamp && activeShift.start_time && new Date(ticket.timestamp) >= new Date(activeShift.start_time))
+      )
+    );
 
     if (!hasPermission(user, 'tickets', 'update')) {
       return NextResponse.json({ error: 'ليس لديك صلاحية تعديل التذاكر. تواصل مع المدير.' }, { status: 403 });

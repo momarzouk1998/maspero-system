@@ -6,16 +6,19 @@ import { getServiceCommission } from '@/lib/service-utils';
 import { getFawryPurchaseRate, computeWalletDeltas } from '@/lib/fawry-utils';
 
 // Helper to check if item's employee has an active open shift
-async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null) {
+async function isEmployeeShiftOpen(employeeId?: string | null, timestamp?: Date | null, shiftId?: string | null) {
   if (!employeeId) return false;
   const activeShift = await db.shifts.findFirst({
     where: { employee_id: employeeId, end_time: null }
   });
   if (!activeShift) return false;
+  if (shiftId && activeShift.id && shiftId === activeShift.id) {
+    return true;
+  }
   if (timestamp && activeShift.start_time) {
     return new Date(timestamp) >= new Date(activeShift.start_time);
   }
-  return true;
+  return false;
 }
 
 // Helper to check if invoice is completed

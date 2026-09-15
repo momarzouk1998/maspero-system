@@ -105,6 +105,7 @@ export async function POST(req: Request) {
           shift_date: today,
           start_time: today,
           shift_type: shiftType || 'صباحي',
+          status: 'مفتوح',
           shift_note: shiftNote || null,
         }
       });
@@ -184,6 +185,7 @@ export async function POST(req: Request) {
         where: { id: shiftId },
         data: {
           end_time: today,
+          status: 'مغلق',
           total_hours: hours,
           shift_note: shiftNote || shift.shift_note,
         }

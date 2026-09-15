@@ -158,7 +158,12 @@ export async function DELETE(req: Request) {
       where: { employee_id: entry.employee_id, end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(activeShift);
+    const isShiftOpen = Boolean(
+      activeShift && (
+        (entry.shift_id && activeShift.id && entry.shift_id === activeShift.id) ||
+        (!entry.shift_id && entry.timestamp && activeShift.start_time && new Date(entry.timestamp) >= new Date(activeShift.start_time))
+      )
+    );
 
     if (!hasPermission(user, 'services', 'delete')) {
       return NextResponse.json({ error: 'ليس لديك صلاحية حذف الخدمات. تواصل مع المدير.' }, { status: 403 });
@@ -197,7 +202,12 @@ export async function PUT(req: Request) {
       where: { employee_id: entry.employee_id, end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(activeShift);
+    const isShiftOpen = Boolean(
+      activeShift && (
+        (entry.shift_id && activeShift.id && entry.shift_id === activeShift.id) ||
+        (!entry.shift_id && entry.timestamp && activeShift.start_time && new Date(entry.timestamp) >= new Date(activeShift.start_time))
+      )
+    );
 
     if (!hasPermission(user, 'services', 'update')) {
       return NextResponse.json({ error: 'ليس لديك صلاحية تعديل الخدمات. تواصل مع المدير.' }, { status: 403 });

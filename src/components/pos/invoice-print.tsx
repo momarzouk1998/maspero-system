@@ -172,30 +172,35 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
             }
 
             @page {
-              margin: 2mm;
-              size: 80mm auto;
+              margin: 0 !important;
+              size: 80mm auto !important;
             }
 
-            /* Cashier Thermal Print (80mm) Rules */
+            /* Cashier Thermal Print (80mm paper / 72mm printable width) Rules */
             body.cashier-print .container {
-              max-width: 80mm !important;
-              width: 80mm !important;
-              margin: 0 !important;
-              padding: 0 !important;
+              max-width: 72mm !important;
+              width: 72mm !important;
+              margin: 0 auto !important;
+              padding: 0 2mm !important;
+              box-sizing: border-box !important;
               box-shadow: none !important;
               border: none !important;
             }
 
+            body.cashier-print .container * {
+              box-sizing: border-box !important;
+            }
+
             body.cashier-print .header {
-              padding: 8px !important;
+              padding: 6px 2px !important;
               border-bottom: 2px solid #000 !important;
               text-align: center !important;
             }
 
             body.cashier-print .logo {
-              width: 80px !important;
-              height: 80px !important;
-              margin: 0 auto 5px !important;
+              width: 70px !important;
+              height: 70px !important;
+              margin: 0 auto 4px !important;
             }
 
             body.cashier-print .logo img {
@@ -205,39 +210,44 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
             }
 
             body.cashier-print .header h1 {
-              font-size: 1.3em !important;
-              margin-bottom: 3px !important;
+              font-size: 1.25em !important;
+              margin-bottom: 2px !important;
               font-weight: 700 !important;
               color: #000 !important;
             }
 
             body.cashier-print .header .subtitle {
-              font-size: 0.85em !important;
+              font-size: 0.8em !important;
               font-weight: 600 !important;
               color: #000 !important;
             }
 
             body.cashier-print .invoice-info {
-              padding: 8px !important;
-              font-size: 0.8em !important;
+              padding: 6px 2px !important;
+              font-size: 0.72em !important;
               border-bottom: 2px solid #000 !important;
               font-weight: 600 !important;
               display: flex !important;
-              justify-content: space-around !important;
+              justify-content: space-between !important;
+              gap: 2px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
 
             body.cashier-print .content {
-              padding: 8px !important;
+              padding: 4px 0 !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
 
             body.cashier-print .invoice-details table {
               font-size: 0.8em !important;
               border: 2px solid #000 !important;
               table-layout: fixed !important;
-              width: 92% !important;
-              margin-left: auto !important;
-              margin-right: auto !important;
+              width: 100% !important;
+              margin: 4px 0 !important;
               border-collapse: collapse !important;
+              box-sizing: border-box !important;
             }
 
             body.cashier-print .invoice-details th {
@@ -245,20 +255,20 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
               background: #000 !important;
               color: #fff !important;
               border: 1px solid #000 !important;
-              padding: 6px 4px !important;
+              padding: 5px 2px !important;
               text-align: center !important;
-              font-size: 0.9em !important;
+              font-size: 0.85em !important;
             }
 
             body.cashier-print .invoice-details td {
-              padding: 6px 4px !important;
+              padding: 5px 2px !important;
               border: 1px solid #000 !important;
               font-weight: 600 !important;
               color: #000 !important;
               text-align: center !important;
               line-height: 1.2 !important;
-              vertical-align: top !important;
-              font-size: 0.9em !important;
+              vertical-align: middle !important;
+              font-size: 0.85em !important;
               word-wrap: break-word !important;
               overflow-wrap: break-word !important;
               white-space: normal !important;
@@ -271,53 +281,60 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
               min-width: 50% !important;
               max-width: 50% !important;
               text-align: center !important;
+              padding-right: 2px !important;
             }
 
             body.cashier-print .invoice-details th:nth-child(2),
             body.cashier-print .invoice-details td:nth-child(2) {
-              width: 25% !important;
-              min-width: 25% !important;
-              max-width: 25% !important;
+              width: 27% !important;
+              min-width: 27% !important;
+              max-width: 27% !important;
               text-align: center !important;
             }
 
             body.cashier-print .invoice-details th:nth-child(3),
             body.cashier-print .invoice-details td:nth-child(3) {
-              width: 25% !important;
-              min-width: 25% !important;
-              max-width: 25% !important;
+              width: 23% !important;
+              min-width: 23% !important;
+              max-width: 23% !important;
               text-align: center !important;
+              padding-left: 2px !important;
             }
 
             body.cashier-print .total-section {
-              padding: 10px !important;
-              margin-top: 8px !important;
-              border-top: 3px solid #000 !important;
-              border-bottom: 3px solid #000 !important;
+              padding: 8px !important;
+              margin-top: 6px !important;
+              border-top: 2px solid #000 !important;
+              border-bottom: 2px solid #000 !important;
               background: #f0f0f0 !important;
               text-align: center !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
 
             body.cashier-print .total-section h3 {
-              font-size: 1em !important;
-              margin-bottom: 5px !important;
+              font-size: 0.95em !important;
+              margin-bottom: 3px !important;
               font-weight: 700 !important;
               color: #000 !important;
             }
 
             body.cashier-print .total-amount {
-              font-size: 1.5em !important;
+              font-size: 1.4em !important;
               font-weight: 900 !important;
               color: #000 !important;
             }
 
             body.cashier-print .footer {
-              padding: 8px !important;
-              font-size: 0.75em !important;
+              padding: 6px 2px !important;
+              font-size: 0.7em !important;
               border-top: 2px solid #000 !important;
               font-weight: 600 !important;
               text-align: center !important;
               color: #000 !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+              word-break: break-word !important;
             }
 
             /* Normal (A4) Print styling */

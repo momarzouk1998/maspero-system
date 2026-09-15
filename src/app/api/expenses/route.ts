@@ -219,7 +219,7 @@ export async function POST(req: Request) {
 
     // Check if user currently has an active open shift
     const activeShift = await db.shifts.findFirst({
-      where: { employee_id: user.id, end_time: null }
+      where: { employee_id: user.id, status: 'مفتوح', end_time: null }
     });
 
     const expense = await db.$transaction(async (tx) => {
@@ -236,6 +236,8 @@ export async function POST(req: Request) {
           employee_name: employeeName,
           created_by_id: user.id,
           created_by_name: user.name,
+          shift_id: activeShift?.id || null,
+          shift_name: activeShift?.shift_type || null,
           shift_cashier: user.name,
           timestamp: txDate,
         }
@@ -285,18 +287,24 @@ export async function DELETE(req: Request) {
         if (!exp) continue;
 
         const activeShift = exp.employee_id ? await tx.shifts.findFirst({
-          where: { employee_id: exp.employee_id, end_time: null }
+          where: { employee_id: exp.employee_id, status: 'مفتوح', end_time: null }
         }) : null;
 
-        const isShiftOpen = Boolean(activeShift);
+        const isExpenseInActiveShift = Boolean(
+          activeShift && (
+            (exp.shift_id && activeShift.id && exp.shift_id === activeShift.id) ||
+            (!exp.shift_id && exp.timestamp && activeShift.start_time && new Date(exp.timestamp) >= new Date(activeShift.start_time))
+          )
+        );
 
-        if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+        if (user.role !== 'manager' && (!isExpenseInActiveShift || user.id !== exp.employee_id)) {
           continue;
         }
 
         const numAmount = Number(exp.amount || 0);
 
-        if (isShiftOpen && exp.employee_id) {
+        // Adjust cash custody balance ONLY if the expense actually belongs to the current open shift
+        if (isExpenseInActiveShift && exp.employee_id) {
           if (exp.main_type === 'دعم مالي') {
             await WalletService.adjustEmployeeWallet(exp.employee_id, -numAmount, tx);
           } else {
@@ -313,7 +321,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'لم يتم حذف أي معاملة. تأكد من الصلاحيات أو أن المعاملة غير موجودة' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, message: `تم حذف (${deletedCount}) معاملة مالية وعكس عهدة الكاش بنجاح` });
+    return NextResponse.json({ success: true, message: `تم حذف (${deletedCount}) معاملة مالية بنجاح` });
   } catch (error: any) {
     console.error('Delete Expense Error:', error);
     return NextResponse.json({ error: error.message || 'حدث خطأ أثناء حذف المعاملة' }, { status: 500 });
@@ -333,24 +341,28 @@ export async function PUT(req: Request) {
     if (!exp) return NextResponse.json({ error: 'المعاملة غير موجودة' }, { status: 404 });
 
     const activeShift = exp.employee_id ? await db.shifts.findFirst({
-      where: { employee_id: exp.employee_id, end_time: null }
+      where: { employee_id: exp.employee_id, status: 'مفتوح', end_time: null }
     }) : null;
 
-    const isShiftOpen = Boolean(activeShift);
+    const isExpenseInActiveShift = Boolean(
+      activeShift && (
+        (exp.shift_id && activeShift.id && exp.shift_id === activeShift.id) ||
+        (!exp.shift_id && exp.timestamp && activeShift.start_time && new Date(exp.timestamp) >= new Date(activeShift.start_time))
+      )
+    );
 
     if (!hasPermission(user, 'expenses', 'update')) {
       return NextResponse.json({ error: 'ليس لديك صلاحية تعديل المصروفات. تواصل مع المدير.' }, { status: 403 });
     }
-    if (user.role !== 'manager' && (!isShiftOpen || user.id !== exp.employee_id)) {
+    if (user.role !== 'manager' && (!isExpenseInActiveShift || user.id !== exp.employee_id)) {
       return NextResponse.json({ error: 'لا يمكن التعديل خارج الشفت المفتوح الخاص بك' }, { status: 403 });
     }
-
 
     const numNewAmount = amount !== undefined ? Number(amount) : Number(exp.amount || 0);
     const targetMainType = mainType || exp.main_type;
 
     const updated = await db.$transaction(async (tx: any) => {
-      if (isShiftOpen && exp.employee_id) {
+      if (isExpenseInActiveShift && exp.employee_id) {
         const oldAmount = Number(exp.amount || 0);
         const oldChange = exp.main_type === 'دعم مالي' ? oldAmount : -oldAmount;
         const newChange = targetMainType === 'دعم مالي' ? numNewAmount : -numNewAmount;
