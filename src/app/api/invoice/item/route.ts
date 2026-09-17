@@ -46,14 +46,15 @@ export async function PUT(req: Request) {
 
     await db.$transaction(async (tx) => {
       if (type === 'service') {
-        if (!hasPermission(user, 'services', 'update')) throw new Error('ليس لديك صلاحية تعديل خدمات الطباعة');
         const entry = await tx.service_entries.findUnique({ where: { id } });
         if (!entry) throw new Error('العنصر غير موجود');
 
         const isCompleted = await isInvoiceCompleted(entry.invoice_code);
         if (user.role !== 'manager') {
           if (entry.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
-          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          if (isCompleted && !hasPermission(user, 'services', 'update')) {
+            throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          }
         }
 
         const shiftOpen = await isEmployeeShiftOpen(entry.employee_id, entry.timestamp);
@@ -88,7 +89,9 @@ export async function PUT(req: Request) {
         const isCompleted = await isInvoiceCompleted(ticket.invoice_code);
         if (user.role !== 'manager') {
           if (ticket.employee_id !== user.id) throw new Error('غير مصرح بتعديل هذا العنصر');
-          if (isCompleted) throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          if (isCompleted && !hasPermission(user, 'tickets', 'update')) {
+            throw new Error('لا يمكن التعديل بعد إنهاء الفاتورة');
+          }
         }
 
         const shiftOpen = await isEmployeeShiftOpen(ticket.employee_id, ticket.timestamp);
