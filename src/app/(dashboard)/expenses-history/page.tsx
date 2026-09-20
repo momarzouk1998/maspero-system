@@ -21,9 +21,7 @@ export default function ExpensesHistoryPage() {
   const [filterEmployeeId, setFilterEmployeeId] = useState('');
 
   // Dynamic Months & Days State
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>('');
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -104,30 +102,6 @@ export default function ExpensesHistoryPage() {
 
     fetchTreeData();
   }, []);
-
-  useEffect(() => {
-    fetch(`/api/expenses/months?mainType=${encodeURIComponent(mainTypeFilter)}&employeeId=${filterEmployeeId}`)
-      .then(r => r.json())
-      .then(d => {
-        setAvailableMonths(d.months || []);
-        setSelectedMonth('');
-        setAvailableDays([]);
-        setSelectedDay('');
-      })
-      .catch(console.error);
-  }, [mainTypeFilter, filterEmployeeId]);
-
-  useEffect(() => {
-    if (!selectedMonth) {
-      setAvailableDays([]);
-      setSelectedDay('');
-      return;
-    }
-    fetch(`/api/expenses/days?mainType=${encodeURIComponent(mainTypeFilter)}&month=${encodeURIComponent(selectedMonth)}&employeeId=${filterEmployeeId}`)
-      .then(r => r.json())
-      .then(d => setAvailableDays(d.days || []))
-      .catch(console.error);
-  }, [selectedMonth, mainTypeFilter, filterEmployeeId]);
 
   const hasActiveFilters = mainTypeFilter || startDate || endDate || filterEmployeeId;
 
@@ -392,7 +366,7 @@ export default function ExpensesHistoryPage() {
                 onClick={handleSelectAllNode}
                 className={`flex items-center justify-between p-2 rounded-xl border cursor-pointer transition-all ${
                   !selectedMonth && !selectedDay && !mainTypeFilter
-                    ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                    ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-md ring-2 ring-rose-300'
                     : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
                 }`}
               >
@@ -412,14 +386,17 @@ export default function ExpensesHistoryPage() {
                 <div className="mr-2 border-r-2 border-rose-200 pr-1.5 space-y-1">
                   {treeData?.months?.map((m: any) => {
                     const isMonthExpanded = expandedMonths.includes(m.month);
-                    const isMonthSelected = selectedMonth === m.month && !selectedDay && !mainTypeFilter;
+                    const isMonthActive = selectedMonth === m.month;
+                    const isMonthOnlySelected = selectedMonth === m.month && !selectedDay && !mainTypeFilter;
 
                     return (
                       <div key={m.month} className="space-y-1">
                         {/* Month header */}
                         <div className={`flex items-center justify-between p-1.5 rounded-xl border transition-all group cursor-pointer ${
-                          isMonthSelected
-                            ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                          isMonthOnlySelected
+                            ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-md ring-2 ring-rose-300'
+                            : isMonthActive
+                            ? 'bg-rose-100 border-rose-400 text-rose-950 font-bold shadow-sm'
                             : 'bg-slate-100 hover:bg-rose-50 border-slate-200 hover:border-rose-300 text-slate-800'
                         }`}>
                           <div className="flex items-center gap-1 min-w-0">
@@ -429,7 +406,7 @@ export default function ExpensesHistoryPage() {
                                 e.stopPropagation();
                                 toggleMonth(m.month);
                               }}
-                              className="p-1 hover:bg-slate-200/60 rounded text-slate-600"
+                              className={`p-1 rounded ${isMonthOnlySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-200/60 text-slate-600'}`}
                             >
                               <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
                             </button>
@@ -440,7 +417,11 @@ export default function ExpensesHistoryPage() {
                               📅 شهر {m.month}
                             </span>
                           </div>
-                          <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md text-rose-700 bg-rose-50 border border-rose-200">
+                          <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${
+                            isMonthOnlySelected
+                              ? 'bg-white/20 text-white border-white/30'
+                              : 'text-rose-700 bg-rose-50 border-rose-200'
+                          }`}>
                             {formatNumberLocale(m.totalSum)}
                           </span>
                         </div>
@@ -450,14 +431,17 @@ export default function ExpensesHistoryPage() {
                           <div className="mr-3 border-r-2 border-rose-300 pr-1.5 space-y-1">
                             {m.days?.map((d: any) => {
                               const isDayExpanded = expandedDays.includes(d.day);
-                              const isDaySelected = selectedDay === d.day && !mainTypeFilter;
+                              const isDayActive = selectedDay === d.day;
+                              const isDayOnlySelected = selectedDay === d.day && !mainTypeFilter;
 
                               return (
                                 <div key={d.day} className="space-y-1">
                                   {/* Day header */}
                                   <div className={`flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition-all ${
-                                    isDaySelected
-                                      ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                                    isDayOnlySelected
+                                      ? 'bg-rose-600 text-white font-extrabold border-rose-600 shadow-md ring-2 ring-rose-400'
+                                      : isDayActive
+                                      ? 'bg-rose-100 border-rose-400 text-rose-950 font-bold shadow-sm ring-1 ring-rose-300'
                                       : 'bg-white hover:bg-rose-50 border-slate-200 text-slate-700'
                                   }`}>
                                     <div className="flex items-center gap-1 min-w-0">
@@ -467,7 +451,7 @@ export default function ExpensesHistoryPage() {
                                           e.stopPropagation();
                                           toggleDay(d.day);
                                         }}
-                                        className={`p-0.5 rounded ${isDaySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
+                                        className={`p-0.5 rounded ${isDayOnlySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
                                       >
                                         <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isDayExpanded ? '-rotate-90' : ''}`} />
                                       </button>
@@ -479,7 +463,7 @@ export default function ExpensesHistoryPage() {
                                       </span>
                                     </div>
                                     <span className={`text-[9px] font-mono font-bold px-1 py-0.5 rounded ${
-                                      isDaySelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                                      isDayOnlySelected ? 'bg-white/20 text-white' : isDayActive ? 'bg-rose-200 text-rose-900' : 'bg-slate-100 text-slate-700'
                                     }`}>
                                       {formatNumberLocale(d.totalSum)}
                                     </span>
@@ -497,15 +481,17 @@ export default function ExpensesHistoryPage() {
                                             onClick={() => handleSelectCategory(c.category, d.day, m.month)}
                                             className={`flex items-center justify-between p-1.5 rounded-md border cursor-pointer transition-all ${
                                               isCatSelected
-                                                ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
-                                                : 'bg-slate-50 hover:bg-rose-100/60 border-slate-200 text-slate-600'
+                                                ? 'bg-rose-600 text-white font-extrabold border-rose-600 shadow-md ring-2 ring-rose-400 scale-[1.02]'
+                                                : 'bg-slate-50 hover:bg-rose-100/60 border-slate-200 text-slate-700'
                                             }`}
                                           >
-                                            <div className="flex items-center gap-1.5 text-[10px]">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                              <span>{c.category}</span>
+                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                              <span className={`w-2 h-2 rounded-full ${isCatSelected ? 'bg-white shadow-sm' : 'bg-rose-500'}`} />
+                                              <span className={isCatSelected ? 'font-black tracking-wide' : 'font-medium'}>{c.category}</span>
                                             </div>
-                                            <span className="text-[9px] font-mono font-bold">
+                                            <span className={`text-[10px] font-mono font-bold px-1 py-0.5 rounded ${
+                                              isCatSelected ? 'bg-white/25 text-white' : 'text-slate-600 bg-white/70'
+                                            }`}>
                                               {formatNumberLocale(c.totalSum)}
                                             </span>
                                           </div>
@@ -529,14 +515,17 @@ export default function ExpensesHistoryPage() {
                 <div className="mr-2 border-r-2 border-rose-200 pr-1.5 space-y-1">
                   {treeData?.categories?.map((cat: any) => {
                     const isCatExpanded = expandedCategories.includes(cat.category);
-                    const isCatSelected = mainTypeFilter === cat.category && !selectedMonth && !selectedDay;
+                    const isCatActive = mainTypeFilter === cat.category;
+                    const isCatOnlySelected = mainTypeFilter === cat.category && !selectedMonth && !selectedDay;
 
                     return (
                       <div key={cat.category} className="space-y-1">
                         {/* Category Header */}
                         <div className={`flex items-center justify-between p-1.5 rounded-xl border transition-all group cursor-pointer ${
-                          isCatSelected
-                            ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                          isCatOnlySelected
+                            ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-md ring-2 ring-rose-300'
+                            : isCatActive
+                            ? 'bg-rose-100 border-rose-400 text-rose-950 font-bold shadow-sm'
                             : 'bg-slate-100 hover:bg-rose-50 border-slate-200 hover:border-rose-300 text-slate-800'
                         }`}>
                           <div className="flex items-center gap-1 min-w-0">
@@ -546,13 +535,13 @@ export default function ExpensesHistoryPage() {
                                 e.stopPropagation();
                                 toggleCategory(cat.category);
                               }}
-                              className="p-1 hover:bg-slate-200/60 rounded text-slate-600"
+                              className={`p-1 rounded ${isCatOnlySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-200/60 text-slate-600'}`}
                             >
                               <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isCatExpanded ? '-rotate-90' : ''}`} />
                             </button>
                             <span
                               onClick={() => {
-                                if (isCatSelected) {
+                                if (isCatOnlySelected) {
                                   handleSelectAllNode();
                                 } else {
                                   setMainTypeFilter(cat.category);
@@ -567,7 +556,11 @@ export default function ExpensesHistoryPage() {
                               🏷️ {cat.category}
                             </span>
                           </div>
-                          <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md text-rose-700 bg-rose-50 border border-rose-200">
+                          <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${
+                            isCatOnlySelected
+                              ? 'bg-white/20 text-white border-white/30'
+                              : 'text-rose-700 bg-rose-50 border-rose-200'
+                          }`}>
                             {formatNumberLocale(cat.totalSum)}
                           </span>
                         </div>
@@ -577,14 +570,17 @@ export default function ExpensesHistoryPage() {
                           <div className="mr-3 border-r-2 border-rose-300 pr-1.5 space-y-1">
                             {cat.months?.map((m: any) => {
                               const isMonthExpanded = expandedMonths.includes(`${cat.category}-${m.month}`);
-                              const isMonthSelected = mainTypeFilter === cat.category && selectedMonth === m.month && !selectedDay;
+                              const isMonthActive = mainTypeFilter === cat.category && selectedMonth === m.month;
+                              const isMonthOnlySelected = mainTypeFilter === cat.category && selectedMonth === m.month && !selectedDay;
 
                               return (
                                 <div key={m.month} className="space-y-1">
                                   {/* Month header */}
                                   <div className={`flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition-all ${
-                                    isMonthSelected
-                                      ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                                    isMonthOnlySelected
+                                      ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-md ring-2 ring-rose-300'
+                                      : isMonthActive
+                                      ? 'bg-rose-100 border-rose-400 text-rose-950 font-bold shadow-sm'
                                       : 'bg-slate-50 hover:bg-rose-50 border-slate-200 text-slate-700'
                                   }`}>
                                     <div className="flex items-center gap-1 min-w-0">
@@ -594,7 +590,7 @@ export default function ExpensesHistoryPage() {
                                           e.stopPropagation();
                                           toggleMonth(`${cat.category}-${m.month}`);
                                         }}
-                                        className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
+                                        className={`p-0.5 rounded ${isMonthOnlySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
                                       >
                                         <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
                                       </button>
@@ -608,7 +604,9 @@ export default function ExpensesHistoryPage() {
                                         📅 {m.month}
                                       </span>
                                     </div>
-                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md">
+                                    <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md ${
+                                      isMonthOnlySelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                                    }`}>
                                       {formatNumberLocale(m.totalSum)}
                                     </span>
                                   </div>
@@ -633,15 +631,17 @@ export default function ExpensesHistoryPage() {
                                             }}
                                             className={`flex items-center justify-between p-1.5 rounded-md border cursor-pointer transition-all ${
                                               isDaySelected
-                                                ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                                                ? 'bg-rose-600 text-white font-extrabold border-rose-600 shadow-md ring-2 ring-rose-400 scale-[1.02]'
                                                 : 'bg-white hover:bg-rose-50 border-slate-200 text-slate-600'
                                             }`}
                                           >
-                                            <div className="flex items-center gap-1.5 text-[10px]">
-                                              <span className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? 'bg-white' : 'bg-slate-400'}`} />
-                                              <span>{d.day}</span>
+                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                              <span className={`w-2 h-2 rounded-full ${isDaySelected ? 'bg-white shadow-sm' : 'bg-slate-400'}`} />
+                                              <span className={isDaySelected ? 'font-black' : ''}>{d.day}</span>
                                             </div>
-                                            <span className={`text-[9px] font-mono font-bold ${isDaySelected ? 'text-white' : 'text-slate-600'}`}>
+                                            <span className={`text-[10px] font-mono font-bold px-1 py-0.5 rounded ${
+                                              isDaySelected ? 'bg-white/25 text-white' : 'text-slate-600'
+                                            }`}>
                                               {formatNumberLocale(d.totalSum)}
                                             </span>
                                           </div>

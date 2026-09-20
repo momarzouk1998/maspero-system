@@ -270,7 +270,8 @@ export default function TicketsPage() {
                 </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
-                const isMonthSelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
+                const isMonthActive = selectedMonth === m.month;
+                const isMonthOnlySelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
 
                 return (
                   <div key={m.month} className="space-y-1">
@@ -289,13 +290,17 @@ export default function TicketsPage() {
                         setFilterEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
                       }}
                       className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                        isMonthSelected
-                          ? 'bg-purple-100 border-purple-400 text-purple-900 font-bold shadow-sm'
+                        isMonthOnlySelected
+                          ? 'bg-purple-600 text-white font-bold border-purple-600 shadow-md ring-2 ring-purple-300'
+                          : isMonthActive
+                          ? 'bg-purple-100 border-purple-400 text-purple-950 font-bold shadow-sm'
                           : 'bg-slate-100 hover:bg-purple-50 border-slate-200 hover:border-purple-300 text-slate-800'
                       }`}
                     >
                       <span className="font-bold">📅 شهر {m.month}</span>
-                      <span className="font-mono font-bold text-purple-700 text-[11px]">{formatNumberLocale(m.totalSum, 'en-US')}</span>
+                      <span className={`font-mono font-bold text-[11px] px-1.5 py-0.5 rounded ${
+                        isMonthOnlySelected ? 'bg-white/20 text-white' : 'text-purple-700 bg-purple-50'
+                      }`}>{formatNumberLocale(m.totalSum, 'en-US')}</span>
                     </div>
 
                     {/* Days inside Month */}
@@ -303,7 +308,8 @@ export default function TicketsPage() {
                       <div className="pr-3 space-y-1 border-r-2 border-purple-200 mr-2">
                         {m.days.map((d: any) => {
                           const isDayExpanded = expandedDays.includes(d.day);
-                          const isDaySelected = selectedDay === d.day && !selectedCategory;
+                          const isDayActive = selectedDay === d.day;
+                          const isDayOnlySelected = selectedDay === d.day && !selectedCategory;
 
                           return (
                             <div key={d.day} className="space-y-1">
@@ -320,13 +326,17 @@ export default function TicketsPage() {
                                   setFilterEndDate(`${yyyy}-${mm}-${dd}`);
                                 }}
                                 className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-all ${
-                                  isDaySelected
-                                    ? 'bg-purple-600 text-white font-bold border-purple-600 shadow-sm'
+                                  isDayOnlySelected
+                                    ? 'bg-purple-600 text-white font-extrabold border-purple-600 shadow-md ring-2 ring-purple-400'
+                                    : isDayActive
+                                    ? 'bg-purple-100 border-purple-400 text-purple-950 font-bold shadow-sm ring-1 ring-purple-300'
                                     : 'bg-white hover:bg-purple-50 border-slate-200 text-slate-700'
                                 }`}
                               >
                                 <span className="font-bold">📆 {d.day}</span>
-                                <span className={`font-mono font-bold ${isDaySelected ? 'text-white' : 'text-purple-600'}`}>{formatNumberLocale(d.totalSum, 'en-US')}</span>
+                                <span className={`font-mono font-bold px-1 py-0.5 rounded ${
+                                  isDayOnlySelected ? 'bg-white/20 text-white' : isDayActive ? 'bg-purple-200 text-purple-900' : 'text-purple-600'
+                                }`}>{formatNumberLocale(d.totalSum, 'en-US')}</span>
                               </div>
 
                               {/* Categories inside Day */}
@@ -354,12 +364,17 @@ export default function TicketsPage() {
                                         }}
                                         className={`p-1.5 rounded-md border text-[10px] cursor-pointer flex items-center justify-between transition-all ${
                                           isCatSelected
-                                            ? 'bg-purple-100 text-purple-900 border-purple-400 font-bold shadow-sm'
-                                            : 'bg-slate-50 hover:bg-purple-100/60 border-slate-200 text-slate-600'
+                                            ? 'bg-purple-600 text-white font-extrabold border-purple-600 shadow-md ring-2 ring-purple-400 scale-[1.02]'
+                                            : 'bg-slate-50 hover:bg-purple-100/60 border-slate-200 text-slate-700'
                                         }`}
                                       >
-                                        <span>🚆 {c.category}</span>
-                                        <span className="font-mono font-bold">{formatNumberLocale(c.totalSum, 'en-US')}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`w-2 h-2 rounded-full ${isCatSelected ? 'bg-white shadow-sm' : 'bg-purple-500'}`} />
+                                          <span className={isCatSelected ? 'font-black tracking-wide' : 'font-medium'}>🚆 {c.category}</span>
+                                        </div>
+                                        <span className={`font-mono font-bold px-1 py-0.5 rounded ${
+                                          isCatSelected ? 'bg-white/25 text-white' : 'text-slate-700'
+                                        }`}>{formatNumberLocale(c.totalSum, 'en-US')}</span>
                                       </div>
                                     );
                                   })}

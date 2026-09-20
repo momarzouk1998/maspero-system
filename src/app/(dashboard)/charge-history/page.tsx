@@ -306,7 +306,8 @@ export default function ChargeHistoryPage() {
                 </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
-                const isMonthSelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
+                const isMonthActive = selectedMonth === m.month;
+                const isMonthOnlySelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
 
                 return (
                   <div key={m.month} className="space-y-1">
@@ -327,13 +328,17 @@ export default function ChargeHistoryPage() {
                         setEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
                       }}
                       className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                        isMonthSelected
-                          ? 'bg-amber-100 border-amber-400 text-amber-900 font-bold shadow-sm'
+                        isMonthOnlySelected
+                          ? 'bg-amber-600 text-white font-bold border-amber-600 shadow-md ring-2 ring-amber-300'
+                          : isMonthActive
+                          ? 'bg-amber-100 border-amber-400 text-amber-950 font-bold shadow-sm'
                           : 'bg-slate-100 hover:bg-amber-50 border-slate-200 hover:border-amber-300 text-slate-800'
                       }`}
                     >
                       <span className="font-bold">📅 شهر {m.month}</span>
-                      <span className="font-mono font-bold text-amber-700 text-[11px]">{formatNumber(m.totalSum)}</span>
+                      <span className={`font-mono font-bold text-[11px] px-1.5 py-0.5 rounded ${
+                        isMonthOnlySelected ? 'bg-white/20 text-white' : 'text-amber-700 bg-amber-50'
+                      }`}>{formatNumber(m.totalSum)}</span>
                     </div>
 
                     {/* Days inside Month */}
@@ -341,7 +346,8 @@ export default function ChargeHistoryPage() {
                       <div className="pr-3 space-y-1 border-r-2 border-amber-200 mr-2">
                         {m.days.map((d: any) => {
                           const isDayExpanded = expandedDays.includes(d.day);
-                          const isDaySelected = selectedDay === d.day && !selectedCategory && !transactionType;
+                          const isDayActive = selectedDay === d.day;
+                          const isDayOnlySelected = selectedDay === d.day && !selectedCategory && !transactionType;
 
                           return (
                             <div key={d.day} className="space-y-1">
@@ -359,13 +365,17 @@ export default function ChargeHistoryPage() {
                                   setEndDate(`${yyyy}-${mm}-${dd}`);
                                 }}
                                 className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-all ${
-                                  isDaySelected
-                                    ? 'bg-amber-500 text-white font-bold border-amber-500 shadow-sm'
+                                  isDayOnlySelected
+                                    ? 'bg-amber-600 text-white font-extrabold border-amber-600 shadow-md ring-2 ring-amber-400'
+                                    : isDayActive
+                                    ? 'bg-amber-100 border-amber-400 text-amber-950 font-bold shadow-sm ring-1 ring-amber-300'
                                     : 'bg-white hover:bg-amber-50 border-slate-200 text-slate-700'
                                 }`}
                               >
                                 <span className="font-bold">📆 {d.day}</span>
-                                <span className={`font-mono font-bold ${isDaySelected ? 'text-white' : 'text-amber-600'}`}>{formatNumber(d.totalSum)}</span>
+                                <span className={`font-mono font-bold px-1 py-0.5 rounded ${
+                                  isDayOnlySelected ? 'bg-white/20 text-white' : isDayActive ? 'bg-amber-200 text-amber-900' : 'text-amber-600'
+                                }`}>{formatNumber(d.totalSum)}</span>
                               </div>
 
                               {/* Categories inside Day */}
@@ -394,12 +404,17 @@ export default function ChargeHistoryPage() {
                                         }}
                                         className={`p-1.5 rounded-md border text-[10px] cursor-pointer flex items-center justify-between transition-all ${
                                           isCatSelected
-                                            ? 'bg-amber-100 text-amber-900 border-amber-400 font-bold shadow-sm'
-                                            : 'bg-slate-50 hover:bg-amber-100/60 border-slate-200 text-slate-600'
+                                            ? 'bg-amber-600 text-white font-extrabold border-amber-600 shadow-md ring-2 ring-amber-400 scale-[1.02]'
+                                            : 'bg-slate-50 hover:bg-amber-100/60 border-slate-200 text-slate-700'
                                         }`}
                                       >
-                                        <span>⚡ {c.category}</span>
-                                        <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`w-2 h-2 rounded-full ${isCatSelected ? 'bg-white shadow-sm' : 'bg-amber-500'}`} />
+                                          <span className={isCatSelected ? 'font-black tracking-wide' : 'font-medium'}>⚡ {c.category}</span>
+                                        </div>
+                                        <span className={`font-mono font-bold px-1 py-0.5 rounded ${
+                                          isCatSelected ? 'bg-white/25 text-white' : 'text-slate-700'
+                                        }`}>{formatNumber(c.totalSum)}</span>
                                       </div>
                                     );
                                   })}
