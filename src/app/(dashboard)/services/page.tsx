@@ -48,6 +48,9 @@ export default function ServicesPage() {
   }, [editAmount, editCommissionPercent, editIsCommissionable, editingItem]);
 
   const [treeData, setTreeData] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
@@ -148,6 +151,9 @@ export default function ServicesPage() {
     setFilterEmployeeId('');
     setFilterStartDate('');
     setFilterEndDate('');
+    setSelectedMonth('');
+    setSelectedDay('');
+    setSelectedCategory('');
     setIsFilterOpen(false);
   };
 
@@ -285,9 +291,12 @@ export default function ServicesPage() {
                     setFilterStartDate('');
                     setFilterEndDate('');
                     setFilterServiceName('');
+                    setSelectedMonth('');
+                    setSelectedDay('');
+                    setSelectedCategory('');
                   }}
                   className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                    !filterStartDate && !filterEndDate && !filterServiceName
+                    !filterStartDate && !filterEndDate && !filterServiceName && !selectedMonth && !selectedDay
                       ? 'bg-blue-600 text-white font-bold border-blue-600 shadow-sm'
                       : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
                   }`}
@@ -299,6 +308,7 @@ export default function ServicesPage() {
                 </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
+                const isMonthSelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
 
                 return (
                   <div key={m.month} className="space-y-1">
@@ -308,14 +318,22 @@ export default function ServicesPage() {
                         setExpandedMonths(prev =>
                           isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
                         );
+                        setSelectedMonth(m.month);
+                        setSelectedDay('');
+                        setSelectedCategory('');
+                        setFilterServiceName('');
                         const [yyyy, mm] = m.month.split(' ');
                         const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
                         setFilterStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
                         setFilterEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
                       }}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 cursor-pointer flex items-center justify-between transition-all"
+                      className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                        isMonthSelected
+                          ? 'bg-blue-100 border-blue-400 text-blue-900 font-bold shadow-sm'
+                          : 'bg-slate-100 hover:bg-blue-50 border-slate-200 hover:border-blue-300 text-slate-800'
+                      }`}
                     >
-                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                      <span className="font-bold">📅 شهر {m.month}</span>
                       <span className="font-mono font-bold text-blue-700 text-[11px]">{formatNumberLocale(m.totalSum, 'en-US')}</span>
                     </div>
 
@@ -324,6 +342,7 @@ export default function ServicesPage() {
                       <div className="pr-3 space-y-1 border-r-2 border-blue-200 mr-2">
                         {m.days.map((d: any) => {
                           const isDayExpanded = expandedDays.includes(d.day);
+                          const isDaySelected = selectedDay === d.day && !selectedCategory && !filterServiceName;
 
                           return (
                             <div key={d.day} className="space-y-1">
@@ -332,34 +351,60 @@ export default function ServicesPage() {
                                   setExpandedDays(prev =>
                                     isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
                                   );
+                                  setSelectedMonth(m.month);
+                                  setSelectedDay(d.day);
+                                  setSelectedCategory('');
+                                  setFilterServiceName('');
                                   const [dd, mm, yyyy] = d.day.split('/');
                                   setFilterStartDate(`${yyyy}-${mm}-${dd}`);
                                   setFilterEndDate(`${yyyy}-${mm}-${dd}`);
                                 }}
-                                className="p-1.5 rounded-lg bg-white hover:bg-blue-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                                className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-all ${
+                                  isDaySelected
+                                    ? 'bg-blue-600 text-white font-bold border-blue-600 shadow-sm'
+                                    : 'bg-white hover:bg-blue-50 border-slate-200 text-slate-700'
+                                }`}
                               >
-                                <span className="font-bold text-slate-700">📆 {d.day}</span>
-                                <span className="font-mono font-bold text-blue-600">{formatNumberLocale(d.totalSum, 'en-US')}</span>
+                                <span className="font-bold">📆 {d.day}</span>
+                                <span className={`font-mono font-bold ${isDaySelected ? 'text-white' : 'text-blue-600'}`}>{formatNumberLocale(d.totalSum, 'en-US')}</span>
                               </div>
 
                               {/* Categories inside Day */}
                               {isDayExpanded && d.categories && (
                                 <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
-                                  {d.categories.map((c: any) => (
-                                    <div
-                                      key={c.category}
-                                      onClick={() => {
-                                        setFilterServiceName(c.category);
-                                        const [dd, mm, yyyy] = d.day.split('/');
-                                        setFilterStartDate(`${yyyy}-${mm}-${dd}`);
-                                        setFilterEndDate(`${yyyy}-${mm}-${dd}`);
-                                      }}
-                                      className="p-1 rounded bg-slate-50 hover:bg-blue-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
-                                    >
-                                      <span>🖨️ {c.category}</span>
-                                      <span className="font-mono font-bold">{formatNumberLocale(c.totalSum, 'en-US')}</span>
-                                    </div>
-                                  ))}
+                                  {d.categories.map((c: any) => {
+                                    const isCatSelected = selectedDay === d.day && (selectedCategory === c.category || filterServiceName === c.category);
+
+                                    return (
+                                      <div
+                                        key={c.category}
+                                        onClick={() => {
+                                          const [dd, mm, yyyy] = d.day.split('/');
+                                          if (isCatSelected) {
+                                            setSelectedCategory('');
+                                            setFilterServiceName('');
+                                            setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                            setFilterEndDate(`${yyyy}-${mm}-${dd}`);
+                                          } else {
+                                            setSelectedMonth(m.month);
+                                            setSelectedDay(d.day);
+                                            setSelectedCategory(c.category);
+                                            setFilterServiceName(c.category);
+                                            setFilterStartDate(`${yyyy}-${mm}-${dd}`);
+                                            setFilterEndDate(`${yyyy}-${mm}-${dd}`);
+                                          }
+                                        }}
+                                        className={`p-1.5 rounded-md border text-[10px] cursor-pointer flex items-center justify-between transition-all ${
+                                          isCatSelected
+                                            ? 'bg-blue-100 text-blue-900 border-blue-400 font-bold shadow-sm'
+                                            : 'bg-slate-50 hover:bg-blue-100/60 border-slate-200 text-slate-600'
+                                        }`}
+                                      >
+                                        <span>🖨️ {c.category}</span>
+                                        <span className="font-mono font-bold">{formatNumberLocale(c.totalSum, 'en-US')}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>

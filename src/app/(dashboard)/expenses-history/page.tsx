@@ -185,6 +185,7 @@ export default function ExpensesHistoryPage() {
   const handleSelectMonth = (m: string) => {
     setSelectedMonth(m);
     setSelectedDay('');
+    setMainTypeFilter('');
     const parts = m.split(' ');
     if (parts.length === 2) {
       const yyyy = parseInt(parts[0]);
@@ -199,6 +200,7 @@ export default function ExpensesHistoryPage() {
   const handleSelectDay = (dStr: string, monthName: string) => {
     setSelectedMonth(monthName);
     setSelectedDay(dStr);
+    setMainTypeFilter('');
     const parts = dStr.split('/');
     if (parts.length === 3) {
       const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -208,6 +210,16 @@ export default function ExpensesHistoryPage() {
   };
 
   const handleSelectCategory = (cat: string, dStr: string, monthName: string) => {
+    if (selectedDay === dStr && mainTypeFilter === cat) {
+      setMainTypeFilter('');
+      const parts = dStr.split('/');
+      if (parts.length === 3) {
+        const formatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        setStartDate(formatted);
+        setEndDate(formatted);
+      }
+      return;
+    }
     setSelectedMonth(monthName);
     setSelectedDay(dStr);
     setMainTypeFilter(cat);
@@ -378,32 +390,38 @@ export default function ExpensesHistoryPage() {
               {/* Grand Total "الكل" node */}
               <div
                 onClick={handleSelectAllNode}
-                className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center justify-between p-2 rounded-xl border cursor-pointer transition-all ${
                   !selectedMonth && !selectedDay && !mainTypeFilter
-                    ? 'bg-blue-50 text-blue-700 font-bold shadow-sm'
-                    : 'hover:bg-slate-50'
+                    ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
-                  <span>الكل</span>
+                <div className="flex items-center gap-1.5 font-bold">
+                  <ChevronLeft className={`w-3.5 h-3.5 ${!selectedMonth && !selectedDay && !mainTypeFilter ? 'text-white' : 'opacity-40'}`} />
+                  <span>🌐 الكل</span>
                 </div>
-                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                  !selectedMonth && !selectedDay && !mainTypeFilter ? 'bg-white/20 text-white' : 'bg-slate-100 text-rose-700'
+                }`}>
                   {formatNumberLocale(treeData?.totalSum || 0)}
                 </span>
               </div>
 
               {/* MODE 1: BY MONTH (بالشهر) */}
               {treeMode === 'month' && (
-                <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+                <div className="mr-2 border-r-2 border-rose-200 pr-1.5 space-y-1">
                   {treeData?.months?.map((m: any) => {
                     const isMonthExpanded = expandedMonths.includes(m.month);
-                    const isMonthSelected = selectedMonth === m.month && !selectedDay;
+                    const isMonthSelected = selectedMonth === m.month && !selectedDay && !mainTypeFilter;
 
                     return (
                       <div key={m.month} className="space-y-1">
                         {/* Month header */}
-                        <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                        <div className={`flex items-center justify-between p-1.5 rounded-xl border transition-all group cursor-pointer ${
+                          isMonthSelected
+                            ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                            : 'bg-slate-100 hover:bg-rose-50 border-slate-200 hover:border-rose-300 text-slate-800'
+                        }`}>
                           <div className="flex items-center gap-1 min-w-0">
                             <button
                               type="button"
@@ -411,25 +429,25 @@ export default function ExpensesHistoryPage() {
                                 e.stopPropagation();
                                 toggleMonth(m.month);
                               }}
-                              className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                              className="p-1 hover:bg-slate-200/60 rounded text-slate-600"
                             >
                               <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
                             </button>
                             <span
                               onClick={() => handleSelectMonth(m.month)}
-                              className={`cursor-pointer truncate ${isMonthSelected ? 'text-blue-700 font-bold' : ''}`}
+                              className="cursor-pointer truncate font-bold text-xs"
                             >
-                              {m.month}
+                              📅 شهر {m.month}
                             </span>
                           </div>
-                          <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                          <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md text-rose-700 bg-rose-50 border border-rose-200">
                             {formatNumberLocale(m.totalSum)}
                           </span>
                         </div>
 
                         {/* Days level */}
                         {isMonthExpanded && (
-                          <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                          <div className="mr-3 border-r-2 border-rose-300 pr-1.5 space-y-1">
                             {m.days?.map((d: any) => {
                               const isDayExpanded = expandedDays.includes(d.day);
                               const isDaySelected = selectedDay === d.day && !mainTypeFilter;
@@ -437,7 +455,11 @@ export default function ExpensesHistoryPage() {
                               return (
                                 <div key={d.day} className="space-y-1">
                                   {/* Day header */}
-                                  <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                  <div className={`flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition-all ${
+                                    isDaySelected
+                                      ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                                      : 'bg-white hover:bg-rose-50 border-slate-200 text-slate-700'
+                                  }`}>
                                     <div className="flex items-center gap-1 min-w-0">
                                       <button
                                         type="button"
@@ -445,25 +467,27 @@ export default function ExpensesHistoryPage() {
                                           e.stopPropagation();
                                           toggleDay(d.day);
                                         }}
-                                        className="p-0.5 hover:bg-slate-100 rounded text-slate-500"
+                                        className={`p-0.5 rounded ${isDaySelected ? 'hover:bg-rose-700 text-white' : 'hover:bg-slate-100 text-slate-500'}`}
                                       >
                                         <ChevronLeft className={`w-3 h-3 transition-transform duration-200 ${isDayExpanded ? '-rotate-90' : ''}`} />
                                       </button>
                                       <span
                                         onClick={() => handleSelectDay(d.day, m.month)}
-                                        className={`cursor-pointer truncate ${isDaySelected ? 'text-blue-700 font-bold' : ''}`}
+                                        className="cursor-pointer truncate text-[11px] font-bold"
                                       >
-                                        {d.day}
+                                        📆 {d.day}
                                       </span>
                                     </div>
-                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1 py-0.5 rounded">
+                                    <span className={`text-[9px] font-mono font-bold px-1 py-0.5 rounded ${
+                                      isDaySelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                                    }`}>
                                       {formatNumberLocale(d.totalSum)}
                                     </span>
                                   </div>
 
                                   {/* Categories level */}
                                   {isDayExpanded && (
-                                    <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                                    <div className="mr-3 border-r-2 border-slate-300 pr-1.5 space-y-1">
                                       {d.categories?.map((c: any) => {
                                         const isCatSelected = selectedDay === d.day && mainTypeFilter === c.category;
 
@@ -471,15 +495,17 @@ export default function ExpensesHistoryPage() {
                                           <div
                                             key={c.category}
                                             onClick={() => handleSelectCategory(c.category, d.day, m.month)}
-                                            className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-blue-50/50 transition-colors ${
-                                              isCatSelected ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                                            className={`flex items-center justify-between p-1.5 rounded-md border cursor-pointer transition-all ${
+                                              isCatSelected
+                                                ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                                                : 'bg-slate-50 hover:bg-rose-100/60 border-slate-200 text-slate-600'
                                             }`}
                                           >
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 text-[10px]">
                                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                               <span>{c.category}</span>
                                             </div>
-                                            <span className="text-[9px] text-slate-500 font-mono">
+                                            <span className="text-[9px] font-mono font-bold">
                                               {formatNumberLocale(c.totalSum)}
                                             </span>
                                           </div>
@@ -500,15 +526,19 @@ export default function ExpensesHistoryPage() {
 
               {/* MODE 2: BY CATEGORY (بالتصنيف) */}
               {treeMode === 'category' && (
-                <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+                <div className="mr-2 border-r-2 border-rose-200 pr-1.5 space-y-1">
                   {treeData?.categories?.map((cat: any) => {
                     const isCatExpanded = expandedCategories.includes(cat.category);
-                    const isCatSelected = mainTypeFilter === cat.category && !selectedMonth;
+                    const isCatSelected = mainTypeFilter === cat.category && !selectedMonth && !selectedDay;
 
                     return (
                       <div key={cat.category} className="space-y-1">
                         {/* Category Header */}
-                        <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                        <div className={`flex items-center justify-between p-1.5 rounded-xl border transition-all group cursor-pointer ${
+                          isCatSelected
+                            ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                            : 'bg-slate-100 hover:bg-rose-50 border-slate-200 hover:border-rose-300 text-slate-800'
+                        }`}>
                           <div className="flex items-center gap-1 min-w-0">
                             <button
                               type="button"
@@ -516,31 +546,35 @@ export default function ExpensesHistoryPage() {
                                 e.stopPropagation();
                                 toggleCategory(cat.category);
                               }}
-                              className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                              className="p-1 hover:bg-slate-200/60 rounded text-slate-600"
                             >
                               <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isCatExpanded ? '-rotate-90' : ''}`} />
                             </button>
                             <span
                               onClick={() => {
-                                setMainTypeFilter(cat.category);
-                                setStartDate('');
-                                setEndDate('');
-                                setSelectedMonth('');
-                                setSelectedDay('');
+                                if (isCatSelected) {
+                                  handleSelectAllNode();
+                                } else {
+                                  setMainTypeFilter(cat.category);
+                                  setStartDate('');
+                                  setEndDate('');
+                                  setSelectedMonth('');
+                                  setSelectedDay('');
+                                }
                               }}
-                              className={`cursor-pointer truncate font-bold ${isCatSelected ? 'text-blue-700 font-bold' : 'text-slate-900'}`}
+                              className="cursor-pointer truncate font-bold text-xs"
                             >
-                              {cat.category}
+                              🏷️ {cat.category}
                             </span>
                           </div>
-                          <span className="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                          <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-md text-rose-700 bg-rose-50 border border-rose-200">
                             {formatNumberLocale(cat.totalSum)}
                           </span>
                         </div>
 
                         {/* Months under Category */}
                         {isCatExpanded && (
-                          <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                          <div className="mr-3 border-r-2 border-rose-300 pr-1.5 space-y-1">
                             {cat.months?.map((m: any) => {
                               const isMonthExpanded = expandedMonths.includes(`${cat.category}-${m.month}`);
                               const isMonthSelected = mainTypeFilter === cat.category && selectedMonth === m.month && !selectedDay;
@@ -548,7 +582,11 @@ export default function ExpensesHistoryPage() {
                               return (
                                 <div key={m.month} className="space-y-1">
                                   {/* Month header */}
-                                  <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                  <div className={`flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition-all ${
+                                    isMonthSelected
+                                      ? 'bg-rose-100 border-rose-400 text-rose-900 font-bold shadow-sm'
+                                      : 'bg-slate-50 hover:bg-rose-50 border-slate-200 text-slate-700'
+                                  }`}>
                                     <div className="flex items-center gap-1 min-w-0">
                                       <button
                                         type="button"
@@ -565,19 +603,19 @@ export default function ExpensesHistoryPage() {
                                           setMainTypeFilter(cat.category);
                                           handleSelectMonth(m.month);
                                         }}
-                                        className={`cursor-pointer truncate ${isMonthSelected ? 'text-blue-700 font-bold' : 'text-slate-700'}`}
+                                        className="cursor-pointer truncate text-[11px] font-bold"
                                       >
                                         📅 {m.month}
                                       </span>
                                     </div>
-                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md">
                                       {formatNumberLocale(m.totalSum)}
                                     </span>
                                   </div>
 
                                   {/* Days under Month */}
                                   {isMonthExpanded && (
-                                    <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                                    <div className="mr-3 border-r-2 border-slate-300 pr-1.5 space-y-1">
                                       {m.days?.map((d: any) => {
                                         const isDaySelected = mainTypeFilter === cat.category && selectedDay === d.day;
 
@@ -585,18 +623,25 @@ export default function ExpensesHistoryPage() {
                                           <div
                                             key={d.day}
                                             onClick={() => {
-                                              setMainTypeFilter(cat.category);
-                                              handleSelectDay(d.day, m.month);
+                                              if (isDaySelected) {
+                                                setSelectedDay('');
+                                                handleSelectMonth(m.month);
+                                              } else {
+                                                setMainTypeFilter(cat.category);
+                                                handleSelectDay(d.day, m.month);
+                                              }
                                             }}
-                                            className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-blue-50/50 transition-colors ${
-                                              isDaySelected ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                                            className={`flex items-center justify-between p-1.5 rounded-md border cursor-pointer transition-all ${
+                                              isDaySelected
+                                                ? 'bg-rose-600 text-white font-bold border-rose-600 shadow-sm'
+                                                : 'bg-white hover:bg-rose-50 border-slate-200 text-slate-600'
                                             }`}
                                           >
-                                            <div className="flex items-center gap-1.5">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                            <div className="flex items-center gap-1.5 text-[10px]">
+                                              <span className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? 'bg-white' : 'bg-slate-400'}`} />
                                               <span>{d.day}</span>
                                             </div>
-                                            <span className="text-[9px] text-slate-500 font-mono">
+                                            <span className={`text-[9px] font-mono font-bold ${isDaySelected ? 'text-white' : 'text-slate-600'}`}>
                                               {formatNumberLocale(d.totalSum)}
                                             </span>
                                           </div>

@@ -415,23 +415,25 @@ export default function InvoicesHistoryPage() {
             {/* Grand Total "الكل" node */}
             <div
               onClick={handleSelectAllNode}
-              className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+              className={`flex items-center justify-between p-2 rounded-xl border cursor-pointer transition-all ${
                 !selectedMonth && !selectedDay
-                  ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm'
-                  : 'hover:bg-slate-50'
+                  ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-sm'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <ChevronLeft className="w-3.5 h-3.5 opacity-40" />
-                <span>الكل</span>
+              <div className="flex items-center gap-1.5 font-bold">
+                <ChevronLeft className={`w-3.5 h-3.5 ${!selectedMonth && !selectedDay ? 'text-white' : 'opacity-40'}`} />
+                <span>🌐 الكل</span>
               </div>
-              <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono ${
+                !selectedMonth && !selectedDay ? 'bg-white/20 text-white' : 'bg-slate-100 text-emerald-700'
+              }`}>
                 {formatNumber(treeData?.totalSum || 0)} ج
               </span>
             </div>
 
             {/* Months level */}
-            <div className="mr-2 border-r border-slate-100 pr-1.5 space-y-1">
+            <div className="mr-2 border-r-2 border-emerald-200 pr-1.5 space-y-1">
               {treeData?.months?.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
                 const isMonthSelected = selectedMonth === m.month && !selectedDay;
@@ -439,7 +441,11 @@ export default function InvoicesHistoryPage() {
                 return (
                   <div key={m.month} className="space-y-1">
                     {/* Month header */}
-                    <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                    <div className={`flex items-center justify-between p-1.5 rounded-xl border transition-all group cursor-pointer ${
+                      isMonthSelected
+                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold shadow-sm'
+                        : 'bg-slate-100 hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-800'
+                    }`}>
                       <div className="flex items-center gap-1 min-w-0">
                         <button
                           type="button"
@@ -447,25 +453,25 @@ export default function InvoicesHistoryPage() {
                             e.stopPropagation();
                             toggleMonth(m.month);
                           }}
-                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                          className="p-1 hover:bg-slate-200/60 rounded text-slate-600"
                         >
                           <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isMonthExpanded ? '-rotate-90' : ''}`} />
                         </button>
                         <span
                           onClick={() => handleSelectMonth(m.month)}
-                          className={`cursor-pointer truncate ${isMonthSelected ? 'text-emerald-700 font-bold' : ''}`}
+                          className="cursor-pointer truncate font-bold text-xs"
                         >
-                          {m.month}
+                          📅 شهر {m.month}
                         </span>
                       </div>
-                      <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono">
+                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono">
                         {formatNumber(m.totalSum)} ج
                       </span>
                     </div>
 
                     {/* Days level */}
                     {isMonthExpanded && (
-                      <div className="mr-3 border-r border-slate-100 pr-1.5 space-y-1">
+                      <div className="mr-3 border-r-2 border-emerald-300 pr-1.5 space-y-1">
                         {m.days?.map((d: any) => {
                           const isDaySelected = selectedDay === d.day;
 
@@ -473,16 +479,20 @@ export default function InvoicesHistoryPage() {
                             <div
                               key={d.day}
                               onClick={() => handleSelectDay(d.day, m.month)}
-                              className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer hover:bg-emerald-50/50 transition-colors ${
-                                isDaySelected ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'
+                              className={`flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition-all ${
+                                isDaySelected
+                                  ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-sm'
+                                  : 'bg-white hover:bg-emerald-50 border-slate-200 text-slate-700'
                               }`}
                             >
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                <span className="truncate">{d.day}</span>
-                                <span className="text-[9px] text-slate-400">({d.invoiceCount})</span>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDaySelected ? 'bg-white' : 'bg-emerald-500'}`} />
+                                <span className="truncate text-[11px] font-bold">📆 {d.day}</span>
+                                <span className={`text-[9px] ${isDaySelected ? 'text-emerald-100' : 'text-slate-400'}`}>({d.invoiceCount})</span>
                               </div>
-                              <span className="text-[9px] text-slate-600 font-mono font-bold">
+                              <span className={`text-[9px] font-mono font-bold px-1 py-0.5 rounded ${
+                                isDaySelected ? 'bg-white/20 text-white' : 'text-slate-600'
+                              }`}>
                                 {formatNumber(d.totalSum)} ج
                               </span>
                             </div>

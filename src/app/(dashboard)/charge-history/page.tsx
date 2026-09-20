@@ -38,6 +38,9 @@ export default function ChargeHistoryPage() {
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   const [treeData, setTreeData] = useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
@@ -136,6 +139,9 @@ export default function ChargeHistoryPage() {
     setEndDate('');
     setFilterWalletName('');
     setFilterEmployeeId('');
+    setSelectedMonth('');
+    setSelectedDay('');
+    setSelectedCategory('');
     setIsFilterOpen(false);
   };
 
@@ -283,9 +289,12 @@ export default function ChargeHistoryPage() {
                     setStartDate('');
                     setEndDate('');
                     setTransactionType('');
+                    setSelectedMonth('');
+                    setSelectedDay('');
+                    setSelectedCategory('');
                   }}
                   className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                    !startDate && !endDate && !transactionType
+                    !startDate && !endDate && !transactionType && !selectedMonth && !selectedDay
                       ? 'bg-amber-600 text-white font-bold border-amber-600 shadow-sm'
                       : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
                   }`}
@@ -297,6 +306,7 @@ export default function ChargeHistoryPage() {
                 </div>
               {treeData.months.map((m: any) => {
                 const isMonthExpanded = expandedMonths.includes(m.month);
+                const isMonthSelected = selectedMonth === m.month && !selectedDay && !selectedCategory;
 
                 return (
                   <div key={m.month} className="space-y-1">
@@ -306,15 +316,23 @@ export default function ChargeHistoryPage() {
                         setExpandedMonths(prev =>
                           isMonthExpanded ? prev.filter(x => x !== m.month) : [...prev, m.month]
                         );
+                        setSelectedMonth(m.month);
+                        setSelectedDay('');
+                        setSelectedCategory('');
+                        setTransactionType('');
                         // Filter by month
                         const [yyyy, mm] = m.month.split(' ');
                         const lastDay = new Date(Number(yyyy), Number(mm), 0).getDate();
                         setStartDate(`${yyyy}-${String(mm).padStart(2, '0')}-01`);
                         setEndDate(`${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
                       }}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 cursor-pointer flex items-center justify-between transition-all"
+                      className={`p-2 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
+                        isMonthSelected
+                          ? 'bg-amber-100 border-amber-400 text-amber-900 font-bold shadow-sm'
+                          : 'bg-slate-100 hover:bg-amber-50 border-slate-200 hover:border-amber-300 text-slate-800'
+                      }`}
                     >
-                      <span className="font-bold text-slate-800">📅 شهر {m.month}</span>
+                      <span className="font-bold">📅 شهر {m.month}</span>
                       <span className="font-mono font-bold text-amber-700 text-[11px]">{formatNumber(m.totalSum)}</span>
                     </div>
 
@@ -323,6 +341,7 @@ export default function ChargeHistoryPage() {
                       <div className="pr-3 space-y-1 border-r-2 border-amber-200 mr-2">
                         {m.days.map((d: any) => {
                           const isDayExpanded = expandedDays.includes(d.day);
+                          const isDaySelected = selectedDay === d.day && !selectedCategory && !transactionType;
 
                           return (
                             <div key={d.day} className="space-y-1">
@@ -331,34 +350,59 @@ export default function ChargeHistoryPage() {
                                   setExpandedDays(prev =>
                                     isDayExpanded ? prev.filter(x => x !== d.day) : [...prev, d.day]
                                   );
+                                  setSelectedMonth(m.month);
+                                  setSelectedDay(d.day);
+                                  setSelectedCategory('');
+                                  setTransactionType('');
                                   const [dd, mm, yyyy] = d.day.split('/');
                                   setStartDate(`${yyyy}-${mm}-${dd}`);
                                   setEndDate(`${yyyy}-${mm}-${dd}`);
                                 }}
-                                className="p-1.5 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 text-[11px] cursor-pointer flex items-center justify-between"
+                                className={`p-1.5 rounded-lg border text-[11px] cursor-pointer flex items-center justify-between transition-all ${
+                                  isDaySelected
+                                    ? 'bg-amber-500 text-white font-bold border-amber-500 shadow-sm'
+                                    : 'bg-white hover:bg-amber-50 border-slate-200 text-slate-700'
+                                }`}
                               >
-                                <span className="font-bold text-slate-700">📆 {d.day}</span>
-                                <span className="font-mono font-bold text-amber-600">{formatNumber(d.totalSum)}</span>
+                                <span className="font-bold">📆 {d.day}</span>
+                                <span className={`font-mono font-bold ${isDaySelected ? 'text-white' : 'text-amber-600'}`}>{formatNumber(d.totalSum)}</span>
                               </div>
 
                               {/* Categories inside Day */}
                               {isDayExpanded && d.categories && (
                                 <div className="pr-3 space-y-1 border-r-2 border-slate-300 mr-2">
-                                  {d.categories.map((c: any) => (
-                                    <div
-                                      key={c.category}
-                                      onClick={() => {
-                                        setTransactionType(c.category);
-                                        const [dd, mm, yyyy] = d.day.split('/');
-                                        setStartDate(`${yyyy}-${mm}-${dd}`);
-                                        setEndDate(`${yyyy}-${mm}-${dd}`);
-                                      }}
-                                      className="p-1 rounded bg-slate-50 hover:bg-amber-100 text-[10px] cursor-pointer flex items-center justify-between text-slate-600"
-                                    >
-                                      <span>⚡ {c.category}</span>
-                                      <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
-                                    </div>
-                                  ))}
+                                  {d.categories.map((c: any) => {
+                                    const isCatSelected = selectedDay === d.day && (selectedCategory === c.category || transactionType === c.category);
+                                    return (
+                                      <div
+                                        key={c.category}
+                                        onClick={() => {
+                                          const [dd, mm, yyyy] = d.day.split('/');
+                                          if (isCatSelected) {
+                                            setSelectedCategory('');
+                                            setTransactionType('');
+                                            setStartDate(`${yyyy}-${mm}-${dd}`);
+                                            setEndDate(`${yyyy}-${mm}-${dd}`);
+                                          } else {
+                                            setSelectedMonth(m.month);
+                                            setSelectedDay(d.day);
+                                            setSelectedCategory(c.category);
+                                            setTransactionType(c.category);
+                                            setStartDate(`${yyyy}-${mm}-${dd}`);
+                                            setEndDate(`${yyyy}-${mm}-${dd}`);
+                                          }
+                                        }}
+                                        className={`p-1.5 rounded-md border text-[10px] cursor-pointer flex items-center justify-between transition-all ${
+                                          isCatSelected
+                                            ? 'bg-amber-100 text-amber-900 border-amber-400 font-bold shadow-sm'
+                                            : 'bg-slate-50 hover:bg-amber-100/60 border-slate-200 text-slate-600'
+                                        }`}
+                                      >
+                                        <span>⚡ {c.category}</span>
+                                        <span className="font-mono font-bold">{formatNumber(c.totalSum)}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
