@@ -12,22 +12,30 @@ export async function GET(req: Request) {
   const filterWalletName = searchParams.get('walletName') || '';
 
   try {
-    const where: any = user.role === 'manager'
-      ? (filterEmpId ? { employee_id: filterEmpId } : {})
-      : { employee_id: user.id };
+    const andClauses: any[] = [];
+
+    if (user.role === 'manager') {
+      if (filterEmpId) andClauses.push({ employee_id: filterEmpId });
+    } else {
+      andClauses.push({ employee_id: user.id });
+    }
 
     if (filterWalletName) {
-      where.wallet_name = filterWalletName;
+      andClauses.push({ wallet_name: { contains: filterWalletName, mode: 'insensitive' } });
     }
 
     if (search) {
-      where.OR = [
-        { wallet_name: { contains: search, mode: 'insensitive' } },
-        { employee_name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { invoice_code: { contains: search, mode: 'insensitive' } },
-      ];
+      andClauses.push({
+        OR: [
+          { wallet_name: { contains: search, mode: 'insensitive' } },
+          { employee_name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { invoice_code: { contains: search, mode: 'insensitive' } },
+        ]
+      });
     }
+
+    const where: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
     const transactions = await db.wallet_transactions.findMany({
       where,

@@ -10,24 +10,42 @@ export async function GET(req: Request) {
   const search = searchParams.get('search') || '';
   const filterEmpId = searchParams.get('employeeId') || '';
 
-  const whereCondition: any = user.role === 'manager'
-    ? (filterEmpId ? { employee_id: filterEmpId } : {})
-    : { employee_id: user.id };
+  const andClauses: any[] = [];
 
-  if (search) {
-    whereCondition.AND = [
-      ...(whereCondition.AND || []),
-      {
+  // 1. Employee condition
+  if (user.role === 'manager') {
+    if (filterEmpId) {
+      andClauses.push({
         OR: [
-          { notes: { contains: search, mode: 'insensitive' } },
-          { employee_name: { contains: search, mode: 'insensitive' } },
-          { main_type: { contains: search, mode: 'insensitive' } },
-          { expense_type: { contains: search, mode: 'insensitive' } },
-          { items: { contains: search, mode: 'insensitive' } },
+          { employee_id: filterEmpId },
+          { created_by_id: filterEmpId }
         ]
-      }
-    ];
+      });
+    }
+  } else {
+    andClauses.push({
+      OR: [
+        { employee_id: user.id },
+        { created_by_id: user.id }
+      ]
+    });
   }
+
+  // 2. Search condition
+  if (search) {
+    andClauses.push({
+      OR: [
+        { notes: { contains: search, mode: 'insensitive' } },
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { created_by_name: { contains: search, mode: 'insensitive' } },
+        { main_type: { contains: search, mode: 'insensitive' } },
+        { expense_type: { contains: search, mode: 'insensitive' } },
+        { items: { contains: search, mode: 'insensitive' } },
+      ]
+    });
+  }
+
+  const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
   try {
     const expenses = await db.expenses.findMany({

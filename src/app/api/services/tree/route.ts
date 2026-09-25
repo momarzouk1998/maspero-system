@@ -13,20 +13,28 @@ export async function GET(req: Request) {
   const faceType = searchParams.get('faceType') || '';
 
   try {
-    const whereCondition: any = user.role === 'manager'
-      ? (filterEmpId ? { employee_id: filterEmpId } : {})
-      : { employee_id: user.id };
+    const andClauses: any[] = [];
 
-    if (serviceName) whereCondition.service_name = { contains: serviceName, mode: 'insensitive' };
-    if (faceType) whereCondition.face_type = faceType;
+    if (user.role === 'manager') {
+      if (filterEmpId) andClauses.push({ employee_id: filterEmpId });
+    } else {
+      andClauses.push({ employee_id: user.id });
+    }
+
+    if (serviceName) andClauses.push({ service_name: { contains: serviceName, mode: 'insensitive' } });
+    if (faceType) andClauses.push({ face_type: faceType });
 
     if (search) {
-      whereCondition.OR = [
-        { service_name: { contains: search, mode: 'insensitive' } },
-        { employee_name: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } }
-      ];
+      andClauses.push({
+        OR: [
+          { service_name: { contains: search, mode: 'insensitive' } },
+          { employee_name: { contains: search, mode: 'insensitive' } },
+          { notes: { contains: search, mode: 'insensitive' } }
+        ]
+      });
     }
+
+    const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
     const entries = await db.service_entries.findMany({
       where: whereCondition,

@@ -11,17 +11,25 @@ export async function GET(req: Request) {
   const filterEmpId = searchParams.get('employeeId') || '';
 
   try {
-    const whereCondition: any = user.role === 'manager'
-      ? (filterEmpId ? { employee_id: filterEmpId } : {})
-      : { employee_id: user.id };
+    const andClauses: any[] = [];
+
+    if (user.role === 'manager') {
+      if (filterEmpId) andClauses.push({ employee_id: filterEmpId });
+    } else {
+      andClauses.push({ employee_id: user.id });
+    }
 
     if (search) {
-      whereCondition.OR = [
-        { employee_name: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-        { service_name: { contains: search, mode: 'insensitive' } }
-      ];
+      andClauses.push({
+        OR: [
+          { employee_name: { contains: search, mode: 'insensitive' } },
+          { notes: { contains: search, mode: 'insensitive' } },
+          { service_name: { contains: search, mode: 'insensitive' } }
+        ]
+      });
     }
+
+    const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
     const tickets = await db.train_ticket_bookings.findMany({
       where: whereCondition,

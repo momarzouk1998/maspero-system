@@ -60,51 +60,73 @@ export async function GET(req: Request) {
 
   const skip = (page - 1) * limit;
 
-  const whereCondition: any = user.role === 'manager'
-    ? (filterEmpId ? { employee_id: filterEmpId } : {})
-    : { employee_id: user.id };
+  const andClauses: any[] = [];
 
+  // 1. Employee condition
+  if (user.role === 'manager') {
+    if (filterEmpId) {
+      andClauses.push({
+        OR: [
+          { employee_id: filterEmpId },
+          { created_by_id: filterEmpId }
+        ]
+      });
+    }
+  } else {
+    andClauses.push({
+      OR: [
+        { employee_id: user.id },
+        { created_by_id: user.id }
+      ]
+    });
+  }
+
+  // 2. Main Type / Category condition
   if (mainType) {
-    const targetType = mainType === 'مسحوبات' ? ['مسحوبات', 'إيرادات'] : [mainType];
-    if (['قبض', 'سلفة'].includes(mainType)) {
-      whereCondition.OR = [
-        { main_type: mainType },
-        { expense_type: mainType }
-      ];
-    } else {
-      whereCondition.OR = targetType.flatMap(t => [
+    const targetTypes = mainType === 'مسحوبات' ? ['مسحوبات', 'إيرادات'] : [mainType];
+    andClauses.push({
+      OR: targetTypes.flatMap(t => [
         { main_type: { contains: t, mode: 'insensitive' } },
         { expense_type: { contains: t, mode: 'insensitive' } },
         { items: { contains: t, mode: 'insensitive' } }
-      ]);
-    }
+      ])
+    });
   }
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+  // 3. Date range condition
+  if (startDate || endDate) {
+    const start = startDate ? new Date(startDate) : null;
+    if (start) start.setHours(0, 0, 0, 0);
+    const end = endDate ? new Date(endDate) : null;
+    if (end) end.setHours(23, 59, 59, 999);
 
-    whereCondition.timestamp = {
-      gte: start,
-      lte: end
-    };
+    const dateFilter: any = {};
+    if (start) dateFilter.gte = start;
+    if (end) dateFilter.lte = end;
+
+    andClauses.push({
+      OR: [
+        { date: dateFilter },
+        { timestamp: dateFilter }
+      ]
+    });
   }
 
+  // 4. Search query
   if (search) {
-    whereCondition.AND = [
-      ...(whereCondition.AND || []),
-      {
-        OR: [
-          { notes: { contains: search, mode: 'insensitive' } },
-          { employee_name: { contains: search, mode: 'insensitive' } },
-          { main_type: { contains: search, mode: 'insensitive' } },
-          { expense_type: { contains: search, mode: 'insensitive' } },
-        ]
-      }
-    ];
+    andClauses.push({
+      OR: [
+        { notes: { contains: search, mode: 'insensitive' } },
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { created_by_name: { contains: search, mode: 'insensitive' } },
+        { main_type: { contains: search, mode: 'insensitive' } },
+        { expense_type: { contains: search, mode: 'insensitive' } },
+        { items: { contains: search, mode: 'insensitive' } },
+      ]
+    });
   }
+
+  const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
   const [expenses, total] = await Promise.all([
     db.expenses.findMany({

@@ -15,35 +15,58 @@ export async function GET(req: Request) {
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
 
+  const walletName = searchParams.get('walletName') || '';
+  const employeeId = searchParams.get('employeeId') || '';
+
   const skip = (page - 1) * limit;
 
   try {
-    const where: any = user.role === 'manager' ? {} : { employee_id: user.id };
+    const andClauses: any[] = [];
 
-    if (transactionType) {
-      where.transaction_type = transactionType;
+    if (user.role === 'manager') {
+      if (employeeId) andClauses.push({ employee_id: employeeId });
+    } else {
+      andClauses.push({ employee_id: user.id });
     }
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+    if (transactionType) {
+      andClauses.push({ transaction_type: transactionType });
+    }
 
-      where.timestamp = {
-        gte: start,
-        lte: end
-      };
+    if (walletName) {
+      andClauses.push({ wallet_name: { contains: walletName, mode: 'insensitive' } });
+    }
+
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      const end = endDate ? new Date(endDate) : null;
+      if (end) end.setHours(23, 59, 59, 999);
+
+      const dateFilter: any = {};
+      if (start) dateFilter.gte = start;
+      if (end) dateFilter.lte = end;
+
+      andClauses.push({
+        OR: [
+          { date: dateFilter },
+          { timestamp: dateFilter }
+        ]
+      });
     }
 
     if (search) {
-      where.OR = [
-        { wallet_name: { contains: search, mode: 'insensitive' } },
-        { employee_name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { invoice_code: { contains: search, mode: 'insensitive' } },
-      ];
+      andClauses.push({
+        OR: [
+          { wallet_name: { contains: search, mode: 'insensitive' } },
+          { employee_name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { invoice_code: { contains: search, mode: 'insensitive' } },
+        ]
+      });
     }
+
+    const where: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
     const sortBy = searchParams.get('sortBy') || (search || searchParams.get('walletName') ? 'type' : 'date');
 

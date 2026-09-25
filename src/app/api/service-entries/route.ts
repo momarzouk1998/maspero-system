@@ -21,31 +21,47 @@ export async function GET(req: Request) {
 
   const skip = (page - 1) * limit;
 
+  const andClauses: any[] = [];
+
   // Filter: Manager sees all (or filtered by employeeId); Employee sees only their own entries
-  const whereCondition: any = user.role === 'manager' ? (employeeId ? { employee_id: employeeId } : {}) : { employee_id: user.id };
+  if (user.role === 'manager') {
+    if (employeeId) andClauses.push({ employee_id: employeeId });
+  } else {
+    andClauses.push({ employee_id: user.id });
+  }
 
-  if (serviceName) whereCondition.service_name = { contains: serviceName, mode: 'insensitive' };
-  if (faceType) whereCondition.face_type = faceType;
+  if (serviceName) andClauses.push({ service_name: { contains: serviceName, mode: 'insensitive' } });
+  if (faceType) andClauses.push({ face_type: faceType });
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+  if (startDate || endDate) {
+    const start = startDate ? new Date(startDate) : null;
+    if (start) start.setHours(0, 0, 0, 0);
+    const end = endDate ? new Date(endDate) : null;
+    if (end) end.setHours(23, 59, 59, 999);
 
-    whereCondition.timestamp = {
-      gte: start,
-      lte: end
-    };
+    const dateFilter: any = {};
+    if (start) dateFilter.gte = start;
+    if (end) dateFilter.lte = end;
+
+    andClauses.push({
+      OR: [
+        { date: dateFilter },
+        { timestamp: dateFilter }
+      ]
+    });
   }
 
   if (search) {
-    whereCondition.OR = [
-      { service_name: { contains: search, mode: 'insensitive' } },
-      { employee_name: { contains: search, mode: 'insensitive' } },
-      { notes: { contains: search, mode: 'insensitive' } }
-    ];
+    andClauses.push({
+      OR: [
+        { service_name: { contains: search, mode: 'insensitive' } },
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } }
+      ]
+    });
   }
+
+  const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
   const [entries, total] = await Promise.all([
     db.service_entries.findMany({

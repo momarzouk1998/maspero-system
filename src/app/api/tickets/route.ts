@@ -18,27 +18,43 @@ export async function GET(req: Request) {
 
   const skip = (page - 1) * limit;
 
-  const whereCondition: any = user.role === 'manager' ? (employeeId ? { employee_id: employeeId } : {}) : { employee_id: user.id };
+  const andClauses: any[] = [];
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+  if (user.role === 'manager') {
+    if (employeeId) andClauses.push({ employee_id: employeeId });
+  } else {
+    andClauses.push({ employee_id: user.id });
+  }
 
-    whereCondition.timestamp = {
-      gte: start,
-      lte: end
-    };
+  if (startDate || endDate) {
+    const start = startDate ? new Date(startDate) : null;
+    if (start) start.setHours(0, 0, 0, 0);
+    const end = endDate ? new Date(endDate) : null;
+    if (end) end.setHours(23, 59, 59, 999);
+
+    const dateFilter: any = {};
+    if (start) dateFilter.gte = start;
+    if (end) dateFilter.lte = end;
+
+    andClauses.push({
+      OR: [
+        { date: dateFilter },
+        { timestamp: dateFilter }
+      ]
+    });
   }
 
   if (search) {
-    whereCondition.OR = [
-      { employee_name: { contains: search, mode: 'insensitive' } },
-      { notes: { contains: search, mode: 'insensitive' } },
-      { service_name: { contains: search, mode: 'insensitive' } }
-    ];
+    andClauses.push({
+      OR: [
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+        { service_name: { contains: search, mode: 'insensitive' } }
+      ]
+    });
   }
+
+  const whereCondition: any = andClauses.length > 0 ? { AND: andClauses } : {};
 
   const [bookings, total] = await Promise.all([
     db.train_ticket_bookings.findMany({
