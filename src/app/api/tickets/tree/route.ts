@@ -6,11 +6,25 @@ export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+  const filterEmpId = searchParams.get('employeeId') || '';
+
   try {
-    const userFilter = user.role === 'manager' ? {} : { employee_id: user.id };
+    const whereCondition: any = user.role === 'manager'
+      ? (filterEmpId ? { employee_id: filterEmpId } : {})
+      : { employee_id: user.id };
+
+    if (search) {
+      whereCondition.OR = [
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+        { service_name: { contains: search, mode: 'insensitive' } }
+      ];
+    }
 
     const tickets = await db.train_ticket_bookings.findMany({
-      where: userFilter,
+      where: whereCondition,
       select: {
         id: true,
         amount: true,

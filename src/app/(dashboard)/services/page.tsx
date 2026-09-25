@@ -63,8 +63,13 @@ export default function ServicesPage() {
   const canUpdate = isManager || Boolean(userPerms?.services?.update);
   const canDelete = isManager || Boolean(userPerms?.services?.delete);
 
-  const fetchTreeData = () => {
-    fetch('/api/services/tree')
+  const fetchTreeData = (searchQuery = search, empId = filterEmployeeId, sName = filterServiceName, fType = filterFaceType) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (empId) params.set('employeeId', empId);
+    if (sName) params.set('serviceName', sName);
+    if (fType) params.set('faceType', fType);
+    fetch(`/api/services/tree?${params.toString()}`)
       .then(r => r.json())
       .then(d => setTreeData(d))
       .catch(console.error);
@@ -113,7 +118,10 @@ export default function ServicesPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchEntries(1), 300);
+    const timer = setTimeout(() => {
+      fetchEntries(1);
+      fetchTreeData(search, filterEmployeeId, filterServiceName, filterFaceType);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search, filterServiceName, filterFaceType, filterEmployeeId, filterStartDate, filterEndDate]);
 

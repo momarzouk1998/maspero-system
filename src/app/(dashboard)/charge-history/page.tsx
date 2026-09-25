@@ -53,8 +53,12 @@ export default function ChargeHistoryPage() {
   const canUpdate = isManager || Boolean(userPerms?.charge_history?.update);
   const canDelete = isManager || Boolean(userPerms?.charge_history?.delete);
 
-  const fetchTreeData = () => {
-    fetch('/api/charge-history/tree')
+  const fetchTreeData = (searchQuery = search, empId = filterEmployeeId, wallet = filterWalletName) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (empId) params.set('employeeId', empId);
+    if (wallet) params.set('walletName', wallet);
+    fetch(`/api/charge-history/tree?${params.toString()}`)
       .then(r => r.json())
       .then(d => setTreeData(d))
       .catch(console.error);
@@ -109,7 +113,10 @@ export default function ChargeHistoryPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchTransactions(1), 300);
+    const timer = setTimeout(() => {
+      fetchTransactions(1);
+      fetchTreeData(search, filterEmployeeId, filterWalletName);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search, transactionType, startDate, endDate, filterWalletName, filterEmployeeId, sortBy]);
 

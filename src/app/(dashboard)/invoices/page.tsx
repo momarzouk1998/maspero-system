@@ -38,8 +38,11 @@ export default function InvoicesHistoryPage() {
   const [expandedDays, setExpandedDays] = useState<string[]>([]);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
 
-  const fetchTreeData = () => {
-    fetch('/api/invoices/tree')
+  const fetchTreeData = (searchQuery = search, empId = filterEmployeeId) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (empId) params.set('employeeId', empId);
+    fetch(`/api/invoices/tree?${params.toString()}`)
       .then(res => res.json())
       .then(d => setTreeData(d))
       .catch(console.error);
@@ -149,7 +152,10 @@ export default function InvoicesHistoryPage() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchInvoices(1), 300);
+    const timer = setTimeout(() => {
+      fetchInvoices(1);
+      fetchTreeData(search, filterEmployeeId);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search, startDate, endDate, filterEmployeeId, minTotal, maxTotal]);
 

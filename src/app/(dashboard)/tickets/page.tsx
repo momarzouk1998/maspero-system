@@ -46,8 +46,11 @@ export default function TicketsPage() {
   const canUpdate = isManager || Boolean(userPerms?.tickets?.update);
   const canDelete = isManager || Boolean(userPerms?.tickets?.delete);
 
-  const fetchTreeData = () => {
-    fetch('/api/tickets/tree')
+  const fetchTreeData = (searchQuery = search, empId = filterEmployeeId) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (empId) params.set('employeeId', empId);
+    fetch(`/api/tickets/tree?${params.toString()}`)
       .then(r => r.json())
       .then(d => setTreeData(d))
       .catch(console.error);
@@ -94,7 +97,10 @@ export default function TicketsPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchBookings(1), 300);
+    const timer = setTimeout(() => {
+      fetchBookings(1);
+      fetchTreeData(search, filterEmployeeId);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search, filterEmployeeId, filterStartDate, filterEndDate]);
 

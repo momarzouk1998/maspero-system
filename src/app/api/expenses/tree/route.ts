@@ -6,8 +6,32 @@ export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+  const filterEmpId = searchParams.get('employeeId') || '';
+
+  const whereCondition: any = user.role === 'manager'
+    ? (filterEmpId ? { employee_id: filterEmpId } : {})
+    : { employee_id: user.id };
+
+  if (search) {
+    whereCondition.AND = [
+      ...(whereCondition.AND || []),
+      {
+        OR: [
+          { notes: { contains: search, mode: 'insensitive' } },
+          { employee_name: { contains: search, mode: 'insensitive' } },
+          { main_type: { contains: search, mode: 'insensitive' } },
+          { expense_type: { contains: search, mode: 'insensitive' } },
+          { items: { contains: search, mode: 'insensitive' } },
+        ]
+      }
+    ];
+  }
+
   try {
     const expenses = await db.expenses.findMany({
+      where: whereCondition,
       select: {
         id: true,
         amount: true,

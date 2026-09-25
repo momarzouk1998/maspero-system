@@ -6,11 +6,31 @@ export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+  const filterEmpId = searchParams.get('employeeId') || '';
+  const filterWalletName = searchParams.get('walletName') || '';
+
   try {
-    const userFilter = user.role === 'manager' ? {} : { employee_id: user.id };
+    const where: any = user.role === 'manager'
+      ? (filterEmpId ? { employee_id: filterEmpId } : {})
+      : { employee_id: user.id };
+
+    if (filterWalletName) {
+      where.wallet_name = filterWalletName;
+    }
+
+    if (search) {
+      where.OR = [
+        { wallet_name: { contains: search, mode: 'insensitive' } },
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { invoice_code: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const transactions = await db.wallet_transactions.findMany({
-      where: userFilter,
+      where,
       select: {
         id: true,
         amount: true,

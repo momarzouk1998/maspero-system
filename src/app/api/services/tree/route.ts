@@ -6,11 +6,30 @@ export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search') || '';
+  const filterEmpId = searchParams.get('employeeId') || '';
+  const serviceName = searchParams.get('serviceName') || '';
+  const faceType = searchParams.get('faceType') || '';
+
   try {
-    const userFilter = user.role === 'manager' ? {} : { employee_id: user.id };
+    const whereCondition: any = user.role === 'manager'
+      ? (filterEmpId ? { employee_id: filterEmpId } : {})
+      : { employee_id: user.id };
+
+    if (serviceName) whereCondition.service_name = { contains: serviceName, mode: 'insensitive' };
+    if (faceType) whereCondition.face_type = faceType;
+
+    if (search) {
+      whereCondition.OR = [
+        { service_name: { contains: search, mode: 'insensitive' } },
+        { employee_name: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } }
+      ];
+    }
 
     const entries = await db.service_entries.findMany({
-      where: userFilter,
+      where: whereCondition,
       select: {
         id: true,
         amount: true,

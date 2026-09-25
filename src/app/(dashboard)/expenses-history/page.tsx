@@ -46,8 +46,11 @@ export default function ExpensesHistoryPage() {
     );
   };
 
-  const fetchTreeData = () => {
-    fetch('/api/expenses/tree')
+  const fetchTreeData = (searchQuery = search, empId = filterEmployeeId) => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (empId) params.set('employeeId', empId);
+    fetch(`/api/expenses/tree?${params.toString()}`)
       .then(res => res.json())
       .then(data => setTreeData(data))
       .catch(console.error);
@@ -132,7 +135,10 @@ export default function ExpensesHistoryPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchExpenses(1), 300);
+    const timer = setTimeout(() => {
+      fetchExpenses(1);
+      fetchTreeData(search, filterEmployeeId);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search, mainTypeFilter, startDate, endDate, filterEmployeeId]);
 
