@@ -2,17 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Clock, ShoppingCart, Receipt } from 'lucide-react';
+import { LayoutDashboard, Clock, ShoppingCart, Receipt, Banknote } from 'lucide-react';
 
-const items = [
+type NavItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  badgeKey?: 'shifts';
+};
+
+const baseItems: NavItem[] = [
   { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
-  { name: 'الشفتات', href: '/shifts', icon: Clock, badgeKey: 'shifts' as const },
+  { name: 'الشفتات', href: '/shifts', icon: Clock, badgeKey: 'shifts' },
   { name: 'البيع', href: '/pos', icon: ShoppingCart },
   { name: 'المالية', href: '/expenses', icon: Receipt },
 ];
 
-export default function BottomNav({ pendingTransfers = 0 }: { pendingTransfers?: number }) {
+const managerExtraItem: NavItem = { name: 'الأرصدة', href: '/manager/balances', icon: Banknote };
+
+export default function BottomNav({ pendingTransfers = 0, isManager = false }: { pendingTransfers?: number; isManager?: boolean }) {
   const pathname = usePathname();
+  const items = isManager ? [...baseItems, managerExtraItem] : baseItems;
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');

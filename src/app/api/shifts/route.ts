@@ -148,6 +148,24 @@ export async function POST(req: Request) {
         }, { status: 400 });
       }
 
+      // Rule 8: Cannot end shift while a cash transfer sent by this employee is still PENDING.
+      // If the colleague accepts it AFTER the sender's custody balance was already zeroed out
+      // (via deliver_all), the deduction lands after the fact and drags the sender negative
+      // even though the cash was already physically handed over in a drawer.
+      const pendingSentTransfers = await db.employee_transfers.findMany({
+        where: { sender_id: user.id, status: 'PENDING' },
+        select: { receiver_name: true, amount: true }
+      });
+
+      if (pendingSentTransfers.length > 0) {
+        const details = pendingSentTransfers
+          .map((t: any) => `${Number(t.amount)} ج لـ ${t.receiver_name}`)
+          .join('، ');
+        return NextResponse.json({
+          error: `عفواً، يمنع إنهاء الشفت لوجود تحويل نقدي لم يقبله الزميل بعد (${details}). برجاء إلغاء التحويل أو انتظار قبوله أولاً.`
+        }, { status: 400 });
+      }
+
       // Check open invoices ("قيد التنفيذ") that actually contain items
       const openInvoices = await db.invoices.findMany({
         where: { employee_id: user.id, status: 'قيد التنفيذ' },

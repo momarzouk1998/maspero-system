@@ -453,7 +453,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Mobile Bottom Navigation (additive — desktop keeps the sidebar) */}
-      <BottomNav pendingTransfers={pendingTransfers} />
+      <BottomNav pendingTransfers={pendingTransfers} isManager={isManager} />
 
       {/* LOGOUT BLOCKED MODAL (Item 5) */}
       {logoutBlocked && (
