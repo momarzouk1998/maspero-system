@@ -125,6 +125,10 @@ export default function FinancialAndHROperationsPage() {
       showToast('برجاء أدخال مبلغ صحيح أكبر من 0', 'error');
       return;
     }
+    if (finCategory === 'سلفة' && currentUser?.role !== 'manager' && amt > finStats.remainingSalary) {
+      showToast(`عفواً، المبلغ المطلوب (${amt} ج.م) يتجاوز صافي الراتب المتبقي للموظف (${finStats.remainingSalary} ج.م). يجب الرجوع للمدير.`, 'error');
+      return;
+    }
 
     const itemFinalName = selectedItem === 'أخرى' ? (customItem || 'أخرى') : selectedItem;
 

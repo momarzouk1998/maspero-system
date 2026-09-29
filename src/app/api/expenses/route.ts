@@ -229,11 +229,12 @@ export async function POST(req: Request) {
           });
 
           const totalDrawn = Number(drawnSum._sum.amount || 0);
-          const remainingSalary = baseSalary - totalDrawn;
+          const remainingSalary = Math.max(0, baseSalary - totalDrawn);
 
           if (numAmount > remainingSalary) {
-            isPendingApproval = true;
-            pendingNoteExtension = ` ⚠️ [معلق: سلفة تتجاوز المتبقي من الراتب (${remainingSalary.toFixed(2)})]`;
+            return NextResponse.json({
+              error: `عفواً، لا يمكن صرف السلفة. المبلغ المطلوب (${numAmount} ج.م) يتجاوز صافي الراتب المتبقي للموظف (${remainingSalary.toFixed(2)} ج.م). يجب الرجوع للمدير للصرف أو رفع الحد.`
+            }, { status: 403 });
           }
         }
       }
