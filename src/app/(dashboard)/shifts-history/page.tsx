@@ -244,12 +244,17 @@ export default function ShiftsHistoryPage() {
         })
       });
 
+      const data = await res.json();
       if (res.ok) {
         setEditingItem(null);
         fetchShifts(pagination.page);
+        fetchTreeData();
+      } else {
+        alert(data.error || 'حدث خطأ أثناء تعديل الشفت');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert(e.message || 'حدث خطأ في الاتصال بالخادم');
     } finally {
       setEditSubmitting(false);
     }
@@ -628,6 +633,18 @@ export default function ShiftsHistoryPage() {
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
+              {(!editingItem.end_time || editingItem.status === 'مفتوح') && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-amber-800">
+                    <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                    <span>تنبيه: هذا الشفت مفتوح حالياً (نشط الآن)</span>
+                  </div>
+                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                    عند إدخال إجمالي الساعات وحفظ التعديل، سيتم إنهاء وإغلاق الشفت تلقائياً وحساب توقيت النهاية وتحرير العهد المستلمة.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">الموظف</label>
                 <input

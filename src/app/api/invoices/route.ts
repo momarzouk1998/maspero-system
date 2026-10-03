@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
+import { getCairoDateRange } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -19,13 +20,20 @@ export async function GET(req: Request) {
   try {
     const userFilter = user.role === 'manager' ? {} : { employee_id: user.id };
 
+    const { start, end } = getCairoDateRange(startDate, endDate);
+    const dateFilter: any = {};
+    if (start) dateFilter.gte = start;
+    if (end) dateFilter.lte = end;
+
+    const hasDate = Boolean(start || end);
+
     // Fetch entries from all 3 tables
     const [services, tickets, wallets] = await Promise.all([
       db.service_entries.findMany({
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(startDate && endDate ? { date: { gte: new Date(startDate), lte: new Date(endDate) } } : {})
+          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
         },
         select: {
           invoice_code: true,
@@ -41,7 +49,7 @@ export async function GET(req: Request) {
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(startDate && endDate ? { date: { gte: new Date(startDate), lte: new Date(endDate) } } : {})
+          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
         },
         select: {
           invoice_code: true,
@@ -57,7 +65,7 @@ export async function GET(req: Request) {
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(startDate && endDate ? { date: { gte: new Date(startDate), lte: new Date(endDate) } } : {})
+          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
         },
         select: {
           invoice_code: true,

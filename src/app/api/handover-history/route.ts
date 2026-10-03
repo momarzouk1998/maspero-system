@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getCairoDateRange } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -57,16 +58,13 @@ export async function GET(req: Request) {
       where.review_status = reviewStatus;
     }
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+    if (startDate || endDate) {
+      const { start, end } = getCairoDateRange(startDate, endDate);
+      const dateFilter: any = {};
+      if (start) dateFilter.gte = start;
+      if (end) dateFilter.lte = end;
 
-      where.created_at = {
-        gte: start,
-        lte: end
-      };
+      where.created_at = dateFilter;
     }
 
     if (search) {

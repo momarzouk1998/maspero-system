@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getEgyptDateParts } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -95,13 +96,7 @@ export async function GET(req: Request) {
       grandTotal += amt;
 
       const dateObj = new Date(exp.date);
-      const yyyy = dateObj.getFullYear();
-      const mm = dateObj.getMonth() + 1;
-      const monthKey = `${yyyy} ${mm}`;
-
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const monthStr = String(mm).padStart(2, '0');
-      const dayKey = `${day}/${monthStr}/${yyyy}`;
+      const { dayKey, monthKey } = getEgyptDateParts(dateObj);
 
       let rawCat = (exp.expense_type || exp.main_type || 'أخرى').trim();
       rawCat = rawCat.replace(/[\uFFFD\u0000-\u001F]/g, '');

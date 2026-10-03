@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getEgyptDateParts } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -75,13 +76,7 @@ export async function GET(req: Request) {
       totalCount += 1;
 
       const dateObj = new Date(entry.timestamp || entry.date || Date.now());
-      const yyyy = dateObj.getFullYear();
-      const mm = dateObj.getMonth() + 1;
-      const monthKey = `${yyyy} ${mm}`;
-
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const monthStr = String(mm).padStart(2, '0');
-      const dayKey = `${day}/${monthStr}/${yyyy}`;
+      const { dayKey, monthKey } = getEgyptDateParts(dateObj);
 
       const catKey = entry.service_name || 'خدمات العامة';
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
+import { getCairoDateRange } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -95,10 +96,7 @@ export async function GET(req: Request) {
 
   // 3. Date range condition
   if (startDate || endDate) {
-    const start = startDate ? new Date(startDate) : null;
-    if (start) start.setHours(0, 0, 0, 0);
-    const end = endDate ? new Date(endDate) : null;
-    if (end) end.setHours(23, 59, 59, 999);
+    const { start, end } = getCairoDateRange(startDate, endDate);
 
     const dateFilter: any = {};
     if (start) dateFilter.gte = start;

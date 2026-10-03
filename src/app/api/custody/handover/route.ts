@@ -262,6 +262,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'درج الكاشير غير موجود' }, { status: 404 });
       }
 
+      // Block if pending cash transfers exist
+      const pendingSentTransfers = await db.employee_transfers.findMany({
+        where: { sender_id: user.id, status: 'PENDING' },
+        select: { receiver_name: true, amount: true }
+      });
+
+      if (pendingSentTransfers.length > 0) {
+        const details = pendingSentTransfers
+          .map((t: any) => `${Number(t.amount)} ج لـ ${t.receiver_name}`)
+          .join('، ');
+        return NextResponse.json({
+          error: `عفواً، يمنع تسليم العهدة بالدرج لوجود تحويل نقدي معلق لم يقبله الزميل بعد (${details}). برجاء إلغاء التحويل أو انتظار قبوله أولاً.`
+        }, { status: 400 });
+      }
+
       const dbUser = await db.users.findUnique({ where: { id: user.id } });
       const empCustodyBal = Number(dbUser?.wallet_balance || 0);
 
@@ -324,6 +339,21 @@ export async function POST(req: Request) {
     // --- Deliver All Items directly to Maspero Center (Single Click Day Closing) ---
     if (action === 'deliver_all') {
       const { drawerId } = body;
+
+      // Block if pending cash transfers exist
+      const pendingSentTransfers = await db.employee_transfers.findMany({
+        where: { sender_id: user.id, status: 'PENDING' },
+        select: { receiver_name: true, amount: true }
+      });
+
+      if (pendingSentTransfers.length > 0) {
+        const details = pendingSentTransfers
+          .map((t: any) => `${Number(t.amount)} ج لـ ${t.receiver_name}`)
+          .join('، ');
+        return NextResponse.json({
+          error: `عفواً، يمنع تسليم كل العهد لوجود تحويل نقدي معلق لم يقبله الزميل بعد (${details}). برجاء إلغاء التحويل أو انتظار قبوله أولاً.`
+        }, { status: 400 });
+      }
 
       const dbUser = await db.users.findUnique({ where: { id: user.id } });
       const empCustodyBal = Number(dbUser?.wallet_balance || 0);

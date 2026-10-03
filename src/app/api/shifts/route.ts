@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
+import { getCairoDateRange } from '@/lib/user-utils';
 
 // GET shifts with pagination & filtering
 export async function GET(req: Request) {
@@ -31,16 +32,13 @@ export async function GET(req: Request) {
       where.shift_type = shiftType;
     }
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+    if (startDate || endDate) {
+      const { start, end } = getCairoDateRange(startDate, endDate);
+      const dateFilter: any = {};
+      if (start) dateFilter.gte = start;
+      if (end) dateFilter.lte = end;
 
-      where.start_time = {
-        gte: start,
-        lte: end
-      };
+      where.start_time = dateFilter;
     }
 
     if (search) {
@@ -216,14 +214,43 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'ليس لديك صلاحية تعديل سجل الشفتات' }, { status: 403 });
       }
 
+      const shift = await db.shifts.findUnique({ where: { id: shiftId } });
+      if (!shift) {
+        return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 });
+      }
+
       const { totalHours } = body;
+      const updateData: any = {
+        shift_type: shiftType !== undefined ? shiftType : undefined,
+        shift_note: shiftNote !== undefined ? shiftNote : undefined,
+        total_hours: totalHours !== undefined && totalHours !== '' ? Number(totalHours) : undefined,
+      };
+
+      // If the shift was open (end_time is null or status is 'مفتوح') and manager manually specifies hours > 0,
+      // close the shift automatically and calculate its end_time
+      if ((shift.end_time === null || shift.status === 'مفتوح') && totalHours !== undefined && Number(totalHours) > 0) {
+        const startTime = new Date(shift.start_time || today);
+        const calculatedEndTime = new Date(startTime.getTime() + Number(totalHours) * 3600 * 1000);
+        updateData.end_time = calculatedEndTime;
+        updateData.status = 'مغلق';
+
+        // Check if employee has any remaining active open shift
+        const remainingActiveShifts = await db.shifts.count({
+          where: { employee_id: shift.employee_id, end_time: null, NOT: { id: shiftId } }
+        });
+
+        if (remainingActiveShifts === 0) {
+          // Release any custody items held by this employee
+          await db.external_wallets.updateMany({
+            where: { custodian_id: shift.employee_id },
+            data: { custodian_id: null, custodian_name: null }
+          });
+        }
+      }
+
       const updated = await db.shifts.update({
         where: { id: shiftId },
-        data: {
-          shift_type: shiftType !== undefined ? shiftType : undefined,
-          shift_note: shiftNote !== undefined ? shiftNote : undefined,
-          total_hours: totalHours !== undefined ? Number(totalHours) : undefined,
-        }
+        data: updateData
       });
       return NextResponse.json({ success: true, shift: updated });
     }

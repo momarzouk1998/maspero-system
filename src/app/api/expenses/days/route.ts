@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getCairoDateRange, getEgyptDateParts } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -38,17 +39,19 @@ export async function GET(req: Request) {
     }
 
     if (month) {
-      // فلتر الشهر بناءً على حقل month أو من خلال حساب التاريخ
       const parts = month.split(' ');
       if (parts.length === 2) {
         const yyyy = parseInt(parts[0]);
         const mm = parseInt(parts[1]);
-        const startOfMonth = new Date(yyyy, mm - 1, 1);
-        const endOfMonth = new Date(yyyy, mm, 0, 23, 59, 59);
+        const startStr = `${yyyy}-${String(mm).padStart(2, '0')}-01`;
+        const lastDay = new Date(yyyy, mm, 0).getDate();
+        const endStr = `${yyyy}-${String(mm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const { start, end } = getCairoDateRange(startStr, endStr);
+
         andConditions.push({
           OR: [
             { month: month },
-            { date: { gte: startOfMonth, lte: endOfMonth } }
+            { date: { gte: start, lte: end } }
           ]
         });
       } else {
@@ -72,11 +75,8 @@ export async function GET(req: Request) {
     const daysSet = new Set<string>();
     records.forEach(r => {
       if (r.date) {
-        const d = new Date(r.date);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        daysSet.add(`${yyyy}-${mm}-${dd}`);
+        const { isoDate } = getEgyptDateParts(r.date);
+        daysSet.add(isoDate);
       }
     });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getEgyptDateParts } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -30,22 +31,17 @@ export async function GET(req: Request) {
       }
     }
 
-    // استخدام distinct لجلب الأشهر الفريدة مباشرة بدون تحميل كل السجلات
     const distinctMonthRecords = await db.expenses.findMany({
       where: whereCondition,
       select: { month: true, date: true },
-      distinct: ['month'],
       orderBy: { date: 'desc' }
     });
 
-    // بناء قائمة الأشهر المرتبة بدون تكرار
     const monthsMap = new Map<string, Date>();
     distinctMonthRecords.forEach(r => {
-      const key = r.month
-        ? r.month.trim()
-        : r.date
-        ? `${new Date(r.date).getFullYear()} ${new Date(r.date).getMonth() + 1}`
-        : null;
+      const key = r.date
+        ? getEgyptDateParts(r.date).monthKey
+        : (r.month ? r.month.trim() : null);
       if (key && !monthsMap.has(key)) {
         monthsMap.set(key, r.date ? new Date(r.date) : new Date(0));
       }
