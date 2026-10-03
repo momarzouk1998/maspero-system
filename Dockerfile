@@ -6,6 +6,7 @@
 
 # 1. Base
 FROM node:20-alpine AS base
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 # 2. Dependencies
