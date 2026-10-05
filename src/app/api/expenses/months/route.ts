@@ -33,17 +33,18 @@ export async function GET(req: Request) {
 
     const distinctMonthRecords = await db.expenses.findMany({
       where: whereCondition,
-      select: { month: true, date: true },
-      orderBy: { date: 'desc' }
+      select: { month: true, date: true, timestamp: true },
+      orderBy: { timestamp: 'desc' }
     });
 
     const monthsMap = new Map<string, Date>();
     distinctMonthRecords.forEach(r => {
-      const key = r.date
-        ? getEgyptDateParts(r.date).monthKey
+      const src = r.timestamp || r.date;
+      const key = src
+        ? getEgyptDateParts(src).monthKey
         : (r.month ? r.month.trim() : null);
       if (key && !monthsMap.has(key)) {
-        monthsMap.set(key, r.date ? new Date(r.date) : new Date(0));
+        monthsMap.set(key, src ? new Date(src) : new Date(0));
       }
     });
 

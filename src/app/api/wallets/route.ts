@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cairoDayDate, formatMonthText } from '@/lib/user-utils';
 import { getCurrentUser } from '@/lib/auth';
 import { getFawryPurchaseRate, computeWalletDeltas } from '@/lib/fawry-utils';
 
@@ -168,8 +169,8 @@ export async function POST(req: Request) {
     const transaction = await db.$transaction(async (tx) => {
       const log = await tx.wallet_transactions.create({
         data: {
-          date: today,
-          transaction_month: `${today.getFullYear()} ${today.getMonth() + 1}`,
+          date: cairoDayDate(today),
+          transaction_month: formatMonthText(today),
           wallet_id: walletId,
           wallet_name: wallet.wallet_name,
           transaction_type: transactionType,

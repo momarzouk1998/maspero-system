@@ -119,3 +119,11 @@ export function getCairoDateRange(startDateStr?: string | null, endDateStr?: str
   return { start, end };
 }
 
+
+// Value for @db.Date columns: the CAIRO calendar day of `d` stored as midnight UTC.
+// (Passing a raw Date makes Prisma store the UTC day, which is the previous day for
+// anything recorded between 00:00 and 03:00 Cairo time.)
+export function cairoDayDate(d?: Date | string | number | null): Date {
+  const { isoDate } = getEgyptDateParts(d);
+  return new Date(`${isoDate}T00:00:00.000Z`);
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cairoDayDate, formatMonthText } from '@/lib/user-utils';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET custody items (wallets, machines, cash drawers) & shift custody status
@@ -210,7 +211,7 @@ export async function POST(req: Request) {
       }
 
       const today = new Date();
-      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
+      const monthStr = formatMonthText(today);
 
       await db.$transaction(async (tx: any) => {
         await tx.external_wallets.update({
@@ -291,7 +292,7 @@ export async function POST(req: Request) {
       }
 
       const today = new Date();
-      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
+      const monthStr = formatMonthText(today);
 
       await db.$transaction(async (tx: any) => {
         // 1. Transfer cash custody into cash drawer balance
@@ -314,7 +315,7 @@ export async function POST(req: Request) {
         // 3. Log transaction
         await tx.wallet_transactions.create({
           data: {
-            date: today,
+            date: cairoDayDate(today),
             transaction_month: monthStr,
             time_str: today.toLocaleTimeString('en-US'),
             wallet_id: drawerId,
@@ -371,7 +372,7 @@ export async function POST(req: Request) {
       );
 
       const today = new Date();
-      const monthStr = `${today.getFullYear()} ${today.getMonth() + 1}`;
+      const monthStr = formatMonthText(today);
 
       await db.$transaction(async (tx: any) => {
         // 1. Handover held wallets & machines to Maspero Center
@@ -425,7 +426,7 @@ export async function POST(req: Request) {
 
             await tx.wallet_transactions.create({
               data: {
-                date: today,
+                date: cairoDayDate(today),
                 transaction_month: monthStr,
                 time_str: today.toLocaleTimeString('en-US'),
                 wallet_id: drawerId,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cairoDayDate, formatMonthText } from '@/lib/user-utils';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(req: Request) {
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
           status: 'قيد التنفيذ',
           employee_id: user.id,
           employee_name: user.name,
-          date: new Date(),
+          date: cairoDayDate(new Date()),
           shift_id: activeShift?.id || undefined,
           shift_name: activeShift?.shift_type || undefined,
           shift_cashier: user.name

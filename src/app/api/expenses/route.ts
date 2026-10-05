@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
-import { getCairoDateRange } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -246,8 +246,8 @@ export async function POST(req: Request) {
     const expense = await db.$transaction(async (tx) => {
       const created = await tx.expenses.create({
         data: {
-          date: txDate,
-          month: `${txDate.getFullYear()} ${txDate.getMonth() + 1}`,
+          date: cairoDayDate(txDate),
+          month: formatMonthText(txDate),
           main_type: mainType,
           expense_type: mainType, // e.g. "مصروفات", "دعم مالي", "مسحوبات"
           items: items || null,

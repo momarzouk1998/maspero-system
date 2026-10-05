@@ -74,8 +74,9 @@ export default function InvoicesHistoryPage() {
     if (parts.length === 2) {
       const yyyy = parseInt(parts[0]);
       const mm = parseInt(parts[1]);
-      const start = new Date(yyyy, mm - 1, 1).toISOString().split('T')[0];
-      const end = new Date(yyyy, mm, 0).toISOString().split('T')[0];
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const start = `${yyyy}-${pad(mm)}-01`;
+      const end = `${yyyy}-${pad(mm)}-${pad(new Date(yyyy, mm, 0).getDate())}`;
       setStartDate(start);
       setEndDate(end);
     }

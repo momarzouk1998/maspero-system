@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
-import { getCairoDateRange } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -110,8 +110,8 @@ export async function POST(req: Request) {
 
     const hrEntry = await db.employee_hr.create({
       data: {
-        date: reqDate,
-        month: `${reqDate.getFullYear()} ${reqDate.getMonth() + 1}`,
+        date: cairoDayDate(reqDate),
+        month: formatMonthText(reqDate),
         e_hr_name: employeeName,
         hr_items: requestType,
         hours: numHours,

@@ -7,7 +7,7 @@ import {
   CheckCircle2, AlertCircle, RefreshCw, Trash2, ArrowRight, ShieldCheck,
   Building2, Wallet, ArrowDownLeft, ArrowUpRight, Plane, XSquare
 } from 'lucide-react';
-import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale, getEgyptDateParts } from '@/lib/user-utils';
 
 export default function FinancialAndHROperationsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -19,7 +19,7 @@ export default function FinancialAndHROperationsPage() {
   const [availableItems, setAvailableItems] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState('');
   const [customItem, setCustomItem] = useState('');
-  const [finDate, setFinDate] = useState(new Date().toISOString().split('T')[0]);
+  const [finDate, setFinDate] = useState(getEgyptDateParts().isoDate);
   const [finEmployeeId, setFinEmployeeId] = useState('');
   const [finAmount, setFinAmount] = useState('');
   const [finNotes, setFinNotes] = useState('');
@@ -33,7 +33,7 @@ export default function FinancialAndHROperationsPage() {
   };
 
   // --- HR Form State ---
-  const [hrDate, setHrDate] = useState(new Date().toISOString().split('T')[0]);
+  const [hrDate, setHrDate] = useState(getEgyptDateParts().isoDate);
   const [hrEmployeeId, setHrEmployeeId] = useState('');
   const [hrType, setHrType] = useState<'خصم' | 'مكافأة' | 'طلب إذن' | 'طلب إجازة' | ''>('');
   const [hrHours, setHrHours] = useState('1.00');

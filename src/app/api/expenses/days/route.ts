@@ -51,7 +51,7 @@ export async function GET(req: Request) {
         andConditions.push({
           OR: [
             { month: month },
-            { date: { gte: start, lte: end } }
+            { timestamp: { gte: start, lte: end } }
           ]
         });
       } else {
@@ -68,14 +68,15 @@ export async function GET(req: Request) {
 
     const records = await db.expenses.findMany({
       where: whereCondition,
-      select: { date: true },
-      orderBy: { date: 'desc' }
+      select: { date: true, timestamp: true },
+      orderBy: { timestamp: 'desc' }
     });
 
     const daysSet = new Set<string>();
     records.forEach(r => {
-      if (r.date) {
-        const { isoDate } = getEgyptDateParts(r.date);
+      const src = r.timestamp || r.date;
+      if (src) {
+        const { isoDate } = getEgyptDateParts(src);
         daysSet.add(isoDate);
       }
     });

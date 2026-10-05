@@ -57,9 +57,10 @@ export async function GET(req: Request) {
         main_type: true,
         expense_type: true,
         date: true,
+        timestamp: true,
       },
       orderBy: {
-        date: 'desc'
+        timestamp: 'desc'
       }
     });
 
@@ -95,7 +96,7 @@ export async function GET(req: Request) {
       const amt = Number(exp.amount || 0);
       grandTotal += amt;
 
-      const dateObj = new Date(exp.date);
+      const dateObj = new Date(exp.timestamp || exp.date);
       const { dayKey, monthKey } = getEgyptDateParts(dateObj);
 
       let rawCat = (exp.expense_type || exp.main_type || 'أخرى').trim();

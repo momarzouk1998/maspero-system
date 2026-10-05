@@ -4,7 +4,7 @@ import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { checkSalesLock } from '@/lib/custody-lock';
 import { getServiceCommission } from '@/lib/service-utils';
-import { getCairoDateRange } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -123,8 +123,8 @@ export async function POST(req: Request) {
       // 1. Create Service Entry record
       const entry = await tx.service_entries.create({
         data: {
-          date: today,
-          month: `${today.getFullYear()} ${today.getMonth() + 1}`,
+          date: cairoDayDate(today),
+          month: formatMonthText(today),
           service_id: validFkId,
           service_name: serviceName,
           paper_count: finalPaper,

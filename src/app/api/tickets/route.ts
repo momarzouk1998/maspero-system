@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
 import { checkSalesLock } from '@/lib/custody-lock';
-import { getCairoDateRange } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -92,8 +92,8 @@ export async function POST(req: Request) {
     const booking = await db.$transaction(async (tx: any) => {
       const created = await tx.train_ticket_bookings.create({
         data: {
-          date: today,
-          month: `${today.getFullYear()} ${today.getMonth() + 1}`,
+          date: cairoDayDate(today),
+          month: formatMonthText(today),
           service_name: serviceName || 'قطار',
           item_count: count,
           amount: totalAmount,
