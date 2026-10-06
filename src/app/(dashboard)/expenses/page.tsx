@@ -7,7 +7,8 @@ import {
   CheckCircle2, AlertCircle, RefreshCw, Trash2, ArrowRight, ShieldCheck,
   Building2, Wallet, ArrowDownLeft, ArrowUpRight, Plane, XSquare
 } from 'lucide-react';
-import { getActiveUsers, formatNumberLocale, getEgyptDateParts } from '@/lib/user-utils';
+import { getActiveUsers, formatNumberLocale } from '@/lib/user-utils';
+import { fetchServerToday } from '@/lib/server-clock';
 
 export default function FinancialAndHROperationsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -19,7 +20,7 @@ export default function FinancialAndHROperationsPage() {
   const [availableItems, setAvailableItems] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState('');
   const [customItem, setCustomItem] = useState('');
-  const [finDate, setFinDate] = useState(getEgyptDateParts().isoDate);
+  const [finDate, setFinDate] = useState('');
   const [finEmployeeId, setFinEmployeeId] = useState('');
   const [finAmount, setFinAmount] = useState('');
   const [finNotes, setFinNotes] = useState('');
@@ -33,7 +34,7 @@ export default function FinancialAndHROperationsPage() {
   };
 
   // --- HR Form State ---
-  const [hrDate, setHrDate] = useState(getEgyptDateParts().isoDate);
+  const [hrDate, setHrDate] = useState('');
   const [hrEmployeeId, setHrEmployeeId] = useState('');
   const [hrType, setHrType] = useState<'خصم' | 'مكافأة' | 'طلب إذن' | 'طلب إجازة' | ''>('');
   const [hrHours, setHrHours] = useState('1.00');
@@ -42,6 +43,16 @@ export default function FinancialAndHROperationsPage() {
   // --- Common State ---
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Default form dates = today's Cairo date from the SERVER (device clocks may be wrong)
+  useEffect(() => {
+    fetchServerToday()
+      .then(({ isoDate }) => {
+        setFinDate((prev) => prev || isoDate);
+        setHrDate((prev) => prev || isoDate);
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     fetch('/api/auth/me')

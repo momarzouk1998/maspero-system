@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { fetchServerToday } from '@/lib/server-clock';
 import Link from 'next/link';
 import { 
   BarChart3, TrendingUp, DollarSign, Printer, Train, Cpu, Receipt, 
@@ -91,8 +92,19 @@ export default function ManagerReportsPage() {
 
     // نحدد الشهر من فلتر التاريخ اللي اختاره المستخدم (تاريخ البداية)،
     // وليس من تاريخ اليوم — علشان لو المدير عامل فلتر شهر 7 يحفظ باسم شهر 7 مش شهر 9.
-    const monthSource = startDate ? new Date(startDate) : new Date();
-    const currentMonthStr = `${monthSource.getFullYear()} ${monthSource.getMonth() + 1}`;
+    let currentMonthStr: string;
+    if (startDate) {
+      const [y, m] = startDate.split('-').map(Number);
+      currentMonthStr = `${y} ${m}`;
+    } else {
+      // من غير فلتر: الشهر الحالي حسب ساعة السيرفر (توقيت القاهرة) مش ساعة الجهاز
+      try {
+        currentMonthStr = (await fetchServerToday()).monthKey;
+      } catch {
+        alert('تعذر جلب التاريخ من السيرفر، حاول مرة أخرى');
+        return;
+      }
+    }
 
     if (!confirm(`سيتم حفظ/تحديث تقرير شهر (${currentMonthStr}) في الأرشيف. هل تريد المتابعة؟`)) {
       return;

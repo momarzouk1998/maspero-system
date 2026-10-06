@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cairoMonthBounds } from '@/lib/user-utils';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(req: Request) {
@@ -17,9 +18,10 @@ export async function GET(req: Request) {
     ? Math.max(0, Math.min(100, parseFloat(machineCommissionRateStr)))
     : 7;
 
-  const now = new Date();
-  const startDate = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), 1);
-  const endDate = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  // التقرير بيفلتر على أعمدة @db.Date (يوم القاهرة) — الافتراضي = شهر القاهرة الحالي
+  const cairoMonth = cairoMonthBounds();
+  const startDate = new Date(`${startDateStr || cairoMonth.firstDay}T00:00:00.000Z`);
+  const endDate = new Date(`${endDateStr || cairoMonth.lastDay}T00:00:00.000Z`);
 
   // 1. Fetch Financial Metrics via Prisma Aggregations
   const [

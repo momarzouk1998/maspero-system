@@ -1,4 +1,5 @@
 import { db } from './db';
+import { cairoDayDate, formatMonthText } from './user-utils';
 import { Prisma } from '@prisma/client';
 
 export class WalletService {
@@ -177,7 +178,8 @@ export class WalletService {
       // 3. Log transaction
       await tx.wallet_transactions.create({
         data: {
-          date: new Date(),
+          date: cairoDayDate(),
+          transaction_month: formatMonthText(),
           wallet_id: drawerId,
           wallet_name: drawer.wallet_name,
           wallet_type: 'درج كاش',
@@ -221,7 +223,8 @@ export class WalletService {
       // 3. Log transaction
       await tx.wallet_transactions.create({
         data: {
-          date: new Date(),
+          date: cairoDayDate(),
+          transaction_month: formatMonthText(),
           wallet_id: drawerId,
           wallet_name: drawer.wallet_name,
           wallet_type: 'درج كاش',

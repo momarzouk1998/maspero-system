@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { cairoDayDate, formatMonthText } from '@/lib/user-utils';
+import { cairoDayDate, formatMonthText, cairoMonthBounds } from '@/lib/user-utils';
 import { getCurrentUser } from '@/lib/auth';
 import { getFawryPurchaseRate, computeWalletDeltas } from '@/lib/fawry-utils';
 
@@ -30,9 +30,7 @@ export async function GET() {
   });
 
   // Monthly Deposits & Withdrawals aggregation per wallet for current month
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const { start: startOfMonth, end: endOfMonth } = cairoMonthBounds();
 
   const monthlyTx = await db.wallet_transactions.groupBy({
     by: ['wallet_id', 'transaction_type'],

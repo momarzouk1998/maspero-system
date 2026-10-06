@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
-import { getCairoDateRange } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate } from '@/lib/user-utils';
 
 // GET shifts with pagination & filtering
 export async function GET(req: Request) {
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         data: {
           employee_id: user.id,
           employee_name: user.name,
-          shift_date: today,
+          shift_date: cairoDayDate(today),
           start_time: today,
           shift_type: shiftType || 'صباحي',
           status: 'مفتوح',

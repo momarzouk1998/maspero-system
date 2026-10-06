@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
-import { getCairoDateRange, cairoDayDate, formatMonthText, resolveCairoEntryDate } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText, resolveCairoEntryDate, cairoMonthBounds } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -16,9 +16,7 @@ export async function GET(req: Request) {
     const targetUser = await db.users.findUnique({ where: { id: statsEmployeeId } });
     if (!targetUser) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 });
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const { dayStart: startOfMonth, dayEnd: endOfMonth } = cairoMonthBounds();
 
     const monthExpenses = await db.expenses.findMany({
       where: {
@@ -196,8 +194,7 @@ export async function POST(req: Request) {
           }
 
           const baseSalary = Number(emp.salary || 0);
-          const startOfMonth = new Date(txDate.getFullYear(), txDate.getMonth(), 1);
-          const endOfMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0, 23, 59, 59);
+          const { dayStart: startOfMonth, dayEnd: endOfMonth } = cairoMonthBounds(txDate);
 
           const drawnSum = await db.expenses.aggregate({
             where: {

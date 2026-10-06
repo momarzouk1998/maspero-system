@@ -146,3 +146,24 @@ export function resolveCairoEntryDate(input?: unknown, now: Date = new Date()): 
   const diffDays = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(year, month - 1, day)) / 86400000);
   return new Date(now.getTime() + diffDays * 86400000);
 }
+
+// Current (or given) CAIRO calendar month.
+// - firstDay/lastDay: 'YYYY-MM-DD' strings
+// - dayStart/dayEnd: midnight-UTC values for @db.Date columns
+// - start/end: exact instants for timestamp columns (Cairo 00:00 → 23:59:59.999)
+export function cairoMonthBounds(d?: Date | string | number | null) {
+  const { year, month } = getEgyptDateParts(d);
+  const mm = String(month).padStart(2, '0');
+  const lastDayNum = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const firstDay = `${year}-${mm}-01`;
+  const lastDay = `${year}-${mm}-${String(lastDayNum).padStart(2, '0')}`;
+  const { start, end } = getCairoDateRange(firstDay, lastDay);
+  return {
+    firstDay,
+    lastDay,
+    dayStart: new Date(`${firstDay}T00:00:00.000Z`),
+    dayEnd: new Date(`${lastDay}T00:00:00.000Z`),
+    start: start as Date,
+    end: end as Date,
+  };
+}
