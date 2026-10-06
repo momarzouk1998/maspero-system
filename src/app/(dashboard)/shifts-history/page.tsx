@@ -540,13 +540,13 @@ export default function ShiftsHistoryPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-700 font-mono whitespace-nowrap">
-                          {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US') : '-'}
+                          {item.start_time ? new Date(item.start_time).toLocaleDateString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                          {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US') : '-'}
+                          {item.start_time ? new Date(item.start_time).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                          {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US') : (
+                          {item.end_time ? new Date(item.end_time).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : (
                             <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">نشط الآن</span>
                           )}
                         </td>
@@ -832,13 +832,13 @@ export default function ShiftsHistoryPage() {
                   <div>
                     <span className="text-slate-500 block mb-1">توقيت البداية:</span>
                     <span className="font-bold font-mono text-slate-900 dir-ltr text-xs">
-                      {selectedAuditShift.start_time ? new Date(selectedAuditShift.start_time).toLocaleString('en-US') : '-'}
+                      {selectedAuditShift.start_time ? new Date(selectedAuditShift.start_time).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-500 block mb-1">توقيت الإغلاق:</span>
                     <span className="font-bold font-mono text-slate-900 dir-ltr text-xs">
-                      {selectedAuditShift.end_time ? new Date(selectedAuditShift.end_time).toLocaleString('en-US') : 'نشط الآن'}
+                      {selectedAuditShift.end_time ? new Date(selectedAuditShift.end_time).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : 'نشط الآن'}
                     </span>
                   </div>
                   <div>
@@ -930,7 +930,7 @@ export default function ShiftsHistoryPage() {
                                   <span className="text-slate-400">0 ج</span>
                                 )}
                               </td>
-                              <td className="p-2 text-slate-500 font-mono">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                              <td className="p-2 text-slate-500 font-mono">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -971,7 +971,7 @@ export default function ShiftsHistoryPage() {
                               <td className="p-2 font-mono font-bold text-slate-900">{formatNumber(Number(w.amount))} ج</td>
                               <td className="p-2 font-mono text-emerald-700">{formatNumber(Number(w.wallet_commission))} ج</td>
                               <td className="p-2 text-slate-600">{w.description || '-'}</td>
-                              <td className="p-2 text-slate-500 font-mono">{w.timestamp ? new Date(w.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                              <td className="p-2 text-slate-500 font-mono">{w.timestamp ? new Date(w.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1008,7 +1008,7 @@ export default function ShiftsHistoryPage() {
                               <td className="p-2 font-bold text-slate-800">{e.employee_name || '-'}</td>
                               <td className="p-2 font-bold text-blue-700">{e.created_by_name || e.shift_cashier || e.employee_name || '-'}</td>
                               <td className="p-2 text-slate-600">{e.notes || '-'}</td>
-                              <td className="p-2 text-slate-500 font-mono">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                              <td className="p-2 text-slate-500 font-mono">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                             </tr>
                           ))}
                         </tbody>

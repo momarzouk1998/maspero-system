@@ -202,6 +202,7 @@ export default function InvoicesHistoryPage() {
         const data = await res.json();
         const formattedDate = data.timestamp 
           ? new Date(data.timestamp).toLocaleString('en-US', {
+              timeZone: 'Africa/Cairo',
               year: 'numeric', month: 'long', day: 'numeric',
               hour: '2-digit', minute: '2-digit'
             })
@@ -591,7 +592,7 @@ export default function InvoicesHistoryPage() {
                             {invCode}
                           </td>
                           <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                            {invDate ? new Date(invDate).toLocaleString('en-US') : '-'}
+                            {invDate ? new Date(invDate).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                           </td>
                           <td className="px-4 py-3 text-xs font-bold text-slate-800 whitespace-nowrap">
                             {empName}

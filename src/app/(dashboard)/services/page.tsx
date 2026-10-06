@@ -559,7 +559,7 @@ export default function ServicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                      {item.timestamp || item.date ? new Date(item.timestamp || item.date).toLocaleString('en-US') : '-'}
+                      {item.timestamp || item.date ? new Date(item.timestamp || item.date).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate whitespace-nowrap">
                       {item.notes || '-'}

@@ -799,7 +799,7 @@ export default function ManagerReportsPage() {
                 <tbody className="divide-y divide-slate-200">
                   {activeMonthReport.items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                       <td className="px-3 py-3 font-bold text-slate-900 whitespace-nowrap">{item.main_type}</td>
                       <td className="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">{item.items || '-'}</td>
                       <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(Number(item.amount))}</td>
@@ -859,7 +859,7 @@ export default function ManagerReportsPage() {
                 <tbody className="divide-y divide-slate-200">
                   {activeCategoryReport.items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US') : '-'}</td>
+                      <td className="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                       <td className="px-3 py-3 font-mono font-bold text-slate-700 whitespace-nowrap">{item.month || '-'}</td>
                       <td className="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">{item.items || '-'}</td>
                       <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumber(Number(item.amount))}</td>

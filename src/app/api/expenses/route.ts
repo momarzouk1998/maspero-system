@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getCurrentUser, hasPermission } from '@/lib/auth';
 import { WalletService } from '@/lib/wallet-service';
-import { getCairoDateRange, cairoDayDate, formatMonthText } from '@/lib/user-utils';
+import { getCairoDateRange, cairoDayDate, formatMonthText, resolveCairoEntryDate } from '@/lib/user-utils';
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -168,25 +168,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'برجاء ادخال النوع والمبلغ بشكل صحيح' }, { status: 400 });
     }
 
-    let txDate = new Date();
-    if (date) {
-      if (typeof date === 'string' && (date.includes('T') || date.includes(':'))) {
-        const d = new Date(date);
-        if (!isNaN(d.getTime())) {
-          txDate = d;
-        }
-      } else if (typeof date === 'string') {
-        const parts = date.split('-');
-        if (parts.length === 3) {
-          const yr = parseInt(parts[0], 10);
-          const mo = parseInt(parts[1], 10) - 1;
-          const dy = parseInt(parts[2], 10);
-          if (!isNaN(yr) && !isNaN(mo) && !isNaN(dy)) {
-            txDate.setFullYear(yr, mo, dy);
-          }
-        }
-      }
-    }
+    const txDate = resolveCairoEntryDate(date);
 
     // Target employee is ONLY relevant for advances & salary
     let employeeId = user.id;

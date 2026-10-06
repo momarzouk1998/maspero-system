@@ -103,13 +103,13 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
         <div>
           <span className="text-slate-500 text-xs block mb-1">توقيت بداية الشفت:</span>
           <span className="font-bold font-mono text-slate-900 text-xs dir-ltr block">
-            {shift.start_time ? new Date(shift.start_time).toLocaleString('en-US') : '-'}
+            {shift.start_time ? new Date(shift.start_time).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
           </span>
         </div>
         <div>
           <span className="text-slate-500 text-xs block mb-1">توقيت الإغلاق:</span>
           <span className="font-bold font-mono text-slate-900 text-xs dir-ltr block">
-            {shift.end_time ? new Date(shift.end_time).toLocaleString('en-US') : 'نشط الآن'}
+            {shift.end_time ? new Date(shift.end_time).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : 'نشط الآن'}
           </span>
         </div>
         <div>
@@ -255,7 +255,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">
-                        {h.created_at ? new Date(h.created_at).toLocaleString('en-US') : '-'}
+                        {h.created_at ? new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                       </td>
                     </tr>
                   );
@@ -300,7 +300,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                     <td className="px-4 py-3 font-mono font-bold text-purple-700 whitespace-nowrap">{formatNumberLocale(Number(t.amount || 0), 'en-US')} ج</td>
                     <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">{formatNumberLocale(Number(t.ticket_commission || 0), 'en-US')} ج</td>
                     <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{t.invoice_code || '-'}</td>
-                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{t.timestamp ? new Date(t.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{t.timestamp ? new Date(t.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -339,7 +339,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                     <td className="px-4 py-3 font-semibold whitespace-nowrap">{e.expense_type || '-'}</td>
                     <td className="px-4 py-3 font-mono font-bold text-rose-700 whitespace-nowrap">{formatNumberLocale(Number(e.amount || 0), 'en-US')} ج</td>
                     <td className="px-4 py-3 text-slate-700 font-medium whitespace-nowrap">{e.notes || e.items || '-'}</td>
-                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{e.timestamp ? new Date(e.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -388,7 +388,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                         <span className="text-slate-400">0 ج</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{svc.timestamp ? new Date(svc.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -435,7 +435,7 @@ export default function ShiftAuditDetailPage({ params }: { params: Promise<{ id:
                     <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">{formatNumberLocale(Number(w.amount || 0), 'en-US')} ج</td>
                     <td className="px-4 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">{formatNumberLocale(Number(w.wallet_commission || 0), 'en-US')} ج</td>
                     <td className="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">{w.description || '-'}</td>
-                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{w.timestamp ? new Date(w.timestamp).toLocaleTimeString('en-US') : '-'}</td>
+                    <td className="px-4 py-3 font-mono text-slate-500 text-xs whitespace-nowrap">{w.timestamp ? new Date(w.timestamp).toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}</td>
                   </tr>
                 ))}
               </tbody>

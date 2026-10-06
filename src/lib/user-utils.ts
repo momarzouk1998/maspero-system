@@ -127,3 +127,22 @@ export function cairoDayDate(d?: Date | string | number | null): Date {
   const { isoDate } = getEgyptDateParts(d);
   return new Date(`${isoDate}T00:00:00.000Z`);
 }
+
+// Resolve a client-supplied date into the moment to record.
+// - Full ISO / time strings are used as-is.
+// - 'YYYY-MM-DD' is a CAIRO calendar day: keep the current Cairo time-of-day and
+//   move by whole days from today's Cairo date. (setFullYear on the UTC server
+//   pushed anything entered between 00:00 and 03:00 Cairo one day forward.)
+export function resolveCairoEntryDate(input?: unknown, now: Date = new Date()): Date {
+  if (typeof input !== 'string' || !input) return now;
+  if (input.includes('T') || input.includes(':')) {
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? now : d;
+  }
+  const parts = input.split('-').map((p) => parseInt(p, 10));
+  if (parts.length !== 3 || parts.some(isNaN)) return now;
+  const [y, m, d] = parts;
+  const { year, month, day } = getEgyptDateParts(now);
+  const diffDays = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(year, month - 1, day)) / 86400000);
+  return new Date(now.getTime() + diffDays * 86400000);
+}

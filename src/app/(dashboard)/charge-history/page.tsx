@@ -551,7 +551,7 @@ export default function ChargeHistoryPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                        {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
+                        {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                       </td>
                       {(canUpdate || canDelete) && (
                         <td className="px-4 py-3 text-center whitespace-nowrap">

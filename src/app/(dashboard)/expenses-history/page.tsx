@@ -772,7 +772,7 @@ export default function ExpensesHistoryPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{item.notes || '-'}</td>
                         <td className="px-4 py-3 text-xs text-slate-600 font-mono whitespace-nowrap">
-                          {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US') : '-'}
+                          {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', { timeZone: 'Africa/Cairo' }) : '-'}
                         </td>
                         {(canUpdate || canDelete) && (
                           <td className="px-4 py-3 text-center whitespace-nowrap">

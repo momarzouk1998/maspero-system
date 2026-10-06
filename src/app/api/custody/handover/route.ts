@@ -317,7 +317,7 @@ export async function POST(req: Request) {
           data: {
             date: cairoDayDate(today),
             transaction_month: monthStr,
-            time_str: today.toLocaleTimeString('en-US'),
+            time_str: today.toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }),
             wallet_id: drawerId,
             wallet_name: drawer.wallet_name,
             transaction_type: 'تسليم للدرج',
@@ -428,7 +428,7 @@ export async function POST(req: Request) {
               data: {
                 date: cairoDayDate(today),
                 transaction_month: monthStr,
-                time_str: today.toLocaleTimeString('en-US'),
+                time_str: today.toLocaleTimeString('en-US', { timeZone: 'Africa/Cairo' }),
                 wallet_id: drawerId,
                 wallet_name: drawer.wallet_name,
                 transaction_type: 'تسليم للدرج',
