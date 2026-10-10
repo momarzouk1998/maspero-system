@@ -45,12 +45,9 @@ export async function GET(req: Request) {
       if (start) dateFilter.gte = start;
       if (end) dateFilter.lte = end;
 
-      andClauses.push({
-        OR: [
-          { date: dateFilter },
-          { timestamp: dateFilter }
-        ]
-      });
+      // فلترة بالوقت الفعلي (timestamp) فقط — عمود date من نوع DATE وكان بيحوّل بداية يوم
+    // القاهرة (21:00 UTC اليوم اللي قبله) لليوم اللي قبله كامل، فبيدخّل عمليات يوم أمس
+    andClauses.push({ timestamp: dateFilter });
     }
 
     if (search) {

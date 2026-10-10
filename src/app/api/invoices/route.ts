@@ -33,7 +33,7 @@ export async function GET(req: Request) {
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
+          ...(hasDate ? { timestamp: dateFilter } : {})
         },
         select: {
           invoice_code: true,
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
+          ...(hasDate ? { timestamp: dateFilter } : {})
         },
         select: {
           invoice_code: true,
@@ -65,7 +65,7 @@ export async function GET(req: Request) {
         where: {
           ...userFilter,
           invoice_code: { not: null },
-          ...(hasDate ? { OR: [{ date: dateFilter }, { timestamp: dateFilter }] } : {})
+          ...(hasDate ? { timestamp: dateFilter } : {})
         },
         select: {
           invoice_code: true,
